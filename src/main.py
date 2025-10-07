@@ -19,8 +19,8 @@ def main():
 
     # Init command
     init_parser = subparsers.add_parser("init", help="Initialize vault")
-    init_parser.add_argument("--k", type=int, required=True, help="Threshold (K)")
-    init_parser.add_argument("--n", type=int, required=True, help="Total shares (N)")
+    init_parser.add_argument("--k", type=int, help="Threshold (K) - prompts if not provided")
+    init_parser.add_argument("--n", type=int, help="Total shares (N) - prompts if not provided")
     init_parser.add_argument(
         "--vault", default="vault.yaml", help="Vault file path"
     )
@@ -29,8 +29,8 @@ def main():
     # Encrypt command
     encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt message")
     encrypt_parser.add_argument("--vault", default="vault.yaml", help="Vault file")
-    encrypt_parser.add_argument("--title", required=True, help="Message title")
-    encrypt_parser.add_argument("--message", help="Message content")
+    encrypt_parser.add_argument("--title", help="Message title - prompts if not provided")
+    encrypt_parser.add_argument("--message", help="Message content - prompts if not provided")
     encrypt_parser.add_argument("--stdin", action="store_true", help="Read from stdin")
 
     # Decrypt command
@@ -60,6 +60,8 @@ def main():
         "--mode", choices=["shares", "passphrase"], required=True, help="Rotation mode"
     )
     rotate_parser.add_argument("--shares", nargs="+", help="Current shares")
+    rotate_parser.add_argument("--new-k", type=int, help="New threshold (for rotation)")
+    rotate_parser.add_argument("--new-n", type=int, help="New total shares (for rotation)")
 
     args = parser.parse_args()
 
@@ -81,7 +83,9 @@ def main():
     elif args.command == "validate":
         return validate_command(args.vault, args.verbose)
     elif args.command == "rotate":
-        return rotate_command(args.vault, args.mode, args.shares)
+        new_k = getattr(args, 'new_k', None)
+        new_n = getattr(args, 'new_n', None)
+        return rotate_command(args.vault, args.mode, new_k, new_n, args.shares)
 
 
 if __name__ == "__main__":

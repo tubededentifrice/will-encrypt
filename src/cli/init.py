@@ -15,38 +15,78 @@ from src.storage.models import Manifest
 from src.storage.vault import create_vault, save_vault
 
 
-def init_command(k: int, n: int, vault_path: str, force: bool = False) -> int:
+def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", force: bool = False) -> int:
     """Initialize vault with K-of-N threshold."""
     import os
 
+    # Interactive prompts for K and N if not provided
+    if k is None:
+        try:
+            print("\n🔐 Will-Encrypt Vault Initialization\n")
+            print("This will create a new encrypted vault using threshold cryptography.")
+            print("You'll receive N secret shares, and K shares are needed to decrypt.\n")
+            k_input = input("Enter threshold K (minimum shares needed to decrypt): ").strip()
+            k = int(k_input)
+        except (ValueError, EOFError, KeyboardInterrupt):
+            print("\nError: Invalid input for K", file=sys.stderr)
+            return 1
+
+    if n is None:
+        try:
+            n_input = input(f"Enter total shares N (K={k}, typically N > K for redundancy): ").strip()
+            n = int(n_input)
+        except (ValueError, EOFError, KeyboardInterrupt):
+            print("\nError: Invalid input for N", file=sys.stderr)
+            return 1
+
     # Validate args
     if k < 1:
-        print("Error: K must be >= 1", file=sys.stderr)
+        print("\nError: K must be >= 1", file=sys.stderr)
+        print("Hint: K is the minimum number of shares needed to decrypt", file=sys.stderr)
         return 1
     if k > n:
-        print("Error: K must be <= N", file=sys.stderr)
+        print(f"\nError: K must be <= N (got K={k}, N={n})", file=sys.stderr)
+        print("Hint: You need at least K shares out of N total shares", file=sys.stderr)
         return 1
     if n > 255:
-        print("Error: N must be <= 255", file=sys.stderr)
+        print("\nError: N must be <= 255", file=sys.stderr)
+        print("Hint: Shamir Secret Sharing supports up to 255 shares", file=sys.stderr)
         return 1
 
     # Check if vault exists
-    if os.path.exists(vault_path) and not force:
-        print(f"Error: Vault already exists at {vault_path}", file=sys.stderr)
-        return 2
+    if os.path.exists(vault_path):
+        if not force:
+            print(f"\n⚠️  Warning: Vault already exists at {vault_path}", file=sys.stderr)
+            try:
+                confirm = input("Overwrite existing vault? This will DESTROY all data! (yes/no): ").strip().lower()
+                if confirm != "yes":
+                    print("Aborted.", file=sys.stderr)
+                    return 2
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborted.", file=sys.stderr)
+                return 2
+        print(f"\nOverwriting existing vault at {vault_path}...")
 
     try:
-        # Generate passphrase
+        # Progress: Generate passphrase
+        print(f"\n[1/4] Generating 384-bit passphrase...")
         passphrase = generate_passphrase()
+        print("      ✓ Passphrase generated")
 
-        # Split into shares
+        # Progress: Split into shares
+        print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
         shares = split_secret(passphrase, k, n)
+        print(f"      ✓ {n} shares created using Shamir Secret Sharing")
 
         # Encode as BIP39 (use 32 bytes of share data, excluding 1-byte index)
+        print(f"[3/4] Encoding shares as BIP39 mnemonics...")
         mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
+        print(f"      ✓ {n} × 24-word mnemonics generated")
 
-        # Generate keypair
+        # Progress: Generate keypair
+        print(f"[4/4] Generating RSA-4096 + Kyber-1024 keypair...")
         keypair = generate_hybrid_keypair(passphrase)
+        print("      ✓ Hybrid keypair generated and encrypted")
 
         # Create manifest
         manifest = Manifest(
@@ -99,14 +139,30 @@ def init_command(k: int, n: int, vault_path: str, force: bool = False) -> int:
         # Save vault
         save_vault(vault, vault_path)
 
-        # Print shares
-        print(f"\\n✓ Vault initialized: {vault_path}")
-        print(f"\\nShares ({k}-of-{n}):\\n")
-        for i, mnemonic in enumerate(mnemonics, 1):
-            print(f"Share {i}:")
-            print(f"  {mnemonic}\\n")
+        # Print shares with clear instructions
+        print(f"\n{'='*70}")
+        print(f"✓ Vault initialized successfully: {vault_path}")
+        print(f"{'='*70}\n")
 
-        print("⚠️  IMPORTANT: Save these shares securely. They are NOT stored in the vault!")
+        print(f"📋 Secret Shares ({k}-of-{n} threshold)\n")
+        print(f"⚠️  CRITICAL: These shares are displayed ONCE and never stored!")
+        print(f"    • Distribute to {n} different key holders")
+        print(f"    • {k} shares required to decrypt messages")
+        print(f"    • Each share is 24 words (BIP39 mnemonic)")
+        print(f"    • Store securely: paper backup, password manager, or HSM\n")
+        print(f"{'-'*70}\n")
+
+        for i, mnemonic in enumerate(mnemonics, 1):
+            print(f"Share {i}/{n}:")
+            print(f"  {mnemonic}\n")
+
+        print(f"{'-'*70}\n")
+        print("📝 Next Steps:")
+        print("  1. Copy each share to a secure location (paper, password manager)")
+        print("  2. Distribute shares to key holders via secure channels")
+        print("  3. Test decryption immediately with K shares")
+        print(f"  4. Add messages: will-encrypt encrypt --vault {vault_path} --title '...'")
+        print(f"\n✓ Setup complete. Vault ready for encryption.")
 
         # Zero sensitive data
         del passphrase, shares, mnemonics, keypair

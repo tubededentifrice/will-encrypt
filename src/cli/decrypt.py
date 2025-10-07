@@ -16,34 +16,71 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
     # Check vault exists
     if not os.path.exists(vault_path):
-        print(f"Error: Vault not found: {vault_path}", file=sys.stderr)
+        print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
+        print(f"Hint: Check the file path and ensure vault exists", file=sys.stderr)
         return 2
 
     try:
         # Load vault
         vault = load_vault(vault_path)
         k = vault.manifest.k
+        n = vault.manifest.n
 
-        # Collect shares
+        # Collect shares with interactive prompts
         if shares is None:
-            print(f"\\nEnter {k} shares (24-word BIP39 mnemonics):\\n")
+            print(f"\n🔓 Decrypt Vault Messages\n")
+            print(f"This vault requires {k} out of {n} shares to decrypt.")
+            print(f"Each share is a 24-word BIP39 mnemonic.\n")
+            print("-" * 70)
             shares = []
             for i in range(k):
-                share_str = input(f"Share {i+1}: ").strip()
-                shares.append(share_str)
+                while True:
+                    try:
+                        share_str = input(f"\nShare {i+1}/{k}: ").strip()
+                        if not share_str:
+                            print("  Error: Share cannot be empty. Please try again.")
+                            continue
+                        # Validate format (should be ~24 words)
+                        word_count = len(share_str.split())
+                        if word_count != 24:
+                            print(f"  Warning: Expected 24 words, got {word_count}. Continue anyway? (yes/no): ", end="")
+                            confirm = input().strip().lower()
+                            if confirm != "yes":
+                                continue
+                        # Validate BIP39 checksum immediately
+                        if not validate_checksum(share_str):
+                            print(f"  ✗ Invalid BIP39 checksum. Please check for typos.")
+                            retry = input(f"  Retry share {i+1}? (yes/no): ").strip().lower()
+                            if retry != "yes":
+                                print("\nAborted.", file=sys.stderr)
+                                return 4
+                            continue
+                        print(f"  ✓ Share {i+1} validated")
+                        shares.append(share_str)
+                        break
+                    except (EOFError, KeyboardInterrupt):
+                        print("\n\nAborted.", file=sys.stderr)
+                        return 1
 
-        # Validate shares
+        # Validate shares count
         if len(shares) < k:
-            print(f"Error: Insufficient shares (need {k}, got {len(shares)})", file=sys.stderr)
+            print(f"\nError: Insufficient shares (need {k}, got {len(shares)})", file=sys.stderr)
+            print(f"Recovery: Collect at least {k - len(shares)} more share(s) from key holders", file=sys.stderr)
             return 3
 
-        # Validate BIP39 checksums
+        # Validate BIP39 checksums for non-interactive mode
+        print(f"\n🔍 Validating shares...")
         for i, share_str in enumerate(shares[:k], 1):
             if not validate_checksum(share_str):
-                print(f"Error: Invalid BIP39 checksum in share {i}", file=sys.stderr)
+                print(f"\nError: Invalid BIP39 checksum in share {i}", file=sys.stderr)
+                print(f"Recovery: Check for typos in the mnemonic. The last word contains a checksum.", file=sys.stderr)
+                print(f"Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
                 return 4
+        print(f"  ✓ All {k} shares validated")
 
-        # Decode shares
+        # Decode shares with progress
+        print(f"\n🔓 Decrypting vault...")
+        print(f"  [1/3] Reconstructing passphrase from {k} shares...")
         share_bytes = []
         for i, share_str in enumerate(shares[:k], 1):
             decoded = decode_share(share_str)  # Returns 32 bytes
@@ -52,8 +89,10 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
         # Reconstruct passphrase
         passphrase = reconstruct_secret(share_bytes)
+        print(f"        ✓ Passphrase reconstructed")
 
         # Decrypt private keys
+        print(f"  [2/3] Decrypting RSA-4096 + Kyber-1024 private keys...")
         keypair_obj = HybridKeypair(
             rsa_public=vault.keys.rsa_public.encode(),
             rsa_private_encrypted=base64.b64decode(vault.keys.rsa_private_encrypted),
@@ -66,9 +105,11 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
         )
 
         rsa_private, kyber_private = decrypt_private_keys(keypair_obj, passphrase)
+        print(f"        ✓ Private keys decrypted")
 
         # Decrypt messages
-        print(f"\\n✓ Decrypting {len(vault.messages)} message(s)...\\n")
+        print(f"  [3/3] Decrypting {len(vault.messages)} message(s)...")
+        decrypted_messages = []
         for msg in vault.messages:
             encrypted = EncryptedMessage(
                 ciphertext=base64.b64decode(msg.ciphertext),
@@ -81,11 +122,29 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
             plaintext = decrypt_message(
                 encrypted, rsa_private, kyber_private, msg.title
             )
+            decrypted_messages.append((msg, plaintext))
 
-            print(f"Message {msg.id}: {msg.title}")
-            print(f"Created: {msg.created}")
-            print(f"Content:\\n{plaintext.decode('utf-8')}\\n")
-            print("-" * 60 + "\\n")
+        print(f"        ✓ All messages decrypted\n")
+
+        # Pretty print decrypted messages
+        print("=" * 70)
+        print(f"📬 Decrypted Messages ({len(decrypted_messages)})")
+        print("=" * 70 + "\n")
+
+        for msg, plaintext in decrypted_messages:
+            print(f"╔══ Message {msg.id}: {msg.title}")
+            print(f"║")
+            print(f"║ Created: {msg.created}")
+            print(f"║ Size: {msg.size_bytes:,} bytes")
+            print(f"║")
+            print(f"╠══ Content:")
+            print(f"║")
+            # Indent content
+            content_lines = plaintext.decode('utf-8').split('\n')
+            for line in content_lines:
+                print(f"║   {line}")
+            print(f"║")
+            print("╚" + "═" * 68 + "\n")
 
         return 0
 

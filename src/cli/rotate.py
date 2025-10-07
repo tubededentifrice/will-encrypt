@@ -41,21 +41,53 @@ def rotate_command(
 
     # Check vault exists
     if not os.path.exists(vault_path):
-        print(f"Error: Vault not found: {vault_path}", file=sys.stderr)
+        print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
+        print(f"Hint: Check the file path and ensure vault exists", file=sys.stderr)
         return 2
 
     try:
         # Load vault
         vault = load_vault(vault_path)
         k = vault.manifest.k
+        n = vault.manifest.n
+
+        # Interactive mode explanation
+        print(f"\n🔄 Vault Key Rotation\n")
+        print(f"Current configuration: {k}-of-{n} threshold")
+        print(f"Mode: {mode}")
+        if mode == "shares":
+            print(f"  • Keep same passphrase, change share distribution")
+            print(f"  • Useful for: adding/removing key holders, changing threshold")
+        elif mode == "passphrase":
+            print(f"  • Generate new passphrase, re-encrypt private keys")
+            print(f"  • Useful for: suspected compromise, periodic rotation")
+        print(f"\nThis operation requires {k} current shares to authorize.\n")
+        print("-" * 70)
 
         # Collect shares if not provided
         if shares is None:
-            print(f"\\nEnter {k} shares to authorize rotation:\\n")
             shares = []
             for i in range(k):
-                share_str = input(f"Share {i+1}: ").strip()
-                shares.append(share_str)
+                while True:
+                    try:
+                        share_str = input(f"\nCurrent share {i+1}/{k}: ").strip()
+                        if not share_str:
+                            print("  Error: Share cannot be empty.")
+                            continue
+                        # Validate checksum
+                        if not validate_checksum(share_str):
+                            print(f"  ✗ Invalid BIP39 checksum.")
+                            retry = input(f"  Retry? (yes/no): ").strip().lower()
+                            if retry != "yes":
+                                print("\nAborted.", file=sys.stderr)
+                                return 4
+                            continue
+                        print(f"  ✓ Share {i+1} validated")
+                        shares.append(share_str)
+                        break
+                    except (EOFError, KeyboardInterrupt):
+                        print("\n\nAborted.", file=sys.stderr)
+                        return 1
 
         # Validate shares
         if len(shares) < k:
@@ -99,14 +131,44 @@ def rotate_command(
         if mode == "shares":
             # Share rotation: Keep same passphrase, split with new K/N
             if new_k is None or new_n is None:
-                print("Error: Must specify --new-k and --new-n for share rotation", file=sys.stderr)
+                print("\n⚠️  Share rotation requires new K and N values.")
+                try:
+                    new_k_input = input(f"Enter new threshold K (current: {k}): ").strip()
+                    new_k = int(new_k_input)
+                    new_n_input = input(f"Enter new total shares N (current: {n}): ").strip()
+                    new_n = int(new_n_input)
+                except (ValueError, EOFError, KeyboardInterrupt):
+                    print("\nError: Invalid input", file=sys.stderr)
+                    return 1
+
+            # Validate new K/N
+            if new_k < 1 or new_k > new_n or new_n > 255:
+                print(f"\nError: Invalid K/N (got K={new_k}, N={new_n})", file=sys.stderr)
                 return 1
 
-            # Split passphrase with new threshold
+            # Confirmation
+            print(f"\n⚠️  Confirm rotation:")
+            print(f"  • Current: {k}-of-{n}")
+            print(f"  • New: {new_k}-of-{new_n}")
+            print(f"  • Old shares will become INVALID")
+            try:
+                confirm = input(f"\nProceed with share rotation? (yes/no): ").strip().lower()
+                if confirm != "yes":
+                    print("Aborted.", file=sys.stderr)
+                    return 0
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborted.", file=sys.stderr)
+                return 0
+
+            # Progress indicators
+            print(f"\n🔄 Rotating shares...")
+            print(f"  [1/3] Splitting passphrase into {new_n} new shares...")
             new_shares = split_secret(current_passphrase, new_k, new_n)
             new_mnemonics = [encode_share(share[1:]) for share in new_shares]
+            print(f"        ✓ {new_n} shares created")
 
             # Update manifest
+            print(f"  [2/3] Updating vault manifest...")
             rotation_event = RotationEvent(
                 date=datetime.now(timezone.utc).isoformat(),
                 event_type="share_rotation",
@@ -119,27 +181,67 @@ def rotate_command(
 
             # Update fingerprints
             vault.manifest.fingerprints = compute_fingerprints(vault)
+            print(f"        ✓ Manifest updated")
 
             # Save vault
+            print(f"  [3/3] Saving vault...")
             save_vault(vault, vault_path)
+            print(f"        ✓ Vault saved")
 
-            # Print new shares
-            print(f"\\n✓ Share rotation complete ({new_k}-of-{new_n})\\n")
-            print("New shares:\\n")
+            # Print new shares with instructions
+            print(f"\n{'='*70}")
+            print(f"✓ Share rotation complete!")
+            print(f"{'='*70}\n")
+            print(f"📋 New Shares ({new_k}-of-{new_n} threshold)\n")
+            print(f"⚠️  OLD SHARES ARE NOW INVALID. Distribute these new shares:\n")
+            print(f"{'-'*70}\n")
             for i, mnemonic in enumerate(new_mnemonics, 1):
-                print(f"Share {i}:")
-                print(f"  {mnemonic}\\n")
+                print(f"Share {i}/{new_n}:")
+                print(f"  {mnemonic}\n")
+            print(f"{'-'*70}\n")
+            print("📝 Next Steps:")
+            print("  1. Securely destroy all old shares")
+            print("  2. Distribute new shares to key holders")
+            print("  3. Test decryption with new shares immediately")
 
             return 0
 
         elif mode == "passphrase":
             # Passphrase rotation: Generate new passphrase, re-encrypt private keys
+
+            # Use current K/N or allow changing
+            target_k = new_k if new_k is not None else k
+            target_n = new_n if new_n is not None else n
+
+            # Confirmation
+            print(f"\n⚠️  Confirm passphrase rotation:")
+            print(f"  • Generates NEW 384-bit passphrase")
+            print(f"  • Re-encrypts private keys")
+            print(f"  • Threshold: {k}-of-{n} → {target_k}-of-{target_n}")
+            print(f"  • Old passphrase and shares will become INVALID")
+            print(f"  • Messages are NOT re-encrypted (hybrid design)")
+            try:
+                confirm = input(f"\nProceed with passphrase rotation? (yes/no): ").strip().lower()
+                if confirm != "yes":
+                    print("Aborted.", file=sys.stderr)
+                    return 0
+            except (EOFError, KeyboardInterrupt):
+                print("\nAborted.", file=sys.stderr)
+                return 0
+
+            # Progress indicators
+            print(f"\n🔄 Rotating passphrase...")
+            print(f"  [1/5] Generating new 384-bit passphrase...")
             new_passphrase = generate_passphrase()
+            print(f"        ✓ New passphrase generated")
 
             # Re-encrypt private keys with new passphrase
+            print(f"  [2/5] Generating new hybrid keypair...")
             new_keypair = generate_hybrid_keypair(new_passphrase)
+            print(f"        ✓ Keypair generated")
 
             # Update vault with new encrypted private keys
+            print(f"  [3/5] Updating vault with re-encrypted private keys...")
             vault.keys.rsa_private_encrypted = base64.b64encode(
                 new_keypair.rsa_private_encrypted
             ).decode()
@@ -147,16 +249,16 @@ def rotate_command(
                 new_keypair.kyber_private_encrypted
             ).decode()
             vault.keys.kdf_salt = base64.b64encode(new_keypair.kdf_salt).decode()
-
-            # Use current K/N or allow changing
-            target_k = new_k if new_k is not None else k
-            target_n = new_n if new_n is not None else vault.manifest.n
+            print(f"        ✓ Private keys re-encrypted")
 
             # Split new passphrase
+            print(f"  [4/5] Splitting new passphrase into {target_n} shares...")
             new_shares = split_secret(new_passphrase, target_k, target_n)
             new_mnemonics = [encode_share(share[1:]) for share in new_shares]
+            print(f"        ✓ {target_n} shares created")
 
             # Update manifest
+            print(f"  [5/5] Updating manifest and saving vault...")
             rotation_event = RotationEvent(
                 date=datetime.now(timezone.utc).isoformat(),
                 event_type="passphrase_rotation",
@@ -172,13 +274,23 @@ def rotate_command(
 
             # Save vault
             save_vault(vault, vault_path)
+            print(f"        ✓ Vault saved")
 
-            # Print new shares
-            print(f"\\n✓ Passphrase rotation complete ({target_k}-of-{target_n})\\n")
-            print("New shares:\\n")
+            # Print new shares with instructions
+            print(f"\n{'='*70}")
+            print(f"✓ Passphrase rotation complete!")
+            print(f"{'='*70}\n")
+            print(f"📋 New Shares ({target_k}-of-{target_n} threshold)\n")
+            print(f"⚠️  OLD PASSPHRASE AND SHARES ARE NOW INVALID. Distribute these new shares:\n")
+            print(f"{'-'*70}\n")
             for i, mnemonic in enumerate(new_mnemonics, 1):
-                print(f"Share {i}:")
-                print(f"  {mnemonic}\\n")
+                print(f"Share {i}/{target_n}:")
+                print(f"  {mnemonic}\n")
+            print(f"{'-'*70}\n")
+            print("📝 Next Steps:")
+            print("  1. Securely destroy all old shares")
+            print("  2. Distribute new shares to key holders")
+            print("  3. Test decryption with new shares immediately")
 
             return 0
 
