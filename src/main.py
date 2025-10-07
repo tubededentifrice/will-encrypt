@@ -25,6 +25,12 @@ def main():
         "--vault", default="vault.yaml", help="Vault file path"
     )
     init_parser.add_argument("--force", action="store_true", help="Overwrite existing")
+    init_parser.add_argument(
+        "--import-share",
+        action="append",
+        dest="import_shares",
+        help="Import existing BIP39 share (24 words). Can be used multiple times. Requires K shares to reconstruct passphrase."
+    )
 
     # Encrypt command
     encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt message")
@@ -71,7 +77,8 @@ def main():
 
     # Route to command handlers
     if args.command == "init":
-        return init_command(args.k, args.n, args.vault, args.force)
+        import_shares = getattr(args, 'import_shares', None)
+        return init_command(args.k, args.n, args.vault, args.force, import_shares)
     elif args.command == "encrypt":
         return encrypt_command(
             args.vault, args.title, args.message, args.stdin

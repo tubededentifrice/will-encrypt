@@ -3,10 +3,10 @@ import base64
 import sys
 from datetime import datetime, timezone
 
-from src.crypto.bip39 import encode_share
+from src.crypto.bip39 import encode_share, decode_share, validate_checksum
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
-from src.crypto.shamir import split_secret
+from src.crypto.shamir import split_secret, reconstruct_secret
 from src.docs.crypto_notes import generate_crypto_notes
 from src.docs.policy import generate_policy_document
 from src.docs.recovery_guide import generate_recovery_guide
@@ -15,7 +15,7 @@ from src.storage.models import Manifest
 from src.storage.vault import create_vault, save_vault
 
 
-def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", force: bool = False) -> int:
+def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", force: bool = False, import_shares: list = None) -> int:
     """Initialize vault with K-of-N threshold."""
     import os
 
@@ -53,6 +53,68 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print("Hint: Shamir Secret Sharing supports up to 255 shares", file=sys.stderr)
         return 1
 
+    # Handle interactive import of shares
+    if import_shares is None and k is not None:
+        try:
+            print("\n📥 Share Import (Optional)\n")
+            print("You can import existing BIP39 shares to reuse the same passphrase.")
+            print("This allows multiple vaults to share the same underlying key material.")
+            print("")
+            print("⚠️  SECURITY WARNING:")
+            print("   Reusing shares across vaults means compromising one vault")
+            print("   compromises ALL vaults using the same shares.")
+            print("")
+            import_choice = input("Import existing shares? (yes/no): ").strip().lower()
+
+            if import_choice == "yes":
+                import_shares = []
+                print(f"\nYou need to provide at least {k} shares to reconstruct the passphrase.")
+
+                try:
+                    num_shares_str = input(f"How many shares do you want to import? (min {k}): ").strip()
+                    num_shares = int(num_shares_str)
+
+                    if num_shares < k:
+                        print(f"\nError: You must import at least {k} shares", file=sys.stderr)
+                        return 1
+
+                    print("")
+                    for i in range(num_shares):
+                        while True:
+                            share_str = input(f"Enter share {i+1}: ").strip()
+                            if not share_str:
+                                print("  Error: Share cannot be empty. Please try again.")
+                                continue
+
+                            # Validate format
+                            word_count = len(share_str.split())
+                            if word_count != 24:
+                                print(f"  Warning: Expected 24 words, got {word_count}.")
+                                retry = input(f"  Continue with this share? (yes/no): ").strip().lower()
+                                if retry != "yes":
+                                    continue
+
+                            # Validate BIP39 checksum
+                            if not validate_checksum(share_str):
+                                print(f"  ✗ Invalid BIP39 checksum. Please check for typos.")
+                                retry = input(f"  Retry share {i+1}? (yes/no): ").strip().lower()
+                                if retry != "yes":
+                                    print("\nAborted.", file=sys.stderr)
+                                    return 4
+                                continue
+
+                            print(f"  ✓ Share {i+1} validated")
+                            import_shares.append(share_str)
+                            break
+
+                except ValueError:
+                    print("\nError: Invalid input", file=sys.stderr)
+                    return 1
+
+        except (EOFError, KeyboardInterrupt):
+            print("\nAborted.", file=sys.stderr)
+            return 1
+
     # Check if vault exists
     if os.path.exists(vault_path):
         if not force:
@@ -68,20 +130,61 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print(f"\nOverwriting existing vault at {vault_path}...")
 
     try:
-        # Progress: Generate passphrase
-        print(f"\n[1/4] Generating 384-bit passphrase...")
-        passphrase = generate_passphrase()
-        print("      ✓ Passphrase generated")
+        # Handle passphrase generation or reconstruction from imported shares
+        if import_shares:
+            # Validate imported shares
+            print(f"\n🔍 Validating {len(import_shares)} imported share(s)...")
 
-        # Progress: Split into shares
-        print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
-        shares = split_secret(passphrase, k, n)
-        print(f"      ✓ {n} shares created using Shamir Secret Sharing")
+            if len(import_shares) < k:
+                print(f"\nError: Insufficient shares (need {k}, got {len(import_shares)})", file=sys.stderr)
+                print(f"Recovery: Provide at least {k} shares to reconstruct passphrase", file=sys.stderr)
+                return 5
 
-        # Encode as BIP39 (use 32 bytes of share data, excluding 1-byte index)
-        print(f"[3/4] Encoding shares as BIP39 mnemonics...")
-        mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
-        print(f"      ✓ {n} × 24-word mnemonics generated")
+            # Validate all checksums
+            for i, share_str in enumerate(import_shares, 1):
+                if not validate_checksum(share_str):
+                    print(f"\nError: Invalid BIP39 checksum in imported share {i}", file=sys.stderr)
+                    print(f"Recovery: Check for typos in the mnemonic", file=sys.stderr)
+                    return 4
+
+            print(f"      ✓ All {len(import_shares)} share(s) validated")
+
+            # Decode shares and reconstruct passphrase
+            print(f"\n[1/4] Reconstructing passphrase from {len(import_shares)} imported share(s)...")
+            share_bytes = []
+            for i, share_str in enumerate(import_shares[:k], 1):  # Use first K shares
+                decoded = decode_share(share_str)  # Returns 32 bytes
+                # Prepend sequential index (1-based) to make 33-byte share
+                share_bytes.append(bytes([i]) + decoded)
+
+            passphrase = reconstruct_secret(share_bytes)
+            print(f"      ✓ Passphrase reconstructed from imported shares")
+
+            # Split into shares (could be same K/N or different)
+            print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
+            shares = split_secret(passphrase, k, n)
+            print(f"      ✓ {n} shares created using Shamir Secret Sharing")
+
+            # Encode as BIP39
+            print(f"[3/4] Encoding shares as BIP39 mnemonics...")
+            mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
+            print(f"      ✓ {n} × 24-word mnemonics generated")
+
+        else:
+            # Progress: Generate passphrase
+            print(f"\n[1/4] Generating 384-bit passphrase...")
+            passphrase = generate_passphrase()
+            print("      ✓ Passphrase generated")
+
+            # Progress: Split into shares
+            print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
+            shares = split_secret(passphrase, k, n)
+            print(f"      ✓ {n} shares created using Shamir Secret Sharing")
+
+            # Encode as BIP39 (use 32 bytes of share data, excluding 1-byte index)
+            print(f"[3/4] Encoding shares as BIP39 mnemonics...")
+            mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
+            print(f"      ✓ {n} × 24-word mnemonics generated")
 
         # Progress: Generate keypair
         print(f"[4/4] Generating RSA-4096 + Kyber-1024 keypair...")
@@ -144,7 +247,15 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print(f"✓ Vault initialized successfully: {vault_path}")
         print(f"{'='*70}\n")
 
-        print(f"📋 Secret Shares ({k}-of-{n} threshold)\n")
+        if import_shares:
+            print(f"📋 Secret Shares ({k}-of-{n} threshold) - RECONSTRUCTED FROM IMPORTED SHARES\n")
+            print(f"⚠️  SECURITY WARNING:")
+            print(f"    • These shares use the SAME passphrase as the imported shares")
+            print(f"    • Compromising one vault compromises ALL vaults with this passphrase")
+            print(f"    • Only use this feature if you understand the security implications\n")
+        else:
+            print(f"📋 Secret Shares ({k}-of-{n} threshold)\n")
+
         print(f"⚠️  CRITICAL: These shares are displayed ONCE and never stored!")
         print(f"    • Distribute to {n} different key holders")
         print(f"    • {k} shares required to decrypt messages")

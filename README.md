@@ -126,7 +126,7 @@ python -m pytest tests/  # Run test suite
 Create a new vault with K-of-N threshold.
 
 ```bash
-will-encrypt init --k K --n N [--vault FILE] [--force]
+will-encrypt init --k K --n N [--vault FILE] [--force] [--import-share "SHARE"]
 ```
 
 **Arguments:**
@@ -134,6 +134,7 @@ will-encrypt init --k K --n N [--vault FILE] [--force]
 - `--n`: Total number of shares to generate
 - `--vault`: Vault file path (default: `vault.yaml`)
 - `--force`: Overwrite existing vault
+- `--import-share`: Import existing BIP39 share (24 words). Can be used multiple times. Requires K shares to reconstruct passphrase.
 
 **Examples:**
 
@@ -158,6 +159,85 @@ will-encrypt init --k 1 --n 1
 - Write shares to paper or password manager immediately
 - Each share is 24 words (BIP39 standard)
 - Shares can be distributed via secure channels (encrypted email, in-person)
+
+---
+
+#### Importing Existing Shares
+
+You can reuse existing BIP39 shares from another vault to create a new vault with the same passphrase. This allows multiple vaults to share the same underlying key material.
+
+**Use Cases:**
+1. **Multiple vaults with same shares**: Create different vaults for different purposes (personal, business, family) but use the same set of key holders
+2. **Different K/N with same passphrase**: Change the threshold policy while keeping the same passphrase
+3. **Vault migration**: Recreate a vault with new K/N values without generating a new passphrase
+
+**Security Warning:**
+⚠️ **Reusing shares across vaults means compromising one vault compromises ALL vaults using the same shares.** Only use this feature if you understand the security implications and have a valid use case.
+
+**Examples:**
+
+```bash
+# Create first vault (3-of-5)
+will-encrypt init --k 3 --n 5 --vault vault1.yaml
+# Outputs 5 shares (save these)
+
+# Create second vault with SAME shares (same 3-of-5, same passphrase)
+will-encrypt init --k 3 --n 5 --vault vault2.yaml \
+  --import-share "abandon ability able..." \
+  --import-share "abandon about above..." \
+  --import-share "abandon absent absorb..."
+# Reconstructs passphrase from 3 shares
+# Outputs SAME 5 shares (if using same K/N)
+
+# Create third vault with DIFFERENT K/N but same passphrase
+will-encrypt init --k 2 --n 3 --vault vault3.yaml \
+  --import-share "abandon ability able..." \
+  --import-share "abandon about above..." \
+  --import-share "abandon absent absorb..."
+# Reconstructs same passphrase from 3 shares
+# Outputs NEW 3 shares (different split, 2-of-3)
+```
+
+**Interactive Mode:**
+
+If you don't provide shares on the command line, the CLI will prompt you:
+
+```
+📥 Share Import (Optional)
+
+You can import existing BIP39 shares to reuse the same passphrase.
+This allows multiple vaults to share the same underlying key material.
+
+⚠️  SECURITY WARNING:
+   Reusing shares across vaults means compromising one vault
+   compromises ALL vaults using the same shares.
+
+Import existing shares? (yes/no): yes
+
+You need to provide at least 3 shares to reconstruct the passphrase.
+How many shares do you want to import? (min 3): 3
+
+Enter share 1:
+> abandon ability able...
+  ✓ Share 1 validated
+
+Enter share 2:
+> abandon about above...
+  ✓ Share 2 validated
+
+Enter share 3:
+> abandon absent absorb...
+  ✓ Share 3 validated
+
+Passphrase reconstructed from 3 imported shares.
+```
+
+**Validation:**
+- Each imported share must be a valid BIP39 mnemonic (24 words)
+- BIP39 checksum is validated for each share
+- At least K shares must be provided
+- If fewer than K shares provided, initialization fails with clear error message
+- If more than K shares provided, first K shares are used
 
 ---
 
