@@ -86,7 +86,7 @@ def encrypt_key_with_passphrase(
 
     Args:
         key_bytes: Key to encrypt (PEM or DER encoded)
-        passphrase: 48-byte passphrase
+        passphrase: 32-byte passphrase (256 bits)
         salt: 32-byte salt
         iterations: PBKDF2 iterations
 
@@ -113,7 +113,7 @@ def decrypt_key_with_passphrase(
 
     Args:
         encrypted_bytes: Encrypted key (nonce + ciphertext + tag)
-        passphrase: 48-byte passphrase
+        passphrase: 32-byte passphrase (256 bits)
         salt: 32-byte salt
         iterations: PBKDF2 iterations
 
@@ -144,7 +144,7 @@ def generate_hybrid_keypair(passphrase: bytes) -> HybridKeypair:
     Generate hybrid RSA+Kyber keypair and encrypt private keys with passphrase.
 
     Args:
-        passphrase: 48-byte passphrase for encrypting private keys
+        passphrase: 32-byte passphrase for encrypting private keys (256 bits)
 
     Returns:
         HybridKeypair with public keys (plaintext) and encrypted private keys
@@ -198,7 +198,7 @@ def decrypt_private_keys(
 
     Args:
         keypair: HybridKeypair with encrypted private keys
-        passphrase: 48-byte passphrase
+        passphrase: 32-byte passphrase (256 bits)
 
     Returns:
         Tuple of (rsa_private_key, kyber_private_key_bytes)

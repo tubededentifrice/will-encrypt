@@ -35,7 +35,7 @@ def derive_key(
     Derive encryption key from passphrase using PBKDF2-HMAC-SHA512.
 
     Args:
-        passphrase: 48-byte passphrase
+        passphrase: 32-byte passphrase (256 bits)
         salt: 32-byte random salt
         iterations: Number of PBKDF2 iterations (default 600,000)
 
