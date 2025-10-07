@@ -3,7 +3,7 @@ import base64
 import sys
 from datetime import datetime, timezone
 
-from src.crypto.bip39 import encode_share, decode_share, validate_checksum
+from src.crypto.bip39 import encode_share, decode_share, validate_checksum, format_indexed_share, parse_indexed_share
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
 from src.crypto.shamir import split_secret, reconstruct_secret
@@ -152,10 +152,43 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             # Decode shares and reconstruct passphrase
             print(f"\n[1/4] Reconstructing passphrase from {len(import_shares)} imported share(s)...")
             share_bytes = []
-            for i, share_str in enumerate(import_shares[:k], 1):  # Use first K shares
-                decoded = decode_share(share_str)  # Returns 32 bytes
-                # Prepend sequential index (1-based) to make 33-byte share
-                share_bytes.append(bytes([i]) + decoded)
+            missing_indices = []
+
+            for share_str in import_shares[:k]:  # Use first K shares
+                # Parse share with index (if provided)
+                index, mnemonic = parse_indexed_share(share_str)
+
+                if index is None:
+                    missing_indices.append(share_str)
+                    continue
+
+                decoded = decode_share(mnemonic)  # Returns 32 bytes
+                # Prepend ORIGINAL index to make 33-byte share
+                share_bytes.append(bytes([index]) + decoded)
+
+            # If any shares are missing indices, prompt user
+            if missing_indices:
+                print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
+                print(f"Please provide the original share numbers for correct reconstruction.\n")
+
+                for missing_share in missing_indices:
+                    while True:
+                        try:
+                            idx_input = input(f"Enter share number for '{missing_share[:40]}...': ").strip()
+                            index = int(idx_input)
+                            if index < 1 or index > 255:
+                                print(f"  Error: Share index must be 1-255")
+                                continue
+                            decoded = decode_share(missing_share)
+                            share_bytes.append(bytes([index]) + decoded)
+                            break
+                        except ValueError:
+                            print(f"  Error: Invalid number")
+                            continue
+
+            if len(share_bytes) < k:
+                print(f"\nError: Insufficient valid shares (need {k}, got {len(share_bytes)})", file=sys.stderr)
+                return 5
 
             passphrase = reconstruct_secret(share_bytes)
             print(f"      ✓ Passphrase reconstructed from imported shares")
@@ -165,14 +198,18 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             shares = split_secret(passphrase, k, n)
             print(f"      ✓ {n} shares created using Shamir Secret Sharing")
 
-            # Encode as BIP39
+            # Encode as BIP39 (preserve original indices)
             print(f"[3/4] Encoding shares as BIP39 mnemonics...")
-            mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
+            indexed_mnemonics = []
+            for share in shares:
+                index = share[0]  # Extract original index
+                mnemonic = encode_share(share[1:])  # Encode remaining 32 bytes
+                indexed_mnemonics.append((index, mnemonic))
             print(f"      ✓ {n} × 24-word mnemonics generated")
 
         else:
             # Progress: Generate passphrase
-            print(f"\n[1/4] Generating 384-bit passphrase...")
+            print(f"\n[1/4] Generating 256-bit passphrase...")
             passphrase = generate_passphrase()
             print("      ✓ Passphrase generated")
 
@@ -181,9 +218,13 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             shares = split_secret(passphrase, k, n)
             print(f"      ✓ {n} shares created using Shamir Secret Sharing")
 
-            # Encode as BIP39 (use 32 bytes of share data, excluding 1-byte index)
+            # Encode as BIP39 (preserve original indices)
             print(f"[3/4] Encoding shares as BIP39 mnemonics...")
-            mnemonics = [encode_share(share[1:]) for share in shares]  # Skip index byte, encode remaining 32 bytes
+            indexed_mnemonics = []
+            for share in shares:
+                index = share[0]  # Extract original index
+                mnemonic = encode_share(share[1:])  # Encode remaining 32 bytes
+                indexed_mnemonics.append((index, mnemonic))
             print(f"      ✓ {n} × 24-word mnemonics generated")
 
         # Progress: Generate keypair
@@ -197,7 +238,7 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             n=n,
             algorithms={
                 "keypair": "RSA-4096 + Kyber-1024 (hybrid)",
-                "passphrase_entropy": 384,
+                "passphrase_entropy": 256,
                 "secret_sharing": "Shamir SSS over GF(256)",
                 "message_encryption": "AES-256-GCM",
                 "kdf": "PBKDF2-HMAC-SHA512 (600k iterations)",
@@ -260,12 +301,13 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print(f"    • Distribute to {n} different key holders")
         print(f"    • {k} shares required to decrypt messages")
         print(f"    • Each share is 24 words (BIP39 mnemonic)")
+        print(f"    • Share numbers are CRITICAL - they must be preserved with the mnemonics")
         print(f"    • Store securely: paper backup, password manager, or HSM\n")
         print(f"{'-'*70}\n")
 
-        for i, mnemonic in enumerate(mnemonics, 1):
-            print(f"Share {i}/{n}:")
-            print(f"  {mnemonic}\n")
+        for index, mnemonic in indexed_mnemonics:
+            print(f"Share {index}/{n}:")
+            print(f"  {format_indexed_share(index, mnemonic)}\n")
 
         print(f"{'-'*70}\n")
         print("📝 Next Steps:")
@@ -276,7 +318,7 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print(f"\n✓ Setup complete. Vault ready for encryption.")
 
         # Zero sensitive data
-        del passphrase, shares, mnemonics, keypair
+        del passphrase, shares, indexed_mnemonics, keypair
 
         return 0
 

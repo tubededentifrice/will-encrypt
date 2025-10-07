@@ -512,7 +512,7 @@ will-encrypt rotate --vault vault.yaml \
 **Process:**
 1. Collect K current shares
 2. Reconstruct current passphrase
-3. Generate new passphrase (384-bit entropy)
+3. Generate new passphrase (256-bit entropy)
 4. Re-encrypt private keys with new passphrase
 5. Split new passphrase with K/N (new or current)
 6. Print new shares
@@ -547,7 +547,7 @@ will-encrypt rotate --vault vault.yaml \
 - **Key Compromise**: Threshold scheme requires K shares (collusion resistant)
 - **Tamper Detection**: SHA-256 fingerprints detect modification
 - **Quantum Attacks**: Hybrid RSA + Kyber (future-proof)
-- **Brute Force**: 384-bit passphrase entropy, PBKDF2 key stretching
+- **Brute Force**: 256-bit passphrase entropy, PBKDF2 key stretching
 
 **Out of Scope:**
 - **Physical Access**: Assumes vault file is public/untrusted

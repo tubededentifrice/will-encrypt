@@ -31,6 +31,9 @@ class TestShamirSecretSharing:
         assert all(isinstance(share, bytes) for share in shares)
         assert all(len(share) == 33 for share in shares)  # 1 byte index + 32 bytes data
         assert all(shares[i] != secret for i in range(n))  # Shares are not the secret itself
+        # Verify indices are 1-based and sequential
+        for i in range(n):
+            assert shares[i][0] == i + 1, f"Share {i} has wrong index: {shares[i][0]}"
 
     def test_reconstruct_secret_from_any_k_shares(self) -> None:
         """Test: Reconstruct secret from any K shares."""

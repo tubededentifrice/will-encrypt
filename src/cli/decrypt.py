@@ -2,7 +2,7 @@
 import base64
 import sys
 
-from src.crypto.bip39 import decode_share, validate_checksum
+from src.crypto.bip39 import decode_share, validate_checksum, parse_indexed_share
 from src.crypto.encryption import EncryptedMessage, decrypt_message
 from src.crypto.keypair import decrypt_private_keys
 from src.crypto.shamir import reconstruct_secret
@@ -30,7 +30,8 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
         if shares is None:
             print(f"\n🔓 Decrypt Vault Messages\n")
             print(f"This vault requires {k} out of {n} shares to decrypt.")
-            print(f"Each share is a 24-word BIP39 mnemonic.\n")
+            print(f"Each share is a 24-word BIP39 mnemonic with its original share number.")
+            print(f"Format: 'N: word1 word2 ... word24' or just 'word1 word2 ... word24'\n")
             print("-" * 70)
             shares = []
             for i in range(k):
@@ -40,23 +41,44 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
                         if not share_str:
                             print("  Error: Share cannot be empty. Please try again.")
                             continue
-                        # Validate format (should be ~24 words)
-                        word_count = len(share_str.split())
+
+                        # Parse share (with or without index)
+                        index, mnemonic = parse_indexed_share(share_str)
+
+                        # Validate format (should be ~24 words in mnemonic part)
+                        word_count = len(mnemonic.split())
                         if word_count != 24:
                             print(f"  Warning: Expected 24 words, got {word_count}. Continue anyway? (yes/no): ", end="")
                             confirm = input().strip().lower()
                             if confirm != "yes":
                                 continue
+
                         # Validate BIP39 checksum immediately
-                        if not validate_checksum(share_str):
+                        if not validate_checksum(mnemonic):
                             print(f"  ✗ Invalid BIP39 checksum. Please check for typos.")
                             retry = input(f"  Retry share {i+1}? (yes/no): ").strip().lower()
                             if retry != "yes":
                                 print("\nAborted.", file=sys.stderr)
                                 return 4
                             continue
-                        print(f"  ✓ Share {i+1} validated")
-                        shares.append(share_str)
+
+                        # If no index was provided, ask for it
+                        if index is None:
+                            while True:
+                                try:
+                                    idx_input = input(f"  Enter the original share number (1-{n}): ").strip()
+                                    index = int(idx_input)
+                                    if index < 1 or index > n:
+                                        print(f"    Error: Share number must be 1-{n}")
+                                        continue
+                                    break
+                                except ValueError:
+                                    print(f"    Error: Invalid number")
+                                    continue
+
+                        print(f"  ✓ Share {index} validated")
+                        # Store with index prefix for later parsing
+                        shares.append(f"{index}: {mnemonic}")
                         break
                     except (EOFError, KeyboardInterrupt):
                         print("\n\nAborted.", file=sys.stderr)
@@ -68,26 +90,54 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
             print(f"Recovery: Collect at least {k - len(shares)} more share(s) from key holders", file=sys.stderr)
             return 3
 
-        # Validate BIP39 checksums for non-interactive mode
+        # Parse and validate shares
         print(f"\n🔍 Validating shares...")
-        for i, share_str in enumerate(shares[:k], 1):
-            if not validate_checksum(share_str):
-                print(f"\nError: Invalid BIP39 checksum in share {i}", file=sys.stderr)
+        share_bytes = []
+        missing_indices = []
+
+        for share_str in shares[:k]:
+            # Parse share with index
+            index, mnemonic = parse_indexed_share(share_str)
+
+            # Validate BIP39 checksum
+            if not validate_checksum(mnemonic):
+                print(f"\nError: Invalid BIP39 checksum in share", file=sys.stderr)
                 print(f"Recovery: Check for typos in the mnemonic. The last word contains a checksum.", file=sys.stderr)
                 print(f"Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
                 return 4
-        print(f"  ✓ All {k} shares validated")
 
-        # Decode shares with progress
-        print(f"\n🔓 Decrypting vault...")
-        print(f"  [1/3] Reconstructing passphrase from {k} shares...")
-        share_bytes = []
-        for i, share_str in enumerate(shares[:k], 1):
-            decoded = decode_share(share_str)  # Returns 32 bytes
-            # Prepend sequential index (1-based) to make 33-byte share
-            share_bytes.append(bytes([i]) + decoded)
+            if index is None:
+                missing_indices.append(mnemonic)
+            else:
+                decoded = decode_share(mnemonic)  # Returns 32 bytes
+                # Prepend ORIGINAL index to make 33-byte share
+                share_bytes.append(bytes([index]) + decoded)
+
+        # Handle missing indices (interactive prompt)
+        if missing_indices:
+            print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
+            print(f"Please provide the original share numbers for correct reconstruction.\n")
+
+            for missing_mnemonic in missing_indices:
+                while True:
+                    try:
+                        idx_input = input(f"Enter share number for '{missing_mnemonic[:40]}...': ").strip()
+                        index = int(idx_input)
+                        if index < 1 or index > 255:
+                            print(f"  Error: Share index must be 1-255")
+                            continue
+                        decoded = decode_share(missing_mnemonic)
+                        share_bytes.append(bytes([index]) + decoded)
+                        break
+                    except ValueError:
+                        print(f"  Error: Invalid number")
+                        continue
+
+        print(f"  ✓ All {len(share_bytes)} shares validated")
 
         # Reconstruct passphrase
+        print(f"\n🔓 Decrypting vault...")
+        print(f"  [1/3] Reconstructing passphrase from {len(share_bytes)} shares...")
         passphrase = reconstruct_secret(share_bytes)
         print(f"        ✓ Passphrase reconstructed")
 

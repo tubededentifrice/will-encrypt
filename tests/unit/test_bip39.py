@@ -219,3 +219,90 @@ class TestBIP39Encoding:
         # Expected: Both decode to same share
         assert share_full == share_mixed
 
+
+class TestIndexedShares:
+    """Unit tests for indexed share formatting and parsing."""
+
+    def test_format_indexed_share(self) -> None:
+        """Test: Format share with index prefix."""
+        from src.crypto.bip39 import format_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        formatted = format_indexed_share(1, mnemonic)
+
+        assert formatted == f"1: {mnemonic}"
+
+    def test_format_indexed_share_validates_index_range(self) -> None:
+        """Test: format_indexed_share rejects invalid indices."""
+        from src.crypto.bip39 import format_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        # Index too low
+        with pytest.raises(ValueError, match="Share index must be 1-255"):
+            format_indexed_share(0, mnemonic)
+
+        # Index too high
+        with pytest.raises(ValueError, match="Share index must be 1-255"):
+            format_indexed_share(256, mnemonic)
+
+    def test_parse_indexed_share_with_number_prefix(self) -> None:
+        """Test: Parse share with 'N:' format."""
+        from src.crypto.bip39 import parse_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        indexed_str = f"1: {mnemonic}"
+
+        index, parsed_mnemonic = parse_indexed_share(indexed_str)
+
+        assert index == 1
+        assert parsed_mnemonic == mnemonic
+
+    def test_parse_indexed_share_with_share_label(self) -> None:
+        """Test: Parse share with 'Share N:' format."""
+        from src.crypto.bip39 import parse_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        indexed_str = f"Share 5: {mnemonic}"
+
+        index, parsed_mnemonic = parse_indexed_share(indexed_str)
+
+        assert index == 5
+        assert parsed_mnemonic == mnemonic
+
+    def test_parse_indexed_share_without_index(self) -> None:
+        """Test: Parse share without index prefix returns None."""
+        from src.crypto.bip39 import parse_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        index, parsed_mnemonic = parse_indexed_share(mnemonic)
+
+        assert index is None
+        assert parsed_mnemonic == mnemonic
+
+    def test_parse_indexed_share_handles_whitespace(self) -> None:
+        """Test: Parse share handles extra whitespace."""
+        from src.crypto.bip39 import parse_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        indexed_str = f"  3:   {mnemonic}  "
+
+        index, parsed_mnemonic = parse_indexed_share(indexed_str)
+
+        assert index == 3
+        assert parsed_mnemonic == mnemonic
+
+    def test_parse_indexed_share_large_index(self) -> None:
+        """Test: Parse share with large valid index (255)."""
+        from src.crypto.bip39 import parse_indexed_share
+
+        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        indexed_str = f"255: {mnemonic}"
+
+        index, parsed_mnemonic = parse_indexed_share(indexed_str)
+
+        assert index == 255
+        assert parsed_mnemonic == mnemonic
+

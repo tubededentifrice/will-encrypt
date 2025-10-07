@@ -106,3 +106,64 @@ def validate_checksum(mnemonic_str: str) -> bool:
 
     # Use library's checksum validation
     return _mnemonic.check(expanded)
+
+
+def format_indexed_share(index: int, mnemonic: str) -> str:
+    """
+    Format share with index prefix for display/storage.
+
+    Args:
+        index: 1-based share index (1-255)
+        mnemonic: 24-word BIP39 mnemonic
+
+    Returns:
+        Formatted string like "1: abandon ability able..."
+    """
+    if index < 1 or index > 255:
+        raise ValueError(f"Share index must be 1-255, got {index}")
+    return f"{index}: {mnemonic}"
+
+
+def parse_indexed_share(indexed_str: str) -> tuple[int, str]:
+    """
+    Parse share with optional index prefix.
+
+    Supports formats:
+    - "1: abandon ability able..." (explicit index)
+    - "Share 1: abandon ability able..." (with label)
+    - "abandon ability able..." (no index, returns None)
+
+    Args:
+        indexed_str: Share string with optional index prefix
+
+    Returns:
+        Tuple of (index or None, mnemonic_str)
+    """
+    stripped = indexed_str.strip()
+
+    # Try "Share N:" format
+    if stripped.lower().startswith("share "):
+        parts = stripped.split(":", 1)
+        if len(parts) == 2:
+            try:
+                # Extract number from "Share N"
+                share_part = parts[0].strip()
+                index_str = share_part.split()[1]  # Get the number after "Share"
+                index = int(index_str)
+                mnemonic = parts[1].strip()
+                return (index, mnemonic)
+            except (IndexError, ValueError):
+                pass  # Fall through to next format
+
+    # Try "N:" format
+    if ":" in stripped:
+        parts = stripped.split(":", 1)
+        try:
+            index = int(parts[0].strip())
+            mnemonic = parts[1].strip()
+            return (index, mnemonic)
+        except ValueError:
+            pass  # Not a valid index, treat whole string as mnemonic
+
+    # No index prefix found
+    return (None, stripped)
