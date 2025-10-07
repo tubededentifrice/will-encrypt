@@ -1,0 +1,103 @@
+# Contract: List Messages
+# Command: will-encrypt list
+
+command: list
+
+description: |
+  List all messages in vault by their unencrypted titles and metadata.
+  Does NOT require shares or decrypt any content. Useful for inventory
+  and selecting specific messages for decryption.
+
+arguments:
+  - name: --vault
+    type: path
+    required: false
+    default: "./vault.yaml"
+    validation:
+      - must_exist: true
+      - readable: true
+      - format: yaml
+    description: Path to vault file
+    example: "--vault /path/to/vault.yaml"
+
+  - name: --format
+    type: enum
+    required: false
+    default: "table"
+    values: ["table", "json", "csv"]
+    description: Output format
+    example: "--format json"
+
+  - name: --sort
+    type: enum
+    required: false
+    default: "id"
+    values: ["id", "title", "created", "size"]
+    description: Sort messages by field
+    example: "--sort created"
+
+outputs:
+  terminal_display:
+    table_format: |
+      ID  Title                     Created              Size
+      ──  ────────────────────────  ───────────────────  ──────
+      1   Bank Account Passwords    2025-10-07 10:00:00  1.0 KB
+      2   Estate Instructions       2025-10-08 14:30:00  2.0 KB
+      3   Gmail Password            2025-10-10 09:15:00  0.1 KB
+      4   WiFi Credentials          2025-10-12 16:45:00  0.2 KB
+      5   Safe Combination          2025-10-15 11:20:00  0.1 KB
+
+      Total: 5 messages, 3.4 KB encrypted
+
+    json_format: |
+      {
+        "vault": "/path/to/vault.yaml",
+        "created": "2025-10-07T10:30:00Z",
+        "threshold": {"k": 3, "n": 5},
+        "messages": [
+          {
+            "id": 1,
+            "title": "Bank Account Passwords",
+            "created": "2025-10-07T10:00:00Z",
+            "size_bytes": 1024
+          },
+          {
+            "id": 2,
+            "title": "Estate Instructions",
+            "created": "2025-10-08T14:30:00Z",
+            "size_bytes": 2048
+          }
+        ],
+        "total_messages": 2,
+        "total_size_bytes": 3072
+      }
+
+    csv_format: |
+      id,title,created,size_bytes
+      1,Bank Account Passwords,2025-10-07T10:00:00Z,1024
+      2,Estate Instructions,2025-10-08T14:30:00Z,2048
+
+exit_codes:
+  0: Success
+  1: Invalid arguments (unknown format or sort field)
+  2: Vault file not found
+  3: YAML parse error
+  4: Invalid vault structure
+
+performance:
+  target_duration: "< 0.5 seconds for 1000 messages"
+
+security_requirements:
+  - NO decryption performed
+  - NO secrets exposed
+  - Only unencrypted metadata displayed (titles, timestamps, sizes)
+
+example_usage: |
+  # List messages in table format
+  will-encrypt list --vault vault.yaml
+
+  # List messages in JSON (for scripting)
+  will-encrypt list --vault vault.yaml --format json | jq '.messages[] | select(.size_bytes > 1000)'
+
+  # List messages sorted by creation date
+  will-encrypt list --vault vault.yaml --sort created
