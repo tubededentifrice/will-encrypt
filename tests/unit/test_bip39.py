@@ -1,0 +1,160 @@
+"""
+Unit tests for BIP39 mnemonic encoding/decoding.
+
+Based on: specs/001-1-purpose-scope/research.md (Section 3)
+
+Tests MUST fail before implementation (TDD).
+Test vectors from BIP39 specification.
+"""
+
+import secrets
+
+import pytest
+
+
+class TestBIP39Encoding:
+    """Unit tests for BIP39 mnemonic operations."""
+
+    def test_encode_32_byte_share_to_24_word_mnemonic(self) -> None:
+        """Test: Encode 32-byte share → 24-word BIP39 mnemonic."""
+        from src.crypto.bip39 import encode_share
+
+        # Generate 32-byte share (256 bits)
+        share = secrets.token_bytes(32)
+
+        mnemonic = encode_share(share)
+
+        # Expected: 24-word mnemonic (space-separated)
+        assert isinstance(mnemonic, str)
+        assert len(mnemonic.split()) == 24
+
+
+    def test_decode_24_word_mnemonic_to_32_byte_share(self) -> None:
+        """Test: Decode 24-word mnemonic → 32-byte share."""
+        from src.crypto.bip39 import decode_share
+
+        # Known BIP39 mnemonic (24 words with valid checksum)
+        known_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        share = decode_share(known_mnemonic)
+
+        # Expected: 32-byte share
+        assert isinstance(share, bytes)
+        assert len(share) == 32
+
+
+    def test_checksum_validation_valid_mnemonic(self) -> None:
+        """Test: Checksum validation (valid checksum)."""
+        from src.crypto.bip39 import validate_checksum
+
+        # Valid BIP39 mnemonic with correct checksum
+        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        is_valid = validate_checksum(valid_mnemonic)
+
+        # Expected: True
+        assert is_valid is True
+
+
+    def test_checksum_validation_invalid_mnemonic(self) -> None:
+        """Test: Checksum validation (invalid checksum detected)."""
+        from src.crypto.bip39 import validate_checksum
+
+        # Invalid BIP39 mnemonic (last word modified to break checksum)
+        invalid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon zoo"  # 'zoo' breaks checksum
+
+        is_valid = validate_checksum(invalid_mnemonic)
+
+        # Expected: False
+        assert is_valid is False
+
+
+    def test_invalid_word_rejection(self) -> None:
+        """Test: Invalid word rejection (not in BIP39 wordlist)."""
+        from src.crypto.bip39 import decode_share
+
+        # Mnemonic with word not in BIP39 wordlist
+        invalid_mnemonic = "abandon abandon abandon notaword abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        # Expected: ValueError for invalid word
+        with pytest.raises(ValueError, match="Invalid mnemonic"):
+            decode_share(invalid_mnemonic)
+
+
+    def test_bip39_spec_test_vector_1(self) -> None:
+        """Test: BIP39 specification test vector 1."""
+        from src.crypto.bip39 import encode_share, decode_share
+
+        # Test vector from BIP39 spec
+        entropy = bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000")
+        expected_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        mnemonic = encode_share(entropy)
+        assert mnemonic == expected_mnemonic
+
+        decoded = decode_share(expected_mnemonic)
+        assert decoded == entropy
+
+
+    def test_bip39_spec_test_vector_2(self) -> None:
+        """Test: BIP39 specification test vector 2."""
+        from src.crypto.bip39 import encode_share, decode_share
+
+        # Test vector from BIP39 spec
+        entropy = bytes.fromhex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+        expected_mnemonic = "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title"
+
+        mnemonic = encode_share(entropy)
+        assert mnemonic == expected_mnemonic
+
+        decoded = decode_share(expected_mnemonic)
+        assert decoded == entropy
+
+
+    def test_encode_decode_roundtrip(self) -> None:
+        """Test: Encode-decode roundtrip (original share recovered)."""
+        from src.crypto.bip39 import encode_share, decode_share
+
+        # Generate random 32-byte share
+        original_share = secrets.token_bytes(32)
+
+        # Encode to mnemonic
+        mnemonic = encode_share(original_share)
+
+        # Decode back to share
+        decoded_share = decode_share(mnemonic)
+
+        # Expected: decoded_share == original_share
+        assert decoded_share == original_share
+
+
+    def test_mnemonic_case_insensitive(self) -> None:
+        """Test: Mnemonic decoding is case-insensitive."""
+        from src.crypto.bip39 import decode_share
+
+        # Valid BIP39 mnemonic in lowercase
+        lowercase_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        # Same mnemonic in uppercase
+        uppercase_mnemonic = lowercase_mnemonic.upper()
+
+        decode_lower = decode_share(lowercase_mnemonic)
+        decode_upper = decode_share(uppercase_mnemonic)
+
+        # Expected: Both decode to same share
+        assert decode_lower == decode_upper
+
+
+    def test_extra_whitespace_handling(self) -> None:
+        """Test: Extra whitespace in mnemonic is handled correctly."""
+        from src.crypto.bip39 import decode_share
+
+        # Valid BIP39 mnemonic with extra spaces
+        mnemonic_with_spaces = "  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  art  "
+
+        share = decode_share(mnemonic_with_spaces)
+
+        # Expected: Decodes correctly (whitespace normalized)
+        assert isinstance(share, bytes)
+        assert len(share) == 32
+
