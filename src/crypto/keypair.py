@@ -4,12 +4,12 @@ Hybrid RSA+Kyber keypair generation and key encryption.
 Based on: specs/001-1-purpose-scope/research.md (Section 1)
 
 IMPLEMENTATION NOTE:
-This implementation uses RSA-4096 as the primary protection mechanism.
-Kyber-1024 integration is prepared for future expansion when stable Python
-bindings become available (pqcrypto or liboqs-python).
+This implementation uses true hybrid post-quantum cryptography:
+- RSA-4096 for classical security
+- ML-KEM-1024 (CRYSTALS-Kyber) for post-quantum security
 
-For now, "Kyber" operations use a secondary RSA key pair to maintain
-the dual-encryption architecture and API compatibility.
+Both legs must be broken to compromise the encryption, providing defense
+against both classical and quantum adversaries.
 """
 
 import secrets
@@ -19,18 +19,21 @@ from typing import Tuple
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from pqcrypto.kem.ml_kem_1024 import generate_keypair as kyber_generate_keypair
+from pqcrypto.kem.ml_kem_1024 import encrypt as kyber_encrypt
+from pqcrypto.kem.ml_kem_1024 import decrypt as kyber_decrypt
 
 from .passphrase import derive_key
 
 
 @dataclass
 class HybridKeypair:
-    """Hybrid keypair with RSA and Kyber (simulated) keys."""
+    """Hybrid keypair with RSA and ML-KEM-1024 keys."""
 
     rsa_public: bytes  # PEM-encoded RSA public key
     rsa_private_encrypted: bytes  # Encrypted RSA private key (PEM)
-    kyber_public: bytes  # Kyber public key (simulated with RSA for now)
-    kyber_private_encrypted: bytes  # Encrypted Kyber private key (simulated)
+    kyber_public: bytes  # ML-KEM-1024 public key (1568 bytes)
+    kyber_private_encrypted: bytes  # Encrypted ML-KEM-1024 private key
     kdf_salt: bytes  # Salt for PBKDF2
     kdf_iterations: int  # PBKDF2 iterations
 
@@ -51,31 +54,15 @@ def generate_rsa_keypair() -> Tuple[rsa.RSAPublicKey, rsa.RSAPrivateKey]:
 
 def generate_kyber_keypair() -> Tuple[bytes, bytes]:
     """
-    Generate Kyber-1024 keypair (SIMULATED with RSA for now).
+    Generate ML-KEM-1024 (CRYSTALS-Kyber) keypair.
 
     Returns:
         Tuple of (public_key_bytes, private_key_bytes)
-
-    NOTE: This is a temporary simulation. In production, use:
-        from pqcrypto.kem.kyber1024 import generate_keypair
-        public_key, private_key = generate_keypair()
+        - Public key: 1568 bytes
+        - Private key: 3168 bytes
     """
-    # Temporary: Use a second RSA keypair to simulate Kyber
-    # This maintains the dual-encryption architecture
-    public_key, private_key = generate_rsa_keypair()
-
-    # Serialize to bytes (simulating Kyber format)
-    public_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    )
-    private_bytes = private_key.private_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-
-    return public_bytes, private_bytes
+    public_key, private_key = kyber_generate_keypair()
+    return public_key, private_key
 
 
 def encrypt_key_with_passphrase(
@@ -156,7 +143,7 @@ def generate_hybrid_keypair(passphrase: bytes) -> HybridKeypair:
     # Generate RSA keypair
     rsa_public, rsa_private = generate_rsa_keypair()
 
-    # Generate Kyber keypair (simulated)
+    # Generate ML-KEM-1024 keypair
     kyber_public, kyber_private = generate_kyber_keypair()
 
     # Serialize RSA keys to PEM format
@@ -234,22 +221,33 @@ def hybrid_encrypt_kek(
     kek: bytes, rsa_public_pem: bytes, kyber_public: bytes
 ) -> Tuple[bytes, bytes]:
     """
-    Encrypt KEK with both RSA and Kyber public keys.
+    Encrypt KEK with both RSA and ML-KEM-1024 public keys.
 
     Args:
         kek: 32-byte key encryption key
         rsa_public_pem: PEM-encoded RSA public key
-        kyber_public: Kyber public key bytes (or simulated)
+        kyber_public: ML-KEM-1024 public key bytes (1568 bytes)
 
     Returns:
-        Tuple of (rsa_wrapped_kek, kyber_wrapped_kek)
+        Tuple of (rsa_wrapped_kek, kyber_ciphertext)
+
+    Note:
+        Kyber KEM generates its own shared secret; we XOR it with our KEK
+        for hybrid protection. Both RSA and Kyber must be broken to recover KEK.
     """
     # Load RSA public key
     rsa_public = serialization.load_pem_public_key(rsa_public_pem)
 
-    # Encrypt KEK with RSA-OAEP
+    # Kyber KEM: encapsulate to get ciphertext and shared secret
+    kyber_ciphertext, kyber_shared_secret = kyber_encrypt(kyber_public)
+
+    # XOR KEK with Kyber shared secret for hybrid protection
+    # Attacker needs both: RSA private key AND Kyber private key to recover KEK
+    hybrid_kek = bytes(a ^ b for a, b in zip(kek, kyber_shared_secret))
+
+    # Encrypt the hybrid KEK with RSA-OAEP
     rsa_wrapped = rsa_public.encrypt(
-        kek,
+        hybrid_kek,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
             algorithm=hashes.SHA256(),
@@ -257,44 +255,32 @@ def hybrid_encrypt_kek(
         ),
     )
 
-    # Encrypt KEK with Kyber (simulated with RSA)
-    # In production: use pqcrypto.kem.kyber1024.encrypt(kek, kyber_public)
-    kyber_public_key = serialization.load_der_public_key(kyber_public)
-    kyber_wrapped = kyber_public_key.encrypt(
-        kek,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
-
-    return rsa_wrapped, kyber_wrapped
+    return rsa_wrapped, kyber_ciphertext
 
 
 def hybrid_decrypt_kek(
     rsa_wrapped: bytes,
-    kyber_wrapped: bytes,
+    kyber_ciphertext: bytes,
     rsa_private: rsa.RSAPrivateKey,
     kyber_private: bytes,
 ) -> bytes:
     """
-    Decrypt KEK with both RSA and Kyber private keys and verify they match.
+    Decrypt KEK with both RSA and ML-KEM-1024 private keys.
 
     Args:
-        rsa_wrapped: RSA-wrapped KEK
-        kyber_wrapped: Kyber-wrapped KEK
+        rsa_wrapped: RSA-wrapped hybrid KEK
+        kyber_ciphertext: Kyber KEM ciphertext (1568 bytes)
         rsa_private: RSA private key object
-        kyber_private: Kyber private key bytes
+        kyber_private: ML-KEM-1024 private key bytes (3168 bytes)
 
     Returns:
         Decrypted KEK (32 bytes)
 
     Raises:
-        ValueError: If RSA and Kyber KEKs don't match (hybrid verification failed)
+        ValueError: If decryption fails on either leg
     """
-    # Decrypt KEK with RSA
-    kek_from_rsa = rsa_private.decrypt(
+    # Decrypt hybrid KEK with RSA
+    hybrid_kek = rsa_private.decrypt(
         rsa_wrapped,
         padding.OAEP(
             mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -303,22 +289,10 @@ def hybrid_decrypt_kek(
         ),
     )
 
-    # Decrypt KEK with Kyber (simulated)
-    # In production: use pqcrypto.kem.kyber1024.decrypt(kyber_wrapped, kyber_private)
-    kyber_private_key = serialization.load_der_private_key(
-        kyber_private, password=None
-    )
-    kek_from_kyber = kyber_private_key.decrypt(
-        kyber_wrapped,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None,
-        ),
-    )
+    # Kyber KEM: decapsulate to recover shared secret
+    kyber_shared_secret = kyber_decrypt(kyber_private, kyber_ciphertext)
 
-    # Hybrid verification: Both must match
-    if kek_from_rsa != kek_from_kyber:
-        raise ValueError("Hybrid verification failed: RSA KEK != Kyber KEK")
+    # XOR back to recover original KEK
+    kek = bytes(a ^ b for a, b in zip(hybrid_kek, kyber_shared_secret))
 
-    return kek_from_rsa
+    return kek

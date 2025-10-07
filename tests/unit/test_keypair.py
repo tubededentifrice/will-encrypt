@@ -27,16 +27,38 @@ class TestHybridKeypair:
         assert public_key.public_numbers().e == 65537  # Standard exponent
 
     def test_generate_kyber_1024_keypair(self) -> None:
-        """Test: Generate Kyber-1024 keypair."""
+        """Test: Generate ML-KEM-1024 (Kyber-1024) keypair."""
         from src.crypto.keypair import generate_kyber_keypair
 
         public_key, private_key = generate_kyber_keypair()
 
-        # Currently simulated with RSA, so verify it's bytes
+        # Verify ML-KEM-1024 key sizes per NIST FIPS 203
         assert isinstance(public_key, bytes)
         assert isinstance(private_key, bytes)
-        assert len(public_key) > 0
-        assert len(private_key) > 0
+        assert len(public_key) == 1568  # ML-KEM-1024 public key
+        assert len(private_key) == 3168  # ML-KEM-1024 private key
+
+    def test_kyber_kem_encapsulation_decapsulation(self) -> None:
+        """Test: Kyber KEM encapsulation and decapsulation produce consistent shared secrets."""
+        from pqcrypto.kem.ml_kem_1024 import (
+            generate_keypair,
+            encrypt as kyber_encrypt,
+            decrypt as kyber_decrypt,
+        )
+
+        # Generate Kyber keypair
+        public_key, private_key = generate_keypair()
+
+        # Encapsulate: generate ciphertext and shared secret
+        ciphertext, shared_secret_1 = kyber_encrypt(public_key)
+
+        # Decapsulate: recover shared secret from ciphertext
+        shared_secret_2 = kyber_decrypt(private_key, ciphertext)
+
+        # Verify shared secrets match
+        assert shared_secret_1 == shared_secret_2
+        assert len(shared_secret_1) == 32  # 256-bit shared secret
+        assert len(ciphertext) == 1568  # ML-KEM-1024 ciphertext size
 
     def test_hybrid_encryption_encrypt_kek_with_both_algorithms(self) -> None:
         """Test: Hybrid encryption (encrypt KEK with both RSA and Kyber)."""
@@ -58,7 +80,7 @@ class TestHybridKeypair:
         assert isinstance(rsa_wrapped, bytes)
         assert isinstance(kyber_wrapped, bytes)
         assert len(rsa_wrapped) == 512  # RSA-4096 OAEP ciphertext size
-        assert len(kyber_wrapped) > 0  # Simulated Kyber
+        assert len(kyber_wrapped) == 1568  # ML-KEM-1024 ciphertext size
 
     def test_hybrid_decryption_verify_rsa_kek_equals_kyber_kek(self) -> None:
         """Test: Hybrid decryption (verify RSA KEK == Kyber KEK)."""

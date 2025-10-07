@@ -118,7 +118,9 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Integration tests for full workflows in `tests/integration/`
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Current status: all tests passing (100%)
-- After making changes, before returning to the user, ensure all tests are still passing and iterate until everything passes
+- IMPORTANT: After making changes, before returning to the user:
+  - Ensure all tests are still passing and iterate until everything passes
+  - Ensure documentations are up to date (AGENTS.md and README.md)
 
 ## Security Requirements
 - 256-bit passphrase entropy minimum
