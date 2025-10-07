@@ -56,6 +56,9 @@ class TestRotateCommand:
         # Expected: Exit code 0, 6 new shares returned
         assert result == 0, "Rotation should succeed"
 
+        assert "📊 Numbered Share Table" in output, "Share table header should be present"
+        assert "| # | Indexed Share" in output, "Share table should include column headers"
+
         # Extract new shares from output
         from tests.test_helpers import extract_shares_from_output
 
@@ -111,6 +114,8 @@ class TestRotateCommand:
         assert result == 0, "Interactive rotation should succeed with indexed shares"
 
         captured = capsys.readouterr()
+        assert "📊 Numbered Share Table" in captured.out, "Share table header should be present"
+        assert "| # | Indexed Share" in captured.out, "Share table should include column headers"
         from tests.test_helpers import extract_shares_from_output
 
         new_shares = extract_shares_from_output(captured.out)
@@ -175,6 +180,9 @@ class TestRotateCommand:
         # Expected: Exit code 0, new passphrase generated
         assert result == 0, "Passphrase rotation should succeed"
 
+        assert "📊 Numbered Share Table" in output, "Share table header should be present"
+        assert "| # | Indexed Share" in output, "Share table should include column headers"
+
         # Extract new shares from output
         from tests.test_helpers import extract_shares_from_output
 
@@ -233,6 +241,9 @@ class TestRotateCommand:
             sys.stdout = old_stdout
 
         assert result == 0, "Rotation should succeed"
+
+        assert "📊 Numbered Share Table" in output, "Share table header should be present"
+        assert "| # | Indexed Share" in output, "Share table should include column headers"
 
         # Attempt decrypt with old shares - should fail with new passphrase
         # The decrypt will fail because a new passphrase was generated
@@ -293,6 +304,9 @@ class TestRotateCommand:
 
         assert result1 == 0, "First rotation should succeed"
 
+        assert "📊 Numbered Share Table" in output1, "Share table header should be present"
+        assert "| # | Indexed Share" in output1, "Share table should include column headers"
+
         # Extract new shares
         from tests.test_helpers import extract_shares_from_output
 
@@ -315,6 +329,9 @@ class TestRotateCommand:
             sys.stdout = old_stdout
 
         assert result2 == 0, "Second rotation should succeed"
+
+        assert "📊 Numbered Share Table" in output2, "Share table header should be present"
+        assert "| # | Indexed Share" in output2, "Share table should include column headers"
 
         # Expected: rotation_history has initial + 2 rotations
         manifest = get_vault_manifest(vault_path)

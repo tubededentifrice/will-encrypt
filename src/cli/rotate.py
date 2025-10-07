@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from cryptography.hazmat.primitives import serialization
 
+from src.cli.share_table import render_share_table
 from src.crypto.bip39 import (
     decode_share,
     encode_share,
@@ -337,6 +338,12 @@ def rotate_command(
                 print(f"Share {share_index}/{new_n}:")
                 print(f"  {format_indexed_share(share_index, mnemonic)}\n")
             print(f"{'-'*70}\n")
+            print("📊 Numbered Share Table\n")
+            share_table = render_share_table(new_share_mnemonics)
+            if share_table:
+                print(share_table)
+                print()
+            print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")
             print("  2. Distribute new shares to key holders")
@@ -446,6 +453,12 @@ def rotate_command(
             for share_index, mnemonic in new_share_mnemonics:
                 print(f"Share {share_index}/{target_n}:")
                 print(f"  {format_indexed_share(share_index, mnemonic)}\n")
+            print(f"{'-'*70}\n")
+            print("📊 Numbered Share Table\n")
+            share_table = render_share_table(new_share_mnemonics)
+            if share_table:
+                print(share_table)
+                print()
             print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")

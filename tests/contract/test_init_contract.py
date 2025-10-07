@@ -117,6 +117,9 @@ class TestInitCommand:
         # Capture output
         output = capsys.readouterr().out
 
+        assert "📊 Numbered Share Table" in output, "Share table header should be present"
+        assert "| # | Indexed Share" in output, "Share table should include column headers"
+
         # Extract shares from output (format: "Share X/5:" followed by "  N: word1 word2 ... word24")
         import re
         shares = re.findall(r'Share \d+/\d+:\s+([^\n]+)', output)

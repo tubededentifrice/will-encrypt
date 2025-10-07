@@ -5,6 +5,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
+from src.cli.share_table import render_share_table
 from src.crypto.bip39 import encode_share, decode_share, validate_checksum, format_indexed_share, parse_indexed_share
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
@@ -411,6 +412,12 @@ def init_command(
             print(f"Share {index}/{n}:")
             print(f"  {format_indexed_share(index, mnemonic)}\n")
 
+        print(f"{'-'*70}\n")
+        print("📊 Numbered Share Table\n")
+        table_output = render_share_table(indexed_mnemonics)
+        if table_output:
+            print(table_output)
+            print()
         print(f"{'-'*70}\n")
         print("📝 Next Steps:")
         print("  1. Copy each share to a secure location (paper, password manager)")
