@@ -175,6 +175,5 @@ python -m src.main <command>        # Alternative invocation
 - List manual verification steps
 
 ## Known Limitations
-- Kyber-1024 currently simulated with RSA (architecture ready for pqcrypto)
 - No CLI colors yet (future enhancement)
 - Command-line only (by design)

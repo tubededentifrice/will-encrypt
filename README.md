@@ -522,8 +522,6 @@ Use when:
 6. Print new shares
 7. Old shares and passphrase become invalid
 
-> ⚠️ **Known issue:** `rotate --mode passphrase` currently generates fresh key material without rewrapping previously stored ciphertexts, which leaves the vault undecryptable. Avoid this mode until the implementation is updated to rewrap existing messages and align public/private keys.
-
 **Security Notes:**
 - Messages are NOT re-encrypted (hybrid encryption design)
 - Rotation is logged in vault manifest
