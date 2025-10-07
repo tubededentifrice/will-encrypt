@@ -50,13 +50,20 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 # Run tests
-pytest                              # All 127 tests
+pytest                              # All 127 tests (with config verbosity)
 pytest tests/unit/ -v               # Unit tests only
 pytest tests/integration/ -v        # Integration tests only
+pytest tests/contract/ -v           # Contract tests (CLI flows)
+pytest --cov=src                    # With coverage report (htmlcov/)
 python -m pytest tests/ -v --tb=short
 
-# Linting
-ruff check .
+# Linting and type checking
+ruff check src tests                # Lint and auto-format hints (100-char lines)
+mypy src tests                      # Enforce typing rules
+
+# Run CLI experiments
+will-encrypt <command>              # After pip install -e .
+python -m src.main <command>        # Alternative invocation
 ```
 
 ### CLI Usage
@@ -88,19 +95,28 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 ```
 
 ## Code Style
-- Python 3.11+ with type hints throughout
-- Follow PEP 8 conventions
+- Python 3.11+ with explicit type hints throughout
+- Ruff enforces 100-character lines, import order, and dead-code trimming
+- Run `ruff check src tests` before committing
+- `mypy` rejects untyped definitions and implicit optionals
+- snake_case for modules, functions, and variables
+- PascalCase only for classes
 - Use dataclasses for models
 - Prefer standard library over external dependencies
+- Keep docstrings concise, focus on cryptographic assumptions or side effects
 - All cryptographic operations must be auditable
 - Error messages must include recovery suggestions
 - Progress indicators for operations > 1 second
 
 ## Testing Requirements
 - TDD approach: write tests before implementation
+- Pytest discovers files named `test_*.py`, classes starting with `Test`, functions beginning `test_`
+- Mirror production modules in matching directories (e.g., `src/crypto/kyber.py` → `tests/unit/crypto/test_kyber.py`)
 - 100% test coverage for cryptographic primitives
-- All CLI commands must have contract tests
-- Integration tests for full workflows
+- All CLI commands must have contract tests in `tests/contract/`
+- Contract tests should exercise CLI flows end-to-end using CLI entry points
+- Integration tests for full workflows in `tests/integration/`
+- Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Current status: 127/127 tests passing (100%)
 
 ## Security Requirements
@@ -111,6 +127,11 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - File permissions: 0600 for vault files
 - BIP39 checksums for error detection
 - Vault fingerprints for tamper detection
+- **Never commit real vaults, mnemonic shares, or private keys**
+- Use demo artifacts only for docs and reproducible tests
+- Environment overrides belong in ignored `.env` files, not tracked configs
+- When touching encryption or storage, confirm temporary files are removed
+- Mention any deviation from zero-trust assumptions in code reviews
 
 ## Recent Changes
 - 001-1-purpose-scope: Initial implementation
@@ -138,6 +159,18 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Enhanced error messages with recovery suggestions
 - BIP39 checksum validation with retry logic
 - Pretty-printed output with boxes and emojis
+
+## Commit & Pull Request Guidelines
+- History favors short, imperative subjects (e.g., "Add comprehensive UX enhancements")
+- Include focused bodies explaining reasoning or follow-ups
+- Group related changes per commit
+- PRs should provide:
+  - Concise summary
+  - Linked spec or issue
+  - Documentation updates when behavior shifts
+  - Command transcripts or screenshots for user-facing changes
+- Call out security-sensitive adjustments (key handling, share rotation, secret storage)
+- List manual verification steps
 
 ## Known Limitations
 - Kyber-1024 currently simulated with RSA (architecture ready for pqcrypto)
