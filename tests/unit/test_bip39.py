@@ -158,3 +158,64 @@ class TestBIP39Encoding:
         assert isinstance(share, bytes)
         assert len(share) == 32
 
+
+    def test_four_character_prefix_expansion_decode(self) -> None:
+        """Test: 4-character word prefixes expand to full words (decode)."""
+        from src.crypto.bip39 import decode_share
+
+        # Full BIP39 mnemonic
+        full_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        # Same mnemonic with 4-char prefixes
+        prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban art"
+
+        share_full = decode_share(full_mnemonic)
+        share_prefix = decode_share(prefix_mnemonic)
+
+        # Expected: Both decode to same share
+        assert share_full == share_prefix
+        assert len(share_prefix) == 32
+
+
+    def test_four_character_prefix_expansion_validate(self) -> None:
+        """Test: 4-character word prefixes expand to full words (validate)."""
+        from src.crypto.bip39 import validate_checksum
+
+        # Valid BIP39 mnemonic with 4-char prefixes
+        prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban art"
+
+        is_valid = validate_checksum(prefix_mnemonic)
+
+        # Expected: True (prefixes expand correctly)
+        assert is_valid is True
+
+
+    def test_four_character_prefix_invalid_checksum(self) -> None:
+        """Test: 4-character prefixes with invalid checksum detected."""
+        from src.crypto.bip39 import validate_checksum
+
+        # Invalid BIP39 mnemonic with 4-char prefixes (wrong last word)
+        invalid_prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban zoo"
+
+        is_valid = validate_checksum(invalid_prefix_mnemonic)
+
+        # Expected: False (checksum fails even with prefixes)
+        assert is_valid is False
+
+
+    def test_mixed_prefix_and_full_words(self) -> None:
+        """Test: Mix of 4-char prefixes and full words works correctly."""
+        from src.crypto.bip39 import decode_share
+
+        # Full BIP39 mnemonic
+        full_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+
+        # Mixed prefixes and full words
+        mixed_mnemonic = "aban abandon aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban art"
+
+        share_full = decode_share(full_mnemonic)
+        share_mixed = decode_share(mixed_mnemonic)
+
+        # Expected: Both decode to same share
+        assert share_full == share_mixed
+

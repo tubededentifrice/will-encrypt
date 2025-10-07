@@ -46,8 +46,10 @@ def decode_share(mnemonic_str: str) -> bytes:
     """
     Decode 24-word BIP39 mnemonic to 32-byte share.
 
+    Supports 4-character word prefixes (e.g., "aban" → "abandon").
+
     Args:
-        mnemonic_str: 24-word space-separated mnemonic
+        mnemonic_str: 24-word space-separated mnemonic (full words or 4-char prefixes)
 
     Returns:
         32-byte decoded share
@@ -61,13 +63,16 @@ def decode_share(mnemonic_str: str) -> bytes:
     # Normalize whitespace and case
     normalized = " ".join(mnemonic_str.lower().split())
 
+    # Expand 4-character prefixes to full words
+    expanded = _mnemonic.expand(normalized)
+
     # Check if mnemonic is valid (includes checksum verification)
-    if not _mnemonic.check(normalized):
+    if not _mnemonic.check(expanded):
         raise ValueError("Invalid mnemonic or checksum failed")
 
     # Convert mnemonic to bytes
     try:
-        share = _mnemonic.to_entropy(normalized)
+        share = _mnemonic.to_entropy(expanded)
     except Exception as e:
         raise ValueError(f"Failed to decode mnemonic: {e}")
 
@@ -82,8 +87,10 @@ def validate_checksum(mnemonic_str: str) -> bool:
     """
     Validate BIP39 mnemonic checksum.
 
+    Supports 4-character word prefixes (e.g., "aban" → "abandon").
+
     Args:
-        mnemonic_str: 24-word space-separated mnemonic
+        mnemonic_str: 24-word space-separated mnemonic (full words or 4-char prefixes)
 
     Returns:
         True if checksum is valid, False otherwise
@@ -94,5 +101,8 @@ def validate_checksum(mnemonic_str: str) -> bool:
     # Normalize whitespace and case
     normalized = " ".join(mnemonic_str.lower().split())
 
+    # Expand 4-character prefixes to full words
+    expanded = _mnemonic.expand(normalized)
+
     # Use library's checksum validation
-    return _mnemonic.check(normalized)
+    return _mnemonic.check(expanded)
