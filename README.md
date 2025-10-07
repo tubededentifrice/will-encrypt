@@ -185,6 +185,7 @@ You can reuse existing BIP39 shares from another vault to create a new vault wit
 
 # Create second vault with SAME shares (same 3-of-5, same passphrase)
 ./will-encrypt init --k 3 --n 5 --vault vault2.yaml \
+  --source-vault vault1.yaml \
   --import-share "abandon ability able..." \
   --import-share "abandon about above..." \
   --import-share "abandon absent absorb..."
@@ -248,7 +249,7 @@ Passphrase reconstructed from 3 imported shares.
 3. **Re-splitting**: Reconstructed passphrase split into new K/N shares (can have same or different K/N)
 4. **Index Recovery (new)**: Lost the numeric prefix? The CLI now matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
 
-> Tip: Importing into a different path? Set `WILL_ENCRYPT_SOURCE_VAULT=/path/to/original/vault.yaml` so the CLI can read the stored fingerprints before overwriting anything. If you target the same vault path, the fingerprints are detected automatically.
+> Tip: Importing into a different path? Supply `--source-vault /path/to/original/vault.yaml`. The flag takes precedence over the legacy `WILL_ENCRYPT_SOURCE_VAULT` environment variable and ensures the manifest is read even when you are overwriting a different file path.
 
 **Security Considerations:**
 
@@ -266,6 +267,7 @@ When NOT to use:
 - Each vault manifest now records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).
 - These fingerprints cannot recover the 24-word mnemonic, but they make it possible to recover share numbers when only the words remain.
 - Fingerprints refresh automatically during `init --import-share`, `rotate --mode shares`, and `rotate --mode passphrase` flows.
+- Backwards compatibility: if `--source-vault` is omitted, the CLI still consults `WILL_ENCRYPT_SOURCE_VAULT` or the existing target path when present.
 
 **Best Practices:**
 1. Document which vaults share the same passphrase

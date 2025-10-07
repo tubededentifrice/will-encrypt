@@ -32,7 +32,7 @@ will-encrypt/
 ├── tests/
 │   ├── unit/            # 57 unit tests
 │   ├── contract/        # 43 contract tests
-│   ├── integration/     # 45 integration tests
+│   ├── integration/     # 46 integration tests
 │   └── test_helpers.py  # Shared test utilities
 ├── README.md            # Comprehensive user guide (1,333 lines)
 ├── EXAMPLE_IMPORT_SHARES.md
@@ -51,9 +51,9 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 # Run tests
-pytest                              # All 145 tests (with config verbosity)
+pytest                              # All 146 tests (with config verbosity)
 pytest tests/unit/ -v               # Unit tests only (57 tests)
-pytest tests/integration/ -v        # Integration tests only (45 tests)
+pytest tests/integration/ -v        # Integration tests only (46 tests)
 pytest tests/contract/ -v           # Contract tests (CLI flows) (43 tests)
 pytest --cov=src                    # With coverage report (htmlcov/) - 69% coverage
 python -m pytest tests/ -v --tb=short
@@ -74,6 +74,7 @@ python -m src.main <command>        # Alternative invocation
 
 # Import existing shares to create vault with same passphrase
 ./will-encrypt init --k 3 --n 5 --vault vault2.yaml \
+  --source-vault vault1.yaml \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24"
@@ -119,7 +120,7 @@ python -m src.main <command>        # Alternative invocation
 - Integration tests for full workflows in `tests/integration/`
 - Use `tests/test_helpers.py` for shared test utilities (vault creation, message encryption, etc.)
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
-- Current status: **145/145 tests passing (100% pass rate), 69% code coverage**
+- Current status: **146/146 tests passing (100% pass rate), 69% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -156,11 +157,12 @@ python -m src.main <command>        # Alternative invocation
 - BIP39 checksum validation with retry logic
 - Pretty-printed output with boxes and emojis
 - Share index auto-recovery via manifest-managed fingerprints (supports unlabeled imports)
+  - `init --source-vault` flag overrides environment-based manifest detection
 
-✅ Test Coverage (145 tests, 69% code coverage):
+✅ Test Coverage (146 tests, 69% code coverage):
 - **Unit Tests (57)**: Crypto primitives, storage, models
 - **Contract Tests (43)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
-- **Integration Tests (45)**: Full lifecycle, emergency recovery, share rotation, validation audit
+- **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit
 - All tests passing with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines

@@ -31,6 +31,11 @@ def main():
         dest="import_shares",
         help="Import existing BIP39 share (24 words). Can be used multiple times. Requires K shares to reconstruct passphrase."
     )
+    init_parser.add_argument(
+        "--source-vault",
+        dest="source_vault",
+        help="Optional path to a vault whose manifest should be used to recover share indices during import",
+    )
 
     # Encrypt command
     encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt message")
@@ -78,7 +83,8 @@ def main():
     # Route to command handlers
     if args.command == "init":
         import_shares = getattr(args, 'import_shares', None)
-        return init_command(args.k, args.n, args.vault, args.force, import_shares)
+        source_vault = getattr(args, 'source_vault', None)
+        return init_command(args.k, args.n, args.vault, args.force, import_shares, source_vault)
     elif args.command == "encrypt":
         return encrypt_command(
             args.vault, args.title, args.message, args.stdin

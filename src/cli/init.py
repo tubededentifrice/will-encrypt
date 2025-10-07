@@ -3,6 +3,7 @@ import base64
 import os
 import sys
 from datetime import datetime, timezone
+from typing import Optional
 
 from src.crypto.bip39 import encode_share, decode_share, validate_checksum, format_indexed_share, parse_indexed_share
 from src.crypto.keypair import generate_hybrid_keypair
@@ -11,6 +12,7 @@ from src.crypto.shamir import split_secret, reconstruct_secret
 from src.docs.crypto_notes import generate_crypto_notes
 from src.docs.policy import generate_policy_document
 from src.docs.recovery_guide import generate_recovery_guide
+
 from src.storage.manifest import (
     RotationEvent,
     compute_fingerprints,
@@ -21,7 +23,14 @@ from src.storage.models import Manifest
 from src.storage.vault import create_vault, load_vault, save_vault
 
 
-def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", force: bool = False, import_shares: list = None) -> int:
+def init_command(
+    k: int = None,
+    n: int = None,
+    vault_path: str = "vault.yaml",
+    force: bool = False,
+    import_shares: list | None = None,
+    source_vault: Optional[str] = None,
+) -> int:
     """Initialize vault with K-of-N threshold."""
     # Interactive prompts for K and N if not provided
     if k is None:
@@ -58,8 +67,12 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         return 1
 
     existing_share_fingerprints = []
+    source_vault_fingerprints_found = False
+    source_vault_error: Optional[str] = None
     if import_shares:
         candidate_paths = []
+        if source_vault:
+            candidate_paths.append(source_vault)
         env_source = os.getenv("WILL_ENCRYPT_SOURCE_VAULT")
         if env_source:
             candidate_paths.append(env_source)
@@ -74,12 +87,17 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             try:
                 candidate_vault = load_vault(candidate_path)
             except FileNotFoundError:
+                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
+                    source_vault_error = f"Source vault not found: {candidate_path}"
                 continue
             except Exception as exc:  # pragma: no cover - defensive: log and continue
-                print(
-                    f"Warning: Unable to read existing vault at {candidate_path}: {exc}",
-                    file=sys.stderr,
-                )
+                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
+                    source_vault_error = f"Failed to read source vault: {exc}"
+                else:
+                    print(
+                        f"Warning: Unable to read existing vault at {candidate_path}: {exc}",
+                        file=sys.stderr,
+                    )
                 continue
 
             if not candidate_vault.manifest:
@@ -91,6 +109,16 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
                     continue
                 existing_share_fingerprints.append(fingerprint)
                 seen_fingerprint_keys.add(key)
+                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
+                    source_vault_fingerprints_found = True
+
+        if source_vault and not source_vault_fingerprints_found:
+            error_message = source_vault_error or (
+                f"Source vault manifest missing share fingerprints: {source_vault}"
+            )
+            print(f"\nError: {error_message}", file=sys.stderr)
+            print("Recovery: Verify the --source-vault path and ensure it contains a valid manifest", file=sys.stderr)
+            return 6
 
     # Handle interactive import of shares
     if import_shares is None and k is not None:
