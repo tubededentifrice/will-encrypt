@@ -557,7 +557,7 @@ will-encrypt rotate --vault vault.yaml \
 
 **Assumptions:**
 - K key holders do not collude maliciously
-- Passphrase has 384 bits of entropy (48 random bytes)
+- Passphrase has 256 bits of entropy (32 random bytes)
 - PBKDF2 with 600,000 iterations is sufficient (2025 standards)
 - AES-256 and RSA-4096 remain secure until 2030+
 
@@ -857,7 +857,7 @@ will-encrypt rotate --vault vault.yaml \
 - Share distribution (new shares printed)
 
 **What Stays Same:**
-- Passphrase (same 384-bit value)
+- Passphrase (same 256-bit value)
 - Private keys (same encryption)
 - Messages (no re-encryption needed)
 
@@ -874,7 +874,7 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 ```
 
 **What Changes:**
-- Passphrase (new 384-bit value)
+- Passphrase (new 256-bit value)
 - Private key encryption (re-encrypted with new passphrase)
 - KDF salt (new random value)
 - Share distribution (new shares printed)
@@ -1150,7 +1150,7 @@ python -m src.main init --k 3 --n 5
 
 #### Initialization (init)
 ```
-1. Generate 384-bit passphrase (48 random bytes)
+1. Generate 256-bit passphrase (32 random bytes)
 2. Split passphrase → K-of-N shares (Shamir SSS)
 3. Encode shares → BIP39 mnemonics (24 words each)
 4. Generate RSA-4096 + Kyber-1024 keypair
