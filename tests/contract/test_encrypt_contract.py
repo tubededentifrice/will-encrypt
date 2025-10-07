@@ -6,12 +6,16 @@ Based on: specs/001-1-purpose-scope/contracts/encrypt.schema.yaml
 Tests MUST fail before implementation (TDD).
 """
 
-import os
+import base64
+import io
+import sys
+import time
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
+
+from tests.test_helpers import create_test_vault, get_vault_messages
 
 
 class TestEncryptCommand:
@@ -19,145 +23,181 @@ class TestEncryptCommand:
 
     def test_encrypt_message_via_argument(self, tmp_path: Path) -> None:
         """Test: Encrypt message via --message argument, verify vault updated."""
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # encrypt_command(
-        #     vault=str(vault_path),
-        #     title="Test Message",
-        #     message="Secret content"
-        # )
+        # Encrypt message
+        result = encrypt_command(
+            vault_path=str(vault_path),
+            title="Test Message",
+            message_text="Secret content"
+        )
 
-        # Expected: Vault contains encrypted message
-        # TODO: After implementation, verify:
-        # - vault messages array has 1 item
-        # - message.id == 1
-        # - message.title == "Test Message"
-        # - message.ciphertext is base64-encoded
-        # - message.rsa_wrapped_kek exists
-        # - message.kyber_wrapped_kek exists
-        # - message.nonce is 96 bits (12 bytes base64)
-        # - message.auth_tag is 128 bits (16 bytes base64)
+        assert result == 0, "Encrypt command should succeed"
 
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        # Verify vault contains encrypted message
+        messages = get_vault_messages(vault_path)
+        assert len(messages) == 1, "Vault should have 1 message"
+
+        message = messages[0]
+        assert message["id"] == 1, "First message should have ID 1"
+        assert message["title"] == "Test Message"
+        assert "ciphertext" in message
+        assert "rsa_wrapped_kek" in message
+        assert "kyber_wrapped_kek" in message
+        assert "nonce" in message
+        assert "tag" in message
+
+        # Verify fields are base64-encoded
+        ciphertext = base64.b64decode(message["ciphertext"])
+        assert len(ciphertext) > 0, "Ciphertext should not be empty"
+
+        nonce = base64.b64decode(message["nonce"])
+        assert len(nonce) == 12, "Nonce should be 96 bits (12 bytes)"
+
+        auth_tag = base64.b64decode(message["tag"])
+        assert len(auth_tag) == 16, "Auth tag should be 128 bits (16 bytes)"
 
     def test_encrypt_message_via_stdin(self, tmp_path: Path) -> None:
         """Test: Encrypt message via stdin, verify vault updated."""
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # import io
-        # import sys
-        # sys.stdin = io.StringIO("Secret content from stdin")
-        # encrypt_command(vault=str(vault_path), title="Stdin Test", stdin=True)
+        # Mock stdin with message content
+        old_stdin = sys.stdin
+        sys.stdin = io.StringIO("Secret content from stdin")
 
-        # Expected: Message encrypted from stdin
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        try:
+            result = encrypt_command(
+                vault_path=str(vault_path),
+                title="Stdin Test",
+                stdin=True
+            )
+            assert result == 0, "Encrypt command should succeed"
+        finally:
+            sys.stdin = old_stdin
+
+        # Verify message was encrypted
+        messages = get_vault_messages(vault_path)
+        assert len(messages) == 1, "Vault should have 1 message"
+        assert messages[0]["title"] == "Stdin Test"
 
     def test_encrypt_rejects_message_over_64kb(self, tmp_path: Path) -> None:
         """Test: Message size > 64 KB rejection."""
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
         # Create message > 64 KB
         large_message = "A" * (65 * 1024)  # 65 KB
 
         # Expected: Exit code 4 (size exceeded)
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # with pytest.raises(ValueError, match="Message size exceeds 64 KB"):
-        #     encrypt_command(vault=str(vault_path), title="Too Large", message=large_message)
+        result = encrypt_command(
+            vault_path=str(vault_path),
+            title="Too Large",
+            message_text=large_message
+        )
 
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 4, "Encrypt should fail with exit code 4 for oversized messages"
+
+        # Verify no message was added to vault
+        messages = get_vault_messages(vault_path)
+        assert len(messages) == 0, "No message should be added when size limit exceeded"
 
     def test_encrypt_performance_under_1_second_for_64kb(self, tmp_path: Path) -> None:
         """Test: Performance < 1 second for 64 KB message."""
-        import time
-
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
-        # Create 64 KB message
+        # Create 64 KB message (at limit)
         message_64kb = "A" * (64 * 1024)
 
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # start = time.time()
-        # encrypt_command(vault=str(vault_path), title="Performance Test", message=message_64kb)
-        # duration = time.time() - start
+        # Time the encryption
+        start = time.time()
+        result = encrypt_command(
+            vault_path=str(vault_path),
+            title="Performance Test",
+            message_text=message_64kb
+        )
+        duration = time.time() - start
 
-        # Expected: duration < 1.0 second
-        # TODO: After implementation, verify:
-        # assert duration < 1.0, f"Encrypt took {duration:.2f}s (target < 1s)"
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0, "Encrypt should succeed for 64KB message"
+        assert duration < 1.0, f"Encrypt took {duration:.2f}s (target < 1s)"
 
     def test_encrypt_multiple_messages_sequential_ids(self, tmp_path: Path) -> None:
         """Test: Multiple messages get sequential IDs."""
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
         # Encrypt 3 messages
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Message 1", message="Content 1")
-        # encrypt_command(vault=str(vault_path), title="Message 2", message="Content 2")
-        # encrypt_command(vault=str(vault_path), title="Message 3", message="Content 3")
+        result1 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 1",
+            message_text="Content 1"
+        )
+        result2 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 2",
+            message_text="Content 2"
+        )
+        result3 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 3",
+            message_text="Content 3"
+        )
 
-        # Expected: IDs are 1, 2, 3
-        # with open(vault_path) as f:
-        #     vault = yaml.safe_load(f)
-        # assert vault["messages"][0]["id"] == 1
-        # assert vault["messages"][1]["id"] == 2
-        # assert vault["messages"][2]["id"] == 3
+        assert result1 == 0, "First encrypt should succeed"
+        assert result2 == 0, "Second encrypt should succeed"
+        assert result3 == 0, "Third encrypt should succeed"
 
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        # Verify sequential IDs
+        messages = get_vault_messages(vault_path)
+        assert len(messages) == 3, "Vault should have 3 messages"
+        assert messages[0]["id"] == 1, "First message should have ID 1"
+        assert messages[1]["id"] == 2, "Second message should have ID 2"
+        assert messages[2]["id"] == 3, "Third message should have ID 3"
 
     def test_encrypt_vault_not_found(self) -> None:
         """Test: Vault not found error."""
+        from src.cli.encrypt import encrypt_command
+
         # Expected: Exit code 2 (vault not found)
+        result = encrypt_command(
+            vault_path="/nonexistent/vault.yaml",
+            title="Test",
+            message_text="Content"
+        )
 
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # with pytest.raises(FileNotFoundError, match="Vault not found"):
-        #     encrypt_command(vault="/nonexistent/vault.yaml", title="Test", message="Content")
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 2, "Encrypt should fail with exit code 2 when vault not found"
 
     def test_encrypt_title_length_validation(self, tmp_path: Path) -> None:
         """Test: Title length <= 256 characters."""
-        vault_path = tmp_path / "vault.yaml"
+        from src.cli.encrypt import encrypt_command
 
         # Setup: Create initialized vault
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
         # Title with 257 characters (exceeds limit)
         long_title = "A" * 257
 
-        # Expected: ValueError for title too long
-        # Import after implementation: from src.cli.encrypt import encrypt_command
-        # with pytest.raises(ValueError, match="Title exceeds 256 characters"):
-        #     encrypt_command(vault=str(vault_path), title=long_title, message="Content")
+        # Expected: Exit code 1 for validation error
+        result = encrypt_command(
+            vault_path=str(vault_path),
+            title=long_title,
+            message_text="Content"
+        )
 
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 1, "Encrypt should fail with exit code 1 for title too long"
+
+        # Verify no message was added
+        messages = get_vault_messages(vault_path)
+        assert len(messages) == 0, "No message should be added when title validation fails"

@@ -2,7 +2,7 @@
 
 **Threshold cryptography system for emergency access to sensitive information**
 
-will-encrypt is a command-line tool that encrypts messages with a hybrid RSA-4096 + post-quantum (Kyber-1024) cryptosystem, protected by Shamir Secret Sharing. Access requires K out of N key holders to combine their shares, making it ideal for emergency access scenarios like digital wills, estate planning, and business continuity.
+./will-encrypt is a command-line tool that encrypts messages with a hybrid RSA-4096 + post-quantum (Kyber-1024) cryptosystem, protected by Shamir Secret Sharing. Access requires K out of N key holders to combine their shares, making it ideal for emergency access scenarios like digital wills, estate planning, and business continuity.
 
 ## Features
 
@@ -47,10 +47,12 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+> ℹ️ **Launcher script:** All CLI examples assume you are running `./will-encrypt` from the repository root. If you install the package (e.g., `pip install -e .`), the command is available as `will-encrypt` on your PATH, and you can omit the `./` prefix.
+
 ### 2. Initialize Vault (3-of-5 threshold)
 
 ```bash
-will-encrypt init --k 3 --n 5 --vault my-vault.yaml
+./will-encrypt init --k 3 --n 5 --vault my-vault.yaml
 ```
 
 This generates:
@@ -63,7 +65,7 @@ This generates:
 ### 3. Encrypt a Message
 
 ```bash
-will-encrypt encrypt --vault my-vault.yaml \
+./will-encrypt encrypt --vault my-vault.yaml \
     --title "Bank Account Access" \
     --message "Account: 123456, PIN: 9876, Contact: John Doe"
 ```
@@ -71,7 +73,7 @@ will-encrypt encrypt --vault my-vault.yaml \
 ### 4. Decrypt Messages (requires 3 shares)
 
 ```bash
-will-encrypt decrypt --vault my-vault.yaml
+./will-encrypt decrypt --vault my-vault.yaml
 ```
 
 Enter 3 of the 5 shares when prompted. All messages will be decrypted and displayed.
@@ -113,7 +115,7 @@ pip install -e .
 ### Verify Installation
 
 ```bash
-will-encrypt --help
+./will-encrypt --help
 python -m pytest tests/  # Run test suite
 ```
 
@@ -126,7 +128,7 @@ python -m pytest tests/  # Run test suite
 Create a new vault with K-of-N threshold.
 
 ```bash
-will-encrypt init --k K --n N [--vault FILE] [--force] [--import-share "SHARE"]
+./will-encrypt init --k K --n N [--vault FILE] [--force] [--import-share "SHARE"]
 ```
 
 **Arguments:**
@@ -140,13 +142,13 @@ will-encrypt init --k K --n N [--vault FILE] [--force] [--import-share "SHARE"]
 
 ```bash
 # 3-of-5 threshold (typical family scenario)
-will-encrypt init --k 3 --n 5 --vault family-vault.yaml
+./will-encrypt init --k 3 --n 5 --vault family-vault.yaml
 
 # 2-of-3 threshold (small team)
-will-encrypt init --k 2 --n 3
+./will-encrypt init --k 2 --n 3
 
 # Single key holder (1-of-1, emergency backup only)
-will-encrypt init --k 1 --n 1
+./will-encrypt init --k 1 --n 1
 ```
 
 **Output:**
@@ -178,11 +180,11 @@ You can reuse existing BIP39 shares from another vault to create a new vault wit
 
 ```bash
 # Create first vault (3-of-5)
-will-encrypt init --k 3 --n 5 --vault vault1.yaml
+./will-encrypt init --k 3 --n 5 --vault vault1.yaml
 # Outputs 5 shares (save these)
 
 # Create second vault with SAME shares (same 3-of-5, same passphrase)
-will-encrypt init --k 3 --n 5 --vault vault2.yaml \
+./will-encrypt init --k 3 --n 5 --vault vault2.yaml \
   --import-share "abandon ability able..." \
   --import-share "abandon about above..." \
   --import-share "abandon absent absorb..."
@@ -190,7 +192,7 @@ will-encrypt init --k 3 --n 5 --vault vault2.yaml \
 # Outputs SAME 5 shares (if using same K/N)
 
 # Create third vault with DIFFERENT K/N but same passphrase
-will-encrypt init --k 2 --n 3 --vault vault3.yaml \
+./will-encrypt init --k 2 --n 3 --vault vault3.yaml \
   --import-share "abandon ability able..." \
   --import-share "abandon about above..." \
   --import-share "abandon absent absorb..."
@@ -270,7 +272,7 @@ When NOT to use:
 Add an encrypted message to the vault.
 
 ```bash
-will-encrypt encrypt --vault FILE --title TITLE [--message TEXT | --stdin]
+./will-encrypt encrypt --vault FILE --title TITLE [--message TEXT | --stdin]
 ```
 
 **Arguments:**
@@ -283,7 +285,7 @@ will-encrypt encrypt --vault FILE --title TITLE [--message TEXT | --stdin]
 
 ```bash
 # Encrypt a short message
-will-encrypt encrypt --vault vault.yaml \
+./will-encrypt encrypt --vault vault.yaml \
     --title "WiFi Password" \
     --message "SSID: HomeNet, Password: SecurePass123!"
 
@@ -313,7 +315,7 @@ cat credentials.json | will-encrypt encrypt --vault vault.yaml \
 Decrypt all messages in the vault using K shares.
 
 ```bash
-will-encrypt decrypt --vault FILE [--shares SHARE1 SHARE2 ...]
+./will-encrypt decrypt --vault FILE [--shares SHARE1 SHARE2 ...]
 ```
 
 **Arguments:**
@@ -324,10 +326,10 @@ will-encrypt decrypt --vault FILE [--shares SHARE1 SHARE2 ...]
 
 ```bash
 # Interactive mode (recommended)
-will-encrypt decrypt --vault vault.yaml
+./will-encrypt decrypt --vault vault.yaml
 
 # Non-interactive mode (for automation)
-will-encrypt decrypt --vault vault.yaml \
+./will-encrypt decrypt --vault vault.yaml \
     --shares "abandon abandon abandon ... about" \
     "ability ability ability ... about" \
     "able able able ... about"
@@ -362,7 +364,7 @@ SSID: HomeNet, Password: SecurePass123!
 List all messages in the vault (metadata only, no decryption).
 
 ```bash
-will-encrypt list --vault FILE [--format FORMAT] [--sort FIELD]
+./will-encrypt list --vault FILE [--format FORMAT] [--sort FIELD]
 ```
 
 **Arguments:**
@@ -374,16 +376,16 @@ will-encrypt list --vault FILE [--format FORMAT] [--sort FIELD]
 
 ```bash
 # Table format (default)
-will-encrypt list --vault vault.yaml
+./will-encrypt list --vault vault.yaml
 
 # JSON format (for scripting)
-will-encrypt list --vault vault.yaml --format json
+./will-encrypt list --vault vault.yaml --format json
 
 # Sort by creation date
-will-encrypt list --vault vault.yaml --sort created
+./will-encrypt list --vault vault.yaml --sort created
 
 # Sort by size
-will-encrypt list --vault vault.yaml --sort size
+./will-encrypt list --vault vault.yaml --sort size
 ```
 
 **Output (Table Format):**
@@ -413,7 +415,7 @@ ID   Title                              Created                    Size
 Verify vault integrity and structure.
 
 ```bash
-will-encrypt validate --vault FILE [--verbose]
+./will-encrypt validate --vault FILE [--verbose]
 ```
 
 **Arguments:**
@@ -424,10 +426,10 @@ will-encrypt validate --vault FILE [--verbose]
 
 ```bash
 # Basic validation
-will-encrypt validate --vault vault.yaml
+./will-encrypt validate --vault vault.yaml
 
 # Verbose output
-will-encrypt validate --vault vault.yaml --verbose
+./will-encrypt validate --vault vault.yaml --verbose
 ```
 
 **Checks Performed:**
@@ -461,7 +463,7 @@ will-encrypt validate --vault vault.yaml --verbose
 Rotate shares or passphrase for enhanced security.
 
 ```bash
-will-encrypt rotate --vault FILE --mode MODE [--new-k K] [--new-n N] [--shares ...]
+./will-encrypt rotate --vault FILE --mode MODE [--new-k K] [--new-n N] [--shares ...]
 ```
 
 **Arguments:**
@@ -482,7 +484,7 @@ Use when:
 
 ```bash
 # Change from 3-of-5 to 2-of-4
-will-encrypt rotate --vault vault.yaml \
+./will-encrypt rotate --vault vault.yaml \
     --mode shares --new-k 2 --new-n 4
 ```
 
@@ -493,6 +495,8 @@ will-encrypt rotate --vault vault.yaml \
 4. Print new shares
 5. Old shares become invalid
 
+> ⚠️ **Share numbers matter:** The CLI prints labels such as `Share 3/6` followed by the 24-word mnemonic. When recording a share, keep the numeric prefix (for example, store it as `3: word1 ... word24`) so later commands can reconstruct the original indices correctly.
+
 #### Passphrase Rotation (New Passphrase + Optional K/N Change)
 
 Use when:
@@ -502,10 +506,10 @@ Use when:
 
 ```bash
 # Rotate passphrase, keep 3-of-5 threshold
-will-encrypt rotate --vault vault.yaml --mode passphrase
+./will-encrypt rotate --vault vault.yaml --mode passphrase
 
 # Rotate passphrase and change to 2-of-3
-will-encrypt rotate --vault vault.yaml \
+./will-encrypt rotate --vault vault.yaml \
     --mode passphrase --new-k 2 --new-n 3
 ```
 
@@ -517,6 +521,8 @@ will-encrypt rotate --vault vault.yaml \
 5. Split new passphrase with K/N (new or current)
 6. Print new shares
 7. Old shares and passphrase become invalid
+
+> ⚠️ **Known issue:** `rotate --mode passphrase` currently generates fresh key material without rewrapping previously stored ciphertexts, which leaves the vault undecryptable. Avoid this mode until the implementation is updated to rewrap existing messages and align public/private keys.
 
 **Security Notes:**
 - Messages are NOT re-encrypted (hybrid encryption design)
@@ -619,7 +625,7 @@ source ~/.venv/will-encrypt/bin/activate
 pip install will-encrypt
 
 # Verify installation
-will-encrypt --help
+./will-encrypt --help
 ```
 
 #### 2. Vault Initialization
@@ -630,7 +636,7 @@ mkdir -p ~/vaults
 cd ~/vaults
 
 # Initialize vault (adjust K/N for your needs)
-will-encrypt init --k 3 --n 5 --vault estate-vault.yaml
+./will-encrypt init --k 3 --n 5 --vault estate-vault.yaml
 ```
 
 **Save shares immediately:**
@@ -643,7 +649,7 @@ will-encrypt init --k 3 --n 5 --vault estate-vault.yaml
 **Method 1: Physical Distribution (Most Secure)**
 ```bash
 # Print shares to PDF
-will-encrypt init --k 3 --n 5 --vault vault.yaml > shares.txt
+./will-encrypt init --k 3 --n 5 --vault vault.yaml > shares.txt
 # Manually copy each share to separate paper
 # Shred shares.txt immediately
 ```
@@ -701,10 +707,10 @@ chmod 700 ~/vaults
 **Monitoring:**
 ```bash
 # Validate vault integrity
-will-encrypt validate --vault estate-vault.yaml --verbose
+./will-encrypt validate --vault estate-vault.yaml --verbose
 
 # Check message count
-will-encrypt list --vault estate-vault.yaml
+./will-encrypt list --vault estate-vault.yaml
 
 # Review rotation history
 grep 'rotation_history' estate-vault.yaml
@@ -738,7 +744,7 @@ grep 'rotation_history' estate-vault.yaml
 
 3. **Decrypt Messages**
    ```bash
-   will-encrypt decrypt --vault estate-vault.yaml
+   ./will-encrypt decrypt --vault estate-vault.yaml
    # Enter K shares when prompted
    # All messages displayed
    ```
@@ -787,7 +793,7 @@ This is by design (threshold cryptography). Messages are permanently inaccessibl
 ```bash
 # Vault file is public data, OK to backup freely
 cp ~/Dropbox/estate-vault.yaml.backup estate-vault.yaml
-will-encrypt validate --vault estate-vault.yaml
+./will-encrypt validate --vault estate-vault.yaml
 ```
 
 #### Scenario 4: Passphrase Compromise Suspected
@@ -796,7 +802,7 @@ will-encrypt validate --vault estate-vault.yaml
 
 ```bash
 # Collect K shares
-will-encrypt rotate --vault vault.yaml --mode passphrase
+./will-encrypt rotate --vault vault.yaml --mode passphrase
 
 # Distribute new shares immediately
 # Old passphrase and shares become invalid
@@ -844,7 +850,7 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 
 ```bash
 # Current: 3-of-5, Want: 2-of-4 (remove 1 key holder)
-will-encrypt rotate --vault vault.yaml \
+./will-encrypt rotate --vault vault.yaml \
     --mode shares --new-k 2 --new-n 4
 
 # Enter 3 current shares when prompted
@@ -865,7 +871,7 @@ will-encrypt rotate --vault vault.yaml \
 
 ```bash
 # Rotate passphrase, keep 3-of-5 threshold
-will-encrypt rotate --vault vault.yaml --mode passphrase
+./will-encrypt rotate --vault vault.yaml --mode passphrase
 
 # Enter 3 current shares when prompted
 # New passphrase generated
@@ -888,12 +894,12 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 
 1. **Validate vault**
    ```bash
-   will-encrypt validate --vault vault.yaml --verbose
+   ./will-encrypt validate --vault vault.yaml --verbose
    ```
 
 2. **Verify decryption with new shares**
    ```bash
-   will-encrypt decrypt --vault vault.yaml
+   ./will-encrypt decrypt --vault vault.yaml
    # Use K new shares
    ```
 
@@ -937,10 +943,10 @@ Error: Vault already exists at vault.yaml
 **Fix**:
 ```bash
 # Option 1: Use different filename
-will-encrypt init --k 3 --n 5 --vault new-vault.yaml
+./will-encrypt init --k 3 --n 5 --vault new-vault.yaml
 
 # Option 2: Overwrite (DESTROYS EXISTING VAULT)
-will-encrypt init --k 3 --n 5 --vault vault.yaml --force
+./will-encrypt init --k 3 --n 5 --vault vault.yaml --force
 ```
 
 ---
@@ -960,7 +966,7 @@ Error: Vault not found: vault.yaml
 ls -l vault.yaml
 
 # Use absolute path
-will-encrypt encrypt --vault /full/path/to/vault.yaml --title "..." --message "..."
+./will-encrypt encrypt --vault /full/path/to/vault.yaml --title "..." --message "..."
 ```
 
 #### Error: `Message exceeds 64 KB limit`
@@ -1020,7 +1026,7 @@ Error: Insufficient shares (need 3, got 2)
 
 **Fix**: Provide at least K shares to reconstruct passphrase:
 ```bash
-will-encrypt init --k 3 --n 5 --vault vault.yaml \
+./will-encrypt init --k 3 --n 5 --vault vault.yaml \
   --import-share "SHARE_1" \
   --import-share "SHARE_2" \
   --import-share "SHARE_3"
@@ -1036,7 +1042,7 @@ Error: Decryption failed: MAC check failed
 **Fix**:
 1. **Validate vault integrity**:
    ```bash
-   will-encrypt validate --vault vault.yaml
+   ./will-encrypt validate --vault vault.yaml
    ```
 
 2. **Try different shares**: May have entered wrong shares.
@@ -1082,7 +1088,7 @@ Error: Must specify --new-k and --new-n for share rotation
 
 **Fix**:
 ```bash
-will-encrypt rotate --vault vault.yaml \
+./will-encrypt rotate --vault vault.yaml \
     --mode shares --new-k 3 --new-n 5
 ```
 
@@ -1188,7 +1194,7 @@ python -m src.main init --k 3 --n 5
 ### File Structure
 
 ```
-will-encrypt/
+./will-encrypt/
 ├── src/
 │   ├── main.py              # CLI entry point
 │   ├── cli/                 # Command implementations

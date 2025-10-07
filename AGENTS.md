@@ -30,9 +30,10 @@ will-encrypt/
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 50 unit tests
-│   ├── contract/        # 35 contract tests
-│   └── integration/     # 42 integration tests
+│   ├── unit/            # 57 unit tests
+│   ├── contract/        # 42 contract tests
+│   ├── integration/     # 44 integration tests
+│   └── test_helpers.py  # Shared test utilities
 ├── README.md            # Comprehensive user guide (1,333 lines)
 ├── EXAMPLE_IMPORT_SHARES.md
 └── IMPLEMENTATION_SUMMARY.md
@@ -50,11 +51,11 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 # Run tests
-pytest                              # All 127 tests (with config verbosity)
-pytest tests/unit/ -v               # Unit tests only
-pytest tests/integration/ -v        # Integration tests only
-pytest tests/contract/ -v           # Contract tests (CLI flows)
-pytest --cov=src                    # With coverage report (htmlcov/)
+pytest                              # All 143 tests (with config verbosity)
+pytest tests/unit/ -v               # Unit tests only (57 tests)
+pytest tests/integration/ -v        # Integration tests only (44 tests)
+pytest tests/contract/ -v           # Contract tests (CLI flows) (42 tests)
+pytest --cov=src                    # With coverage report (htmlcov/) - 66% coverage
 python -m pytest tests/ -v --tb=short
 
 # Linting and type checking
@@ -62,36 +63,36 @@ ruff check src tests                # Lint and auto-format hints (100-char lines
 mypy src tests                      # Enforce typing rules
 
 # Run CLI experiments
-will-encrypt <command>              # After pip install -e .
+./will-encrypt <command>              # After pip install -e .
 python -m src.main <command>        # Alternative invocation
 ```
 
 ### CLI Usage
 ```bash
 # Initialize vault (supports --import-share for reusing BIP39 shares)
-will-encrypt init --k 3 --n 5 --vault vault.yaml
+./will-encrypt init --k 3 --n 5 --vault vault.yaml
 
 # Import existing shares to create vault with same passphrase
-will-encrypt init --k 3 --n 5 --vault vault2.yaml \
+./will-encrypt init --k 3 --n 5 --vault vault2.yaml \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24"
 
 # Encrypt message (interactive prompts if args omitted)
-will-encrypt encrypt --vault vault.yaml --title "Title" --message "Text"
+./will-encrypt encrypt --vault vault.yaml --title "Title" --message "Text"
 
 # Decrypt messages with K shares
-will-encrypt decrypt --vault vault.yaml --shares "share1..." "share2..." "share3..."
+./will-encrypt decrypt --vault vault.yaml --shares "share1..." "share2..." "share3..."
 
 # List messages
-will-encrypt list --vault vault.yaml --format table --sort created
+./will-encrypt list --vault vault.yaml --format table --sort created
 
 # Validate vault integrity
-will-encrypt validate --vault vault.yaml --verbose
+./will-encrypt validate --vault vault.yaml --verbose
 
 # Rotate shares or passphrase
-will-encrypt rotate --vault vault.yaml --mode shares --new-k 4 --new-n 7
-will-encrypt rotate --vault vault.yaml --mode passphrase
+./will-encrypt rotate --vault vault.yaml --mode shares --new-k 4 --new-n 7
+./will-encrypt rotate --vault vault.yaml --mode passphrase
 ```
 
 ## Code Style
@@ -111,13 +112,14 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 ## Testing Requirements
 - TDD approach: write tests before implementation
 - Pytest discovers files named `test_*.py`, classes starting with `Test`, functions beginning `test_`
-- Mirror production modules in matching directories (e.g., `src/crypto/kyber.py` → `tests/unit/crypto/test_kyber.py`)
+- Mirror production modules in matching directories (e.g., `src/crypto/shamir.py` → `tests/unit/test_shamir.py`)
 - 100% test coverage for cryptographic primitives
 - All CLI commands must have contract tests in `tests/contract/`
 - Contract tests should exercise CLI flows end-to-end using CLI entry points
 - Integration tests for full workflows in `tests/integration/`
+- Use `tests/test_helpers.py` for shared test utilities (vault creation, message encryption, etc.)
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
-- Current status: all tests passing (100%)
+- Current status: **143/143 tests passing (100% pass rate), 66% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -153,6 +155,12 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Enhanced error messages with recovery suggestions
 - BIP39 checksum validation with retry logic
 - Pretty-printed output with boxes and emojis
+
+✅ Test Coverage (143 tests, 66% code coverage):
+- **Unit Tests (57)**: Crypto primitives, storage, models
+- **Contract Tests (42)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
+- **Integration Tests (44)**: Full lifecycle, emergency recovery, share rotation, validation audit
+- All tests passing with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines
 - History favors short, imperative subjects (e.g., "Add comprehensive UX enhancements")

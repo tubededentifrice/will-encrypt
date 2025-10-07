@@ -6,10 +6,14 @@ Based on: specs/001-1-purpose-scope/contracts/list.schema.yaml
 Tests MUST fail before implementation (TDD).
 """
 
+import io
 import json
+import sys
 from pathlib import Path
 
 import pytest
+
+from tests.test_helpers import create_test_vault, encrypt_test_message
 
 
 class TestListCommand:
@@ -20,174 +24,213 @@ class TestListCommand:
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Bank Passwords", message="Secret 1")
-        # encrypt_command(vault=str(vault_path), title="Estate Instructions", message="Secret 2")
-        # encrypt_command(vault=str(vault_path), title="Digital Assets", message="Secret 3")
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Bank Passwords", "Secret 1")
+        encrypt_test_message(vault_path, "Estate Instructions", "Secret 2")
+        encrypt_test_message(vault_path, "Digital Assets", "Secret 3")
 
         # List messages in table format
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="table")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="table", sort_by="id")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Table with columns: ID, Title, Created, Size
-        # TODO: After implementation, verify:
-        # - "ID" in output
-        # - "Title" in output
-        # - "Bank Passwords" in output
-        # - "Estate Instructions" in output
-        # - "Digital Assets" in output
-        # - No plaintext content visible
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        assert "ID" in output
+        assert "Title" in output
+        assert "Bank Passwords" in output
+        assert "Estate Instructions" in output
+        assert "Digital Assets" in output
+        # No plaintext content visible
+        assert "Secret 1" not in output
+        assert "Secret 2" not in output
+        assert "Secret 3" not in output
 
     def test_list_messages_json_format(self, tmp_path: Path) -> None:
         """Test: List messages in JSON format."""
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Test 1", message="Secret 1")
-        # encrypt_command(vault=str(vault_path), title="Test 2", message="Secret 2")
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Test 1", "Secret 1")
+        encrypt_test_message(vault_path, "Test 2", "Secret 2")
 
         # List messages in JSON format
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Valid JSON array
-        # messages = json.loads(output)
-        # assert len(messages) == 2
-        # assert messages[0]["id"] == 1
-        # assert messages[0]["title"] == "Test 1"
-        # assert "created" in messages[0]
-        # assert "size_bytes" in messages[0]
-        # assert "plaintext" not in messages[0]  # No plaintext in list output
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert len(messages) == 2
+        assert messages[0]["id"] == 1
+        assert messages[0]["title"] == "Test 1"
+        assert "created" in messages[0]
+        assert "size_bytes" in messages[0]
+        assert "plaintext" not in messages[0]  # No plaintext in list output
 
     def test_list_sort_by_id(self, tmp_path: Path) -> None:
         """Test: Sort by ID (default order)."""
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Message 3", message="C")
-        # encrypt_command(vault=str(vault_path), title="Message 1", message="A")
-        # encrypt_command(vault=str(vault_path), title="Message 2", message="B")
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Message 3", "C")
+        encrypt_test_message(vault_path, "Message 1", "A")
+        encrypt_test_message(vault_path, "Message 2", "B")
 
         # List sorted by ID
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json", sort="id")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Messages in ID order (1, 2, 3)
-        # messages = json.loads(output)
-        # assert messages[0]["id"] == 1
-        # assert messages[1]["id"] == 2
-        # assert messages[2]["id"] == 3
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert messages[0]["id"] == 1
+        assert messages[1]["id"] == 2
+        assert messages[2]["id"] == 3
 
     def test_list_sort_by_title(self, tmp_path: Path) -> None:
         """Test: Sort by title (alphabetical)."""
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Zebra", message="Content 1")
-        # encrypt_command(vault=str(vault_path), title="Apple", message="Content 2")
-        # encrypt_command(vault=str(vault_path), title="Mango", message="Content 3")
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Zebra", "Content 1")
+        encrypt_test_message(vault_path, "Apple", "Content 2")
+        encrypt_test_message(vault_path, "Mango", "Content 3")
 
         # List sorted by title
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json", sort="title")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="title")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Messages in alphabetical order
-        # messages = json.loads(output)
-        # assert messages[0]["title"] == "Apple"
-        # assert messages[1]["title"] == "Mango"
-        # assert messages[2]["title"] == "Zebra"
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert messages[0]["title"] == "Apple"
+        assert messages[1]["title"] == "Mango"
+        assert messages[2]["title"] == "Zebra"
 
     def test_list_sort_by_created_timestamp(self, tmp_path: Path) -> None:
         """Test: Sort by created timestamp."""
+        import time
+
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages with delays
-        # import time
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="First", message="A")
-        # time.sleep(0.1)
-        # encrypt_command(vault=str(vault_path), title="Second", message="B")
-        # time.sleep(0.1)
-        # encrypt_command(vault=str(vault_path), title="Third", message="C")
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "First", "A")
+        time.sleep(0.1)
+        encrypt_test_message(vault_path, "Second", "B")
+        time.sleep(0.1)
+        encrypt_test_message(vault_path, "Third", "C")
 
         # List sorted by created timestamp
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json", sort="created")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="created")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Messages in chronological order
-        # messages = json.loads(output)
-        # assert messages[0]["title"] == "First"
-        # assert messages[1]["title"] == "Second"
-        # assert messages[2]["title"] == "Third"
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert messages[0]["title"] == "First"
+        assert messages[1]["title"] == "Second"
+        assert messages[2]["title"] == "Third"
 
     def test_list_sort_by_size(self, tmp_path: Path) -> None:
         """Test: Sort by message size."""
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault and encrypt messages of different sizes
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
-        # from src.cli.encrypt import encrypt_command
-        # encrypt_command(vault=str(vault_path), title="Large", message="A" * 1000)
-        # encrypt_command(vault=str(vault_path), title="Small", message="B" * 10)
-        # encrypt_command(vault=str(vault_path), title="Medium", message="C" * 100)
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Large", "A" * 1000)
+        encrypt_test_message(vault_path, "Small", "B" * 10)
+        encrypt_test_message(vault_path, "Medium", "C" * 100)
 
         # List sorted by size
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json", sort="size")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="size")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Messages in size order (small to large)
-        # messages = json.loads(output)
-        # assert messages[0]["title"] == "Small"
-        # assert messages[1]["title"] == "Medium"
-        # assert messages[2]["title"] == "Large"
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert messages[0]["title"] == "Small"
+        assert messages[1]["title"] == "Medium"
+        assert messages[2]["title"] == "Large"
 
     def test_list_empty_vault(self, tmp_path: Path) -> None:
         """Test: List empty vault (no messages)."""
         vault_path = tmp_path / "vault.yaml"
 
         # Setup: Create vault with no messages
-        # from src.cli.init import init_command
-        # init_command(k=3, n=5, vault=str(vault_path))
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
 
         # List messages
-        # from src.cli.list import list_command
-        # output = list_command(vault=str(vault_path), format="json")
+        from src.cli.list import list_command
+
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = io.StringIO()
+
+        try:
+            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            output = captured_output.getvalue()
+        finally:
+            sys.stdout = old_stdout
 
         # Expected: Empty array
-        # messages = json.loads(output)
-        # assert len(messages) == 0
-
-        # EXPECTED FAILURE: Implementation does not exist yet
-        pass  # Test basic functionality
+        assert result == 0
+        messages = json.loads(output)
+        assert len(messages) == 0

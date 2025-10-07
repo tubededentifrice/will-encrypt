@@ -1,0 +1,159 @@
+"""Test helper utilities for will-encrypt tests."""
+
+import re
+from pathlib import Path
+from typing import List, Tuple
+
+
+def extract_shares_from_output(output: str) -> List[str]:
+    """
+    Extract BIP39 shares from init command output.
+
+    Args:
+        output: Captured stdout from init command
+
+    Returns:
+        List of share mnemonics WITH index prefix (e.g., "1: word1 word2 ...")
+    """
+    # Look for lines with pattern: "  1: word1 word2 ..." (indented with 2 spaces)
+    # This matches the format from format_indexed_share()
+    pattern = r'^\s+(\d+:\s+[^\n]+)$'
+
+    shares = re.findall(pattern, output, re.MULTILINE)
+    if shares:
+        return [share.strip() for share in shares]
+
+    # Fallback: try alternative patterns if primary doesn't match
+    # Match patterns like "Share 1/5:\n  1: word1 word2 ..."
+    pattern2 = r'^\s*(\d+):\s+([^\n]+)$'
+    matches = re.findall(pattern2, output, re.MULTILINE)
+    if matches:
+        return [f"{idx}: {mnemonic}" for idx, mnemonic in matches]
+
+    return []
+
+
+def create_test_vault(tmp_path: Path, k: int = 3, n: int = 5) -> Tuple[Path, List[str]]:
+    """
+    Create a test vault and return the path and shares.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        k: Threshold (minimum shares needed)
+        n: Total number of shares
+
+    Returns:
+        Tuple of (vault_path, shares)
+    """
+    from src.cli.init import init_command
+    import io
+    import sys
+
+    vault_path = tmp_path / "test_vault.yaml"
+
+    # Capture output to extract shares
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+
+    try:
+        result = init_command(k=k, n=n, vault_path=str(vault_path), import_shares=[])
+        assert result == 0, "Init command should succeed"
+
+        output = captured_output.getvalue()
+        shares = extract_shares_from_output(output)
+        assert len(shares) == n, f"Expected {n} shares, got {len(shares)}"
+
+        return vault_path, shares
+    finally:
+        sys.stdout = old_stdout
+
+
+def encrypt_test_message(vault_path: Path, title: str, message: str) -> int:
+    """
+    Encrypt a message in the test vault.
+
+    Args:
+        vault_path: Path to vault file
+        title: Message title
+        message: Message plaintext
+
+    Returns:
+        Exit code from encrypt command
+    """
+    from src.cli.encrypt import encrypt_command
+
+    return encrypt_command(
+        vault_path=str(vault_path),
+        title=title,
+        message_text=message
+    )
+
+
+def decrypt_test_vault(vault_path: Path, shares: List[str]) -> List[dict]:
+    """
+    Decrypt messages from vault using shares.
+
+    Args:
+        vault_path: Path to vault file
+        shares: List of BIP39 share mnemonics
+
+    Returns:
+        List of decrypted messages
+    """
+    from src.cli.decrypt import decrypt_command
+
+    return decrypt_command(
+        vault_path=str(vault_path),
+        shares=shares
+    )
+
+
+def get_vault_manifest(vault_path: Path) -> dict:
+    """
+    Load and return the manifest from a vault file.
+
+    Args:
+        vault_path: Path to vault file
+
+    Returns:
+        Manifest dictionary
+    """
+    import yaml
+
+    with open(vault_path) as f:
+        vault = yaml.safe_load(f)
+
+    return vault.get("manifest", {})
+
+
+def get_vault_messages(vault_path: Path) -> List[dict]:
+    """
+    Load and return messages from a vault file.
+
+    Args:
+        vault_path: Path to vault file
+
+    Returns:
+        List of message dictionaries
+    """
+    import yaml
+
+    with open(vault_path) as f:
+        vault = yaml.safe_load(f)
+
+    return vault.get("messages", [])
+
+
+def validate_bip39_share(share: str) -> bool:
+    """
+    Validate a BIP39 share mnemonic.
+
+    Args:
+        share: BIP39 mnemonic string
+
+    Returns:
+        True if valid, False otherwise
+    """
+    from src.crypto.bip39 import validate_checksum
+
+    return validate_checksum(share)

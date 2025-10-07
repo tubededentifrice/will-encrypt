@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Thin launcher so docs' `will-encrypt` examples work without installation.
+# Forwards all CLI arguments to the Python entry point.
+python -m src.main "$@"

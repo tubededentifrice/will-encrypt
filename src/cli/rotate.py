@@ -1,9 +1,12 @@
 """Rotate command implementation."""
 import base64
+import os
 import sys
 from datetime import datetime, timezone
 
-from src.crypto.bip39 import decode_share, encode_share, validate_checksum
+from cryptography.hazmat.primitives import serialization
+
+from src.crypto.bip39 import decode_share, encode_share, validate_checksum, format_indexed_share
 from src.crypto.keypair import (
     HybridKeypair,
     decrypt_private_keys,
@@ -23,6 +26,7 @@ def rotate_command(
     new_k: int = None,
     new_n: int = None,
     shares: list = None,
+    confirm: bool = None,
 ) -> int:
     """
     Rotate shares or passphrase.
@@ -33,6 +37,7 @@ def rotate_command(
         new_k: New threshold (for share rotation)
         new_n: New total shares (for share rotation)
         shares: List of share mnemonics (K shares to reconstruct passphrase)
+        confirm: Skip confirmation prompt if True (for testing)
 
     Returns:
         Exit code (0 = success)
@@ -97,17 +102,25 @@ def rotate_command(
             )
             return 3
 
-        # Validate BIP39 checksums
-        for i, share_str in enumerate(shares[:k], 1):
-            if not validate_checksum(share_str):
-                print(f"Error: Invalid BIP39 checksum in share {i}", file=sys.stderr)
+        # Parse and validate BIP39 checksums
+        from src.crypto.bip39 import parse_indexed_share
+
+        share_bytes = []
+        for share_str in shares[:k]:
+            # Parse indexed share (e.g., "1: word1 word2..." or just "word1 word2...")
+            index, mnemonic = parse_indexed_share(share_str)
+
+            # Validate BIP39 checksum
+            if not validate_checksum(mnemonic):
+                print(f"Error: Invalid BIP39 checksum in share", file=sys.stderr)
                 return 4
 
-        # Decode shares
-        share_bytes = []
-        for i, share_str in enumerate(shares[:k], 1):
-            decoded = decode_share(share_str)
-            share_bytes.append(bytes([i]) + decoded)
+            # Decode and prepend index
+            decoded = decode_share(mnemonic)
+            if index is None:
+                # If no index provided, use sequential numbering
+                index = len(share_bytes) + 1
+            share_bytes.append(bytes([index]) + decoded)
 
         # Reconstruct current passphrase
         current_passphrase = reconstruct_secret(share_bytes)
@@ -147,17 +160,21 @@ def rotate_command(
                 return 1
 
             # Confirmation
-            print(f"\n⚠️  Confirm rotation:")
-            print(f"  • Current: {k}-of-{n}")
-            print(f"  • New: {new_k}-of-{new_n}")
-            print(f"  • Old shares will become INVALID")
-            try:
-                confirm = input(f"\nProceed with share rotation? (yes/no): ").strip().lower()
-                if confirm != "yes":
-                    print("Aborted.", file=sys.stderr)
+            if confirm is None:
+                print(f"\n⚠️  Confirm rotation:")
+                print(f"  • Current: {k}-of-{n}")
+                print(f"  • New: {new_k}-of-{new_n}")
+                print(f"  • Old shares will become INVALID")
+                try:
+                    confirm_input = input(f"\nProceed with share rotation? (yes/no): ").strip().lower()
+                    if confirm_input != "yes":
+                        print("Aborted.", file=sys.stderr)
+                        return 0
+                except (EOFError, KeyboardInterrupt):
+                    print("\nAborted.", file=sys.stderr)
                     return 0
-            except (EOFError, KeyboardInterrupt):
-                print("\nAborted.", file=sys.stderr)
+            elif not confirm:
+                print("Aborted.", file=sys.stderr)
                 return 0
 
             # Progress indicators
@@ -197,7 +214,7 @@ def rotate_command(
             print(f"{'-'*70}\n")
             for i, mnemonic in enumerate(new_mnemonics, 1):
                 print(f"Share {i}/{new_n}:")
-                print(f"  {mnemonic}\n")
+                print(f"  {format_indexed_share(i, mnemonic)}\n")
             print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")
@@ -214,19 +231,23 @@ def rotate_command(
             target_n = new_n if new_n is not None else n
 
             # Confirmation
-            print(f"\n⚠️  Confirm passphrase rotation:")
-            print(f"  • Generates NEW 256-bit passphrase")
-            print(f"  • Re-encrypts private keys")
-            print(f"  • Threshold: {k}-of-{n} → {target_k}-of-{target_n}")
-            print(f"  • Old passphrase and shares will become INVALID")
-            print(f"  • Messages are NOT re-encrypted (hybrid design)")
-            try:
-                confirm = input(f"\nProceed with passphrase rotation? (yes/no): ").strip().lower()
-                if confirm != "yes":
-                    print("Aborted.", file=sys.stderr)
+            if confirm is None:
+                print(f"\n⚠️  Confirm passphrase rotation:")
+                print(f"  • Generates NEW 256-bit passphrase")
+                print(f"  • Re-encrypts private keys")
+                print(f"  • Threshold: {k}-of-{n} → {target_k}-of-{target_n}")
+                print(f"  • Old passphrase and shares will become INVALID")
+                print(f"  • Messages are NOT re-encrypted (hybrid design)")
+                try:
+                    confirm_input = input(f"\nProceed with passphrase rotation? (yes/no): ").strip().lower()
+                    if confirm_input != "yes":
+                        print("Aborted.", file=sys.stderr)
+                        return 0
+                except (EOFError, KeyboardInterrupt):
+                    print("\nAborted.", file=sys.stderr)
                     return 0
-            except (EOFError, KeyboardInterrupt):
-                print("\nAborted.", file=sys.stderr)
+            elif not confirm:
+                print("Aborted.", file=sys.stderr)
                 return 0
 
             # Progress indicators
@@ -235,21 +256,35 @@ def rotate_command(
             new_passphrase = generate_passphrase()
             print(f"        ✓ New passphrase generated")
 
-            # Re-encrypt private keys with new passphrase
-            print(f"  [2/5] Generating new hybrid keypair...")
-            new_keypair = generate_hybrid_keypair(new_passphrase)
-            print(f"        ✓ Keypair generated")
+            # Re-encrypt existing private keys with new passphrase
+            print(f"  [2/5] Re-encrypting private keys with new passphrase...")
+
+            # Use existing private keys (already decrypted above), re-encrypt with new passphrase
+            new_salt = os.urandom(32)
+
+            # Re-encrypt RSA private key
+            rsa_private_pem = rsa_private.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+            encrypted_rsa = encrypt_key_with_passphrase(
+                rsa_private_pem, new_passphrase, new_salt, vault.keys.kdf_iterations
+            )
+
+            # Re-encrypt Kyber private key
+            encrypted_kyber = encrypt_key_with_passphrase(
+                kyber_private, new_passphrase, new_salt, vault.keys.kdf_iterations
+            )
+
+            print(f"        ✓ Private keys re-encrypted")
 
             # Update vault with new encrypted private keys
-            print(f"  [3/5] Updating vault with re-encrypted private keys...")
-            vault.keys.rsa_private_encrypted = base64.b64encode(
-                new_keypair.rsa_private_encrypted
-            ).decode()
-            vault.keys.kyber_private_encrypted = base64.b64encode(
-                new_keypair.kyber_private_encrypted
-            ).decode()
-            vault.keys.kdf_salt = base64.b64encode(new_keypair.kdf_salt).decode()
-            print(f"        ✓ Private keys re-encrypted")
+            print(f"  [3/5] Updating vault...")
+            vault.keys.rsa_private_encrypted = base64.b64encode(encrypted_rsa).decode()
+            vault.keys.kyber_private_encrypted = base64.b64encode(encrypted_kyber).decode()
+            vault.keys.kdf_salt = base64.b64encode(new_salt).decode()
+            print(f"        ✓ Vault updated")
 
             # Split new passphrase
             print(f"  [4/5] Splitting new passphrase into {target_n} shares...")
@@ -285,7 +320,7 @@ def rotate_command(
             print(f"{'-'*70}\n")
             for i, mnemonic in enumerate(new_mnemonics, 1):
                 print(f"Share {i}/{target_n}:")
-                print(f"  {mnemonic}\n")
+                print(f"  {format_indexed_share(i, mnemonic)}\n")
             print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")
