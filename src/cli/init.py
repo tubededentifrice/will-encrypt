@@ -1,5 +1,6 @@
 """Init command implementation."""
 import base64
+import os
 import sys
 from datetime import datetime, timezone
 
@@ -10,15 +11,18 @@ from src.crypto.shamir import split_secret, reconstruct_secret
 from src.docs.crypto_notes import generate_crypto_notes
 from src.docs.policy import generate_policy_document
 from src.docs.recovery_guide import generate_recovery_guide
-from src.storage.manifest import RotationEvent, compute_fingerprints
+from src.storage.manifest import (
+    RotationEvent,
+    compute_fingerprints,
+    create_share_fingerprints,
+    match_share_fingerprint,
+)
 from src.storage.models import Manifest
-from src.storage.vault import create_vault, save_vault
+from src.storage.vault import create_vault, load_vault, save_vault
 
 
 def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", force: bool = False, import_shares: list = None) -> int:
     """Initialize vault with K-of-N threshold."""
-    import os
-
     # Interactive prompts for K and N if not provided
     if k is None:
         try:
@@ -52,6 +56,41 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print("\nError: N must be <= 255", file=sys.stderr)
         print("Hint: Shamir Secret Sharing supports up to 255 shares", file=sys.stderr)
         return 1
+
+    existing_share_fingerprints = []
+    if import_shares:
+        candidate_paths = []
+        env_source = os.getenv("WILL_ENCRYPT_SOURCE_VAULT")
+        if env_source:
+            candidate_paths.append(env_source)
+        if os.path.exists(vault_path):
+            candidate_paths.append(vault_path)
+
+        # Deduplicate paths while preserving priority order (env first, then target vault).
+        candidate_paths = list(dict.fromkeys(candidate_paths))
+
+        seen_fingerprint_keys = set()
+        for candidate_path in candidate_paths:
+            try:
+                candidate_vault = load_vault(candidate_path)
+            except FileNotFoundError:
+                continue
+            except Exception as exc:  # pragma: no cover - defensive: log and continue
+                print(
+                    f"Warning: Unable to read existing vault at {candidate_path}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
+
+            if not candidate_vault.manifest:
+                continue
+
+            for fingerprint in candidate_vault.manifest.share_fingerprints:
+                key = (fingerprint.index, fingerprint.hash)
+                if key in seen_fingerprint_keys:
+                    continue
+                existing_share_fingerprints.append(fingerprint)
+                seen_fingerprint_keys.add(key)
 
     # Handle interactive import of shares
     if import_shares is None and k is not None:
@@ -152,38 +191,70 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
             # Decode shares and reconstruct passphrase
             print(f"\n[1/4] Reconstructing passphrase from {len(import_shares)} imported share(s)...")
             share_bytes = []
-            missing_indices = []
+            used_indices = set()
+            unresolved_shares: list[tuple[str, bytes]] = []
+            available_fingerprints = existing_share_fingerprints.copy()
 
             for share_str in import_shares[:k]:  # Use first K shares
                 # Parse share with index (if provided)
                 index, mnemonic = parse_indexed_share(share_str)
+                decoded = decode_share(mnemonic)  # Returns 32 bytes
+
+                if index is None and available_fingerprints:
+                    matched = match_share_fingerprint(available_fingerprints, decoded)
+                    if matched and matched.index not in used_indices:
+                        index = matched.index
+                        available_fingerprints.remove(matched)
+                        print(
+                            f"      ↺ Auto-detected share index {index} via manifest fingerprint"
+                        )
 
                 if index is None:
-                    missing_indices.append(share_str)
+                    unresolved_shares.append((share_str, decoded))
                     continue
 
-                decoded = decode_share(mnemonic)  # Returns 32 bytes
-                # Prepend ORIGINAL index to make 33-byte share
+                if index < 1 or index > 255:
+                    print(
+                        f"\nError: Share index must be 1-255 (got {index})",
+                        file=sys.stderr,
+                    )
+                    return 5
+
+                if index in used_indices:
+                    print(
+                        f"\nError: Duplicate share index detected ({index})",
+                        file=sys.stderr,
+                    )
+                    print("Recovery: Provide each share only once", file=sys.stderr)
+                    return 5
+
                 share_bytes.append(bytes([index]) + decoded)
+                used_indices.add(index)
 
             # If any shares are missing indices, prompt user
-            if missing_indices:
-                print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
-                print(f"Please provide the original share numbers for correct reconstruction.\n")
+            if unresolved_shares:
+                print(f"\n⚠️  Warning: {len(unresolved_shares)} share(s) missing index information")
+                print("Attempting manual recovery. Original numbering is required for reconstruction.\n")
 
-                for missing_share in missing_indices:
+                for missing_share, decoded in unresolved_shares:
+                    preview = missing_share[:40].strip()
                     while True:
                         try:
-                            idx_input = input(f"Enter share number for '{missing_share[:40]}...': ").strip()
+                            idx_input = input(
+                                f"Enter share number for '{preview}...': "
+                            ).strip()
                             index = int(idx_input)
                             if index < 1 or index > 255:
-                                print(f"  Error: Share index must be 1-255")
+                                print("  Error: Share index must be 1-255")
                                 continue
-                            decoded = decode_share(missing_share)
+                            if index in used_indices:
+                                print("  Error: Share index already used")
+                                continue
                             share_bytes.append(bytes([index]) + decoded)
+                            used_indices.add(index)
                             break
                         except ValueError:
-                            print(f"  Error: Invalid number")
+                            print("  Error: Invalid number")
                             continue
 
             if len(share_bytes) < k:
@@ -227,6 +298,8 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
                 indexed_mnemonics.append((index, mnemonic))
             print(f"      ✓ {n} × 24-word mnemonics generated")
 
+        share_fingerprints = create_share_fingerprints(shares)
+
         # Progress: Generate keypair
         print(f"[4/4] Generating RSA-4096 + Kyber-1024 keypair...")
         keypair = generate_hybrid_keypair(passphrase)
@@ -252,6 +325,7 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
                     n=n,
                 )
             ],
+            share_fingerprints=share_fingerprints,
         )
 
         # Generate guides
@@ -318,7 +392,7 @@ def init_command(k: int = None, n: int = None, vault_path: str = "vault.yaml", f
         print(f"\n✓ Setup complete. Vault ready for encryption.")
 
         # Zero sensitive data
-        del passphrase, shares, indexed_mnemonics, keypair
+        del passphrase, shares, indexed_mnemonics, keypair, share_fingerprints
 
         return 0
 

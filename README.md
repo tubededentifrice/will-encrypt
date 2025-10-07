@@ -246,6 +246,9 @@ Passphrase reconstructed from 3 imported shares.
 1. **Share Validation**: Each imported share validated for BIP39 checksum; minimum K shares required
 2. **Passphrase Reconstruction**: Uses Shamir Secret Sharing (Lagrange interpolation) to reconstruct 32-byte passphrase
 3. **Re-splitting**: Reconstructed passphrase split into new K/N shares (can have same or different K/N)
+4. **Index Recovery (new)**: Lost the numeric prefix? The CLI now matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+
+> Tip: Importing into a different path? Set `WILL_ENCRYPT_SOURCE_VAULT=/path/to/original/vault.yaml` so the CLI can read the stored fingerprints before overwriting anything. If you target the same vault path, the fingerprints are detected automatically.
 
 **Security Considerations:**
 
@@ -258,6 +261,11 @@ When to use:
 When NOT to use:
 - ❌ Sharing same shares across unrelated parties
 - ❌ Creating "backup" vaults without understanding security implications
+
+**About Share Fingerprints:**
+- Each vault manifest now records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).
+- These fingerprints cannot recover the 24-word mnemonic, but they make it possible to recover share numbers when only the words remain.
+- Fingerprints refresh automatically during `init --import-share`, `rotate --mode shares`, and `rotate --mode passphrase` flows.
 
 **Best Practices:**
 1. Document which vaults share the same passphrase

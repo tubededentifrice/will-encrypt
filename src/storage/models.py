@@ -10,6 +10,33 @@ from typing import Dict, List, Optional
 
 
 @dataclass
+class ShareFingerprint:
+    """Salted fingerprint for a share's payload used to recover indices."""
+
+    index: int
+    salt: str  # Hex-encoded salt (32 bytes recommended)
+    hash: str  # Hex-encoded digest of salt || share_data
+    algorithm: str = "sha256"
+
+    def to_dict(self) -> Dict:
+        return {
+            "index": self.index,
+            "salt": self.salt,
+            "hash": self.hash,
+            "algorithm": self.algorithm,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ShareFingerprint":
+        return cls(
+            index=data["index"],
+            salt=data["salt"],
+            hash=data["hash"],
+            algorithm=data.get("algorithm", "sha256"),
+        )
+
+
+@dataclass
 class Keypair:
     """Keypair with encrypted private keys."""
 
@@ -128,6 +155,7 @@ class Manifest:
     algorithms: Dict[str, str] = field(default_factory=dict)
     fingerprints: Dict[str, str] = field(default_factory=dict)
     rotation_history: List[RotationEvent] = field(default_factory=list)
+    share_fingerprints: List[ShareFingerprint] = field(default_factory=list)
 
     def to_dict(self) -> Dict:
         return {
@@ -135,6 +163,7 @@ class Manifest:
             "algorithms": self.algorithms,
             "fingerprints": self.fingerprints,
             "rotation_history": [e.to_dict() for e in self.rotation_history],
+            "share_fingerprints": [f.to_dict() for f in self.share_fingerprints],
         }
 
     @classmethod
@@ -160,6 +189,10 @@ class Manifest:
             algorithms=data.get("algorithms", {}),
             fingerprints=data.get("fingerprints", {}),
             rotation_history=rotation_events,
+            share_fingerprints=[
+                ShareFingerprint.from_dict(fp)
+                for fp in data.get("share_fingerprints", [])
+            ],
         )
 
 

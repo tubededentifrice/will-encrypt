@@ -15,7 +15,11 @@ from src.crypto.keypair import (
 )
 from src.crypto.passphrase import generate_passphrase
 from src.crypto.shamir import reconstruct_secret, split_secret
-from src.storage.manifest import append_rotation_event, compute_fingerprints
+from src.storage.manifest import (
+    append_rotation_event,
+    compute_fingerprints,
+    create_share_fingerprints,
+)
 from src.storage.models import RotationEvent
 from src.storage.vault import load_vault, save_vault, update_manifest
 
@@ -184,6 +188,8 @@ def rotate_command(
             new_mnemonics = [encode_share(share[1:]) for share in new_shares]
             print(f"        ✓ {new_n} shares created")
 
+            vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
+
             # Update manifest
             print(f"  [2/3] Updating vault manifest...")
             rotation_event = RotationEvent(
@@ -291,6 +297,8 @@ def rotate_command(
             new_shares = split_secret(new_passphrase, target_k, target_n)
             new_mnemonics = [encode_share(share[1:]) for share in new_shares]
             print(f"        ✓ {target_n} shares created")
+
+            vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
 
             # Update manifest
             print(f"  [5/5] Updating manifest and saving vault...")

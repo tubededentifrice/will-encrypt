@@ -179,6 +179,30 @@ class TestInitCommand:
         assert len(manifest["rotation_history"]) >= 1
         assert manifest["rotation_history"][0]["event"] == "initial_creation"
 
+    def test_init_manifest_includes_share_fingerprints(self, tmp_path: Path) -> None:
+        """Test: Manifest persists salted share fingerprints for index recovery."""
+        from src.cli.init import init_command
+
+        vault_path = tmp_path / "vault.yaml"
+        result = init_command(k=3, n=5, vault_path=str(vault_path), import_shares=[])
+        assert result == 0, "Init should succeed"
+
+        with open(vault_path) as f:
+            vault = yaml.safe_load(f)
+
+        share_fingerprints = vault["manifest"].get("share_fingerprints")
+        assert isinstance(share_fingerprints, list), "share_fingerprints must be a list"
+        assert len(share_fingerprints) == 5, "One fingerprint per generated share"
+
+        seen_indices = set()
+        for entry in share_fingerprints:
+            assert {"index", "salt", "hash", "algorithm"} <= set(entry.keys())
+            assert entry["algorithm"] == "sha256"
+            assert len(entry["hash"]) == 64  # hex-encoded SHA-256 digest
+            assert len(entry["salt"]) == 64  # 32-byte salt encoded as hex
+            assert entry["index"] not in seen_indices
+            seen_indices.add(entry["index"])
+
     def test_init_shares_never_written_to_disk(self, tmp_path: Path, capsys) -> None:
         """Test: BIP39 shares never stored in vault or temporary files."""
         from src.cli.init import init_command
