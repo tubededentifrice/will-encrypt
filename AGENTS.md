@@ -117,7 +117,8 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Contract tests should exercise CLI flows end-to-end using CLI entry points
 - Integration tests for full workflows in `tests/integration/`
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
-- Current status: 127/127 tests passing (100%)
+- Current status: all tests passing (100%)
+- After making changes, before returning to the user, ensure all tests are still passing and iterate until everything passes
 
 ## Security Requirements
 - 256-bit passphrase entropy minimum
@@ -132,15 +133,6 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Environment overrides belong in ignored `.env` files, not tracked configs
 - When touching encryption or storage, confirm temporary files are removed
 - Mention any deviation from zero-trust assumptions in code reviews
-
-## Recent Changes
-- 001-1-purpose-scope: Initial implementation
-  - Complete threshold cryptography system
-  - All 6 CLI commands functional
-  - 127/127 tests passing
-  - Comprehensive README (1,333 lines)
-  - Interactive CLI with progress indicators
-  - Share import feature for multi-vault passphrase reuse
 
 ## Implementation Status
 ✅ Core Features (Production-Ready):
@@ -176,6 +168,3 @@ will-encrypt rotate --vault vault.yaml --mode passphrase
 - Kyber-1024 currently simulated with RSA (architecture ready for pqcrypto)
 - No CLI colors yet (future enhancement)
 - Command-line only (by design)
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->

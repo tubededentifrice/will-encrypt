@@ -26,8 +26,11 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
         k = vault.manifest.k
         n = vault.manifest.n
 
+        # Track if we're in interactive mode (shares not provided via CLI)
+        interactive_mode = shares is None
+
         # Collect shares with interactive prompts
-        if shares is None:
+        if interactive_mode:
             print(f"\n🔓 Decrypt Vault Messages\n")
             print(f"This vault requires {k} out of {n} shares to decrypt.")
             print(f"Each share is a 24-word BIP39 mnemonic with its original share number.")
@@ -113,8 +116,17 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
                 # Prepend ORIGINAL index to make 33-byte share
                 share_bytes.append(bytes([index]) + decoded)
 
-        # Handle missing indices (interactive prompt)
+        # Handle missing indices
         if missing_indices:
+            # In non-interactive mode (--shares provided via CLI), fail fast instead of prompting
+            if not interactive_mode:
+                print(f"\nError: Share indices missing in non-interactive mode", file=sys.stderr)
+                print(f"Recovery: Include share numbers in format 'N: mnemonic' when using --shares", file=sys.stderr)
+                print(f"Example: --shares '1: abandon ability...' '2: about above...' '3: absorb abstract...'", file=sys.stderr)
+                print(f"Hint: Share numbers are required for correct Shamir reconstruction", file=sys.stderr)
+                return 5
+
+            # Interactive mode: prompt for missing indices
             print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
             print(f"Please provide the original share numbers for correct reconstruction.\n")
 

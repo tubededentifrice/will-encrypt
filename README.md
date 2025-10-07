@@ -1238,7 +1238,7 @@ manifest:
   n: 5
   algorithms:
     keypair: "RSA-4096 + Kyber-1024 (hybrid)"
-    passphrase_entropy: 384
+    passphrase_entropy: 256
     secret_sharing: "Shamir SSS over GF(256)"
     message_encryption: "AES-256-GCM"
     kdf: "PBKDF2-HMAC-SHA512 (600k iterations)"

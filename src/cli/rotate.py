@@ -215,7 +215,7 @@ def rotate_command(
 
             # Confirmation
             print(f"\n⚠️  Confirm passphrase rotation:")
-            print(f"  • Generates NEW 384-bit passphrase")
+            print(f"  • Generates NEW 256-bit passphrase")
             print(f"  • Re-encrypts private keys")
             print(f"  • Threshold: {k}-of-{n} → {target_k}-of-{target_n}")
             print(f"  • Old passphrase and shares will become INVALID")
@@ -231,7 +231,7 @@ def rotate_command(
 
             # Progress indicators
             print(f"\n🔄 Rotating passphrase...")
-            print(f"  [1/5] Generating new 384-bit passphrase...")
+            print(f"  [1/5] Generating new 256-bit passphrase...")
             new_passphrase = generate_passphrase()
             print(f"        ✓ New passphrase generated")
 

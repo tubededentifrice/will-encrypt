@@ -4,7 +4,7 @@ Shamir Secret Sharing implementation for threshold cryptography.
 Based on: specs/001-1-purpose-scope/research.md (Section 2)
 
 Implementation uses Lagrange interpolation over GF(256) for splitting
-a 384-bit passphrase into K-of-N shares with information-theoretic security.
+a 256-bit passphrase into K-of-N shares with information-theoretic security.
 """
 
 import secrets

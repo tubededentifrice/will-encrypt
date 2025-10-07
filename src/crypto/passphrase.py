@@ -3,7 +3,7 @@ Passphrase generation and key derivation for threshold cryptography.
 
 Based on: specs/001-1-purpose-scope/research.md (Section 2)
 
-Implements 384-bit passphrase generation and PBKDF2-based key derivation
+Implements 256-bit passphrase generation and PBKDF2-based key derivation
 for protecting private keys.
 """
 
@@ -21,9 +21,8 @@ def generate_passphrase() -> bytes:
 
     Uses secrets.token_bytes() for cryptographic randomness.
 
-    Note: Originally designed for 384 bits, but reduced to 256 bits (32 bytes)
-    for clean BIP39 integration (24-word mnemonics encode exactly 256 bits).
-    256-bit security is still excellent for this use case.
+    Note: 256 bits (32 bytes) provides clean BIP39 integration (24-word
+    mnemonics encode exactly 256 bits) and excellent security for this use case.
     """
     return secrets.token_bytes(32)
 

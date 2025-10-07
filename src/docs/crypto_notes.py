@@ -17,7 +17,7 @@ def generate_crypto_notes(manifest_dict: Dict) -> str:
 
 ## Security Parameters
 
-- Passphrase entropy: 384 bits
+- Passphrase entropy: 256 bits
 - Threshold: {manifest_dict.get('threshold', {}).get('k', 'N/A')}-of-{manifest_dict.get('threshold', {}).get('n', 'N/A')}
 - RSA key size: 4096 bits
 - AES key size: 256 bits
