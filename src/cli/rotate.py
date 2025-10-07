@@ -6,13 +6,14 @@ from datetime import datetime, timezone
 
 from cryptography.hazmat.primitives import serialization
 
-from src.crypto.bip39 import decode_share, encode_share, validate_checksum, format_indexed_share
-from src.crypto.keypair import (
-    HybridKeypair,
-    decrypt_private_keys,
-    encrypt_key_with_passphrase,
-    generate_hybrid_keypair,
+from src.crypto.bip39 import (
+    decode_share,
+    encode_share,
+    format_indexed_share,
+    parse_indexed_share,
+    validate_checksum,
 )
+from src.crypto.keypair import HybridKeypair, decrypt_private_keys, encrypt_key_with_passphrase
 from src.crypto.passphrase import generate_passphrase
 from src.crypto.shamir import reconstruct_secret, split_secret
 from src.storage.manifest import (
@@ -73,30 +74,70 @@ def rotate_command(
         print(f"\nThis operation requires {k} current shares to authorize.\n")
         print("-" * 70)
 
-        # Collect shares if not provided
-        if shares is None:
+        interactive_mode = shares is None
+
+        # Collect shares interactively when not provided via CLI flags
+        if interactive_mode:
             shares = []
+            collected_indices: set[int] = set()
+
             for i in range(k):
                 while True:
                     try:
-                        share_str = input(f"\nCurrent share {i+1}/{k}: ").strip()
+                        share_str = input(f"\nCurrent share {i + 1}/{k}: ").strip()
                         if not share_str:
                             print("  Error: Share cannot be empty.")
                             continue
-                        # Validate checksum
-                        if not validate_checksum(share_str):
-                            print(f"  ✗ Invalid BIP39 checksum.")
-                            retry = input(f"  Retry? (yes/no): ").strip().lower()
+
+                        index, mnemonic = parse_indexed_share(share_str)
+
+                        word_count = len(mnemonic.split())
+                        if word_count != 24:
+                            print(
+                                f"  Error: Expected 24 words in mnemonic, got {word_count}."
+                            )
+                            continue
+
+                        if not validate_checksum(mnemonic):
+                            print("  ✗ Invalid BIP39 checksum.")
+                            retry = input("  Retry? (yes/no): ").strip().lower()
                             if retry != "yes":
                                 print("\nAborted.", file=sys.stderr)
                                 return 4
                             continue
-                        print(f"  ✓ Share {i+1} validated")
-                        shares.append(share_str)
+
+                        if index is None:
+                            while True:
+                                try:
+                                    idx_input = input(
+                                        f"  Enter the original share number (1-{n}): "
+                                    ).strip()
+                                    index = int(idx_input)
+                                    if index < 1 or index > n:
+                                        print(
+                                            f"    Error: Share number must be between 1 and {n}."
+                                        )
+                                        continue
+                                    break
+                                except ValueError:
+                                    print("    Error: Invalid number. Please enter digits only.")
+                                    continue
+
+                        if index in collected_indices:
+                            print(
+                                f"  Error: Share number {index} already provided."
+                            )
+                            continue
+
+                        print(f"  ✓ Share {index} validated")
+                        shares.append(f"{index}: {mnemonic}")
+                        collected_indices.add(index)
                         break
                     except (EOFError, KeyboardInterrupt):
                         print("\n\nAborted.", file=sys.stderr)
                         return 1
+        else:
+            shares = list(shares)
 
         # Validate shares
         if len(shares) < k:
@@ -107,24 +148,96 @@ def rotate_command(
             return 3
 
         # Parse and validate BIP39 checksums
-        from src.crypto.bip39 import parse_indexed_share
+        share_bytes: list[bytes] = []
+        missing_indices: list[str] = []
+        seen_indices: set[int] = set()
 
-        share_bytes = []
         for share_str in shares[:k]:
-            # Parse indexed share (e.g., "1: word1 word2..." or just "word1 word2...")
             index, mnemonic = parse_indexed_share(share_str)
 
-            # Validate BIP39 checksum
             if not validate_checksum(mnemonic):
-                print(f"Error: Invalid BIP39 checksum in share", file=sys.stderr)
+                print("Error: Invalid BIP39 checksum in share", file=sys.stderr)
+                print(
+                    "Recovery: Check for typos. Share numbers use 'N: word1 word2 ...' format.",
+                    file=sys.stderr,
+                )
                 return 4
 
-            # Decode and prepend index
-            decoded = decode_share(mnemonic)
             if index is None:
-                # If no index provided, use sequential numbering
-                index = len(share_bytes) + 1
+                missing_indices.append(mnemonic)
+                continue
+
+            if index in seen_indices:
+                print(
+                    f"Error: Duplicate share number {index} provided.",
+                    file=sys.stderr,
+                )
+                print(
+                    "Recovery: Supply unique share numbers from the original distribution.",
+                    file=sys.stderr,
+                )
+                return 4
+
+            decoded = decode_share(mnemonic)
             share_bytes.append(bytes([index]) + decoded)
+            seen_indices.add(index)
+
+        if missing_indices:
+            if not interactive_mode:
+                print(
+                    "Error: Share indices missing in non-interactive mode.",
+                    file=sys.stderr,
+                )
+                print(
+                    "Recovery: Include share numbers using 'N: mnemonic' when invoking --shares.",
+                    file=sys.stderr,
+                )
+                print(
+                    "Example: --shares '3: abandon ...' '5: ability ...'",
+                    file=sys.stderr,
+                )
+                return 5
+
+            print(
+                f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information"
+            )
+            print(
+                "Please enter the original share numbers so reconstruction succeeds.\n"
+            )
+
+            for mnemonic in missing_indices:
+                while True:
+                    try:
+                        idx_input = input(
+                            f"Enter share number for '{mnemonic.split()[0]} ...': "
+                        ).strip()
+                        index = int(idx_input)
+                        if index < 1 or index > 255:
+                            print("  Error: Share number must be between 1 and 255.")
+                            continue
+                        if index in seen_indices:
+                            print(
+                                f"  Error: Share number {index} already provided."
+                            )
+                            continue
+                        decoded = decode_share(mnemonic)
+                        share_bytes.append(bytes([index]) + decoded)
+                        seen_indices.add(index)
+                        break
+                    except ValueError:
+                        print("  Error: Invalid number. Please enter digits only.")
+                        continue
+
+        if len(share_bytes) < k:
+            print(
+                f"Error: Only {len(share_bytes)} valid share(s) provided (need {k}).",
+                file=sys.stderr,
+            )
+            print(
+                "Recovery: Provide additional valid shares with their original numbers.",
+                file=sys.stderr,
+            )
+            return 3
 
         # Reconstruct current passphrase
         current_passphrase = reconstruct_secret(share_bytes)
@@ -185,7 +298,9 @@ def rotate_command(
             print(f"\n🔄 Rotating shares...")
             print(f"  [1/3] Splitting passphrase into {new_n} new shares...")
             new_shares = split_secret(current_passphrase, new_k, new_n)
-            new_mnemonics = [encode_share(share[1:]) for share in new_shares]
+            new_share_mnemonics = [
+                (share[0], encode_share(share[1:])) for share in new_shares
+            ]
             print(f"        ✓ {new_n} shares created")
 
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
@@ -218,9 +333,9 @@ def rotate_command(
             print(f"📋 New Shares ({new_k}-of-{new_n} threshold)\n")
             print(f"⚠️  OLD SHARES ARE NOW INVALID. Distribute these new shares:\n")
             print(f"{'-'*70}\n")
-            for i, mnemonic in enumerate(new_mnemonics, 1):
-                print(f"Share {i}/{new_n}:")
-                print(f"  {format_indexed_share(i, mnemonic)}\n")
+            for share_index, mnemonic in new_share_mnemonics:
+                print(f"Share {share_index}/{new_n}:")
+                print(f"  {format_indexed_share(share_index, mnemonic)}\n")
             print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")
@@ -295,7 +410,9 @@ def rotate_command(
             # Split new passphrase
             print(f"  [4/5] Splitting new passphrase into {target_n} shares...")
             new_shares = split_secret(new_passphrase, target_k, target_n)
-            new_mnemonics = [encode_share(share[1:]) for share in new_shares]
+            new_share_mnemonics = [
+                (share[0], encode_share(share[1:])) for share in new_shares
+            ]
             print(f"        ✓ {target_n} shares created")
 
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
@@ -326,9 +443,9 @@ def rotate_command(
             print(f"📋 New Shares ({target_k}-of-{target_n} threshold)\n")
             print(f"⚠️  OLD PASSPHRASE AND SHARES ARE NOW INVALID. Distribute these new shares:\n")
             print(f"{'-'*70}\n")
-            for i, mnemonic in enumerate(new_mnemonics, 1):
-                print(f"Share {i}/{target_n}:")
-                print(f"  {format_indexed_share(i, mnemonic)}\n")
+            for share_index, mnemonic in new_share_mnemonics:
+                print(f"Share {share_index}/{target_n}:")
+                print(f"  {format_indexed_share(share_index, mnemonic)}\n")
             print(f"{'-'*70}\n")
             print("📝 Next Steps:")
             print("  1. Securely destroy all old shares")

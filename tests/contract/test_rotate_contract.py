@@ -79,6 +79,72 @@ class TestRotateCommand:
         result = decrypt_test_vault(vault_path, new_shares[:4])
         assert result == 0, "Should be able to decrypt with new shares"
 
+    def test_share_rotation_interactive_accepts_indexed_shares(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Interactive share rotation accepts indexed mnemonics and preserves indices."""
+        vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
+        encrypt_test_message(vault_path, "Test", "Secret")
+
+        # Provide non-sequential share numbers (1, 3, 5) to ensure original indices are reused
+        share_inputs = iter([old_shares[0], old_shares[2], old_shares[4]])
+
+        def fake_input(_prompt: str = "") -> str:
+            return next(share_inputs)
+
+        monkeypatch.setattr("builtins.input", fake_input)
+
+        from src.cli.rotate import rotate_command
+
+        result = rotate_command(
+            vault_path=str(vault_path),
+            mode="shares",
+            new_k=3,
+            new_n=5,
+            shares=None,
+            confirm=True,
+        )
+
+        assert result == 0, "Interactive rotation should succeed with indexed shares"
+
+        captured = capsys.readouterr()
+        from tests.test_helpers import extract_shares_from_output
+
+        new_shares = extract_shares_from_output(captured.out)
+        assert len(new_shares) == 5, "Expected 5 new shares from rotation output"
+
+        # Ensure the formatted shares keep their indices ("N: mnemonic")
+        for share in new_shares:
+            prefix, _, mnemonic = share.partition(":")
+            assert prefix.strip().isdigit(), "Share must retain numeric prefix"
+            assert validate_bip39_share(mnemonic.strip()), "Mnemonic portion must remain valid"
+
+        # New shares should decrypt successfully
+        decrypt_result = decrypt_test_vault(vault_path, new_shares[:3])
+        assert decrypt_result == 0, "Newly rotated shares should decrypt vault"
+
+    def test_share_rotation_requires_indexed_cli_shares(self, tmp_path: Path) -> None:
+        """Non-interactive rotation rejects shares without explicit indices."""
+        vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
+
+        bare_shares = [share.split(":", 1)[1].strip() for share in old_shares[:3]]
+
+        from src.cli.rotate import rotate_command
+
+        result = rotate_command(
+            vault_path=str(vault_path),
+            mode="shares",
+            new_k=4,
+            new_n=6,
+            shares=bare_shares,
+            confirm=True,
+        )
+
+        assert result == 5, "Rotation must fail when share indices are omitted"
+
     def test_passphrase_rotation_new_passphrase(self, tmp_path: Path) -> None:
         """Test: Passphrase rotation (new passphrase), verify private keys re-encrypted."""
         vault_path = tmp_path / "vault.yaml"

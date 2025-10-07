@@ -30,9 +30,9 @@ will-encrypt/
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 57 unit tests
-│   ├── contract/        # 43 contract tests
-│   ├── integration/     # 46 integration tests
+│   ├── unit/            # 88 unit tests
+│   ├── contract/        # 45 contract tests
+│   ├── integration/     # 38 integration tests
 │   └── test_helpers.py  # Shared test utilities
 ├── README.md            # Comprehensive user guide (1,333 lines)
 ├── EXAMPLE_IMPORT_SHARES.md
@@ -51,11 +51,12 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 # Run tests
-pytest                              # All 146 tests (with config verbosity)
-pytest tests/unit/ -v               # Unit tests only (57 tests)
-pytest tests/integration/ -v        # Integration tests only (46 tests)
-pytest tests/contract/ -v           # Contract tests (CLI flows) (43 tests)
-pytest --cov=src                    # With coverage report (htmlcov/) - 69% coverage
+pytest                              # All tests (defaults to -n auto across available cores)
+pytest -n 12                        # Force 12 workers when auto-detection is unavailable
+pytest tests/unit/ -v               # Unit tests only (parallel by default)
+pytest tests/integration/ -v        # Integration tests only (parallel by default)
+pytest tests/contract/ -v           # Contract tests (CLI flows)
+pytest --cov=src                    # With coverage report (htmlcov/) - ~74% coverage
 python -m pytest tests/ -v --tb=short
 
 # Linting and type checking
@@ -120,7 +121,9 @@ python -m src.main <command>        # Alternative invocation
 - Integration tests for full workflows in `tests/integration/`
 - Use `tests/test_helpers.py` for shared test utilities (vault creation, message encryption, etc.)
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
-- Current status: **146/146 tests passing (100% pass rate), 69% code coverage**
+- Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
+- Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
+- Current status: **171/171 tests passing (100% pass rate), 74% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -159,10 +162,10 @@ python -m src.main <command>        # Alternative invocation
 - Share index auto-recovery via manifest-managed fingerprints (supports unlabeled imports)
   - `init --source-vault` flag overrides environment-based manifest detection
 
-✅ Test Coverage (146 tests, 69% code coverage):
-- **Unit Tests (57)**: Crypto primitives, storage, models
-- **Contract Tests (43)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
-- **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit
+✅ Test Coverage (171 tests, 74% code coverage):
+- **Unit Tests (88)**: Crypto primitives, storage, CLI wiring
+- **Contract Tests (45)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
+- **Integration Tests (38)**: Full lifecycle, emergency recovery, share rotation, validation audit
 - All tests passing with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines

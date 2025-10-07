@@ -28,6 +28,20 @@ class TestBIP39Encoding:
         assert isinstance(mnemonic, str)
         assert len(mnemonic.split()) == 24
 
+    def test_encode_share_type_validation(self) -> None:
+        """Test: encode_share rejects non-bytes input."""
+        from src.crypto.bip39 import encode_share
+
+        with pytest.raises(TypeError, match="Share must be bytes"):
+            encode_share("not-bytes")  # type: ignore[arg-type]
+
+    def test_encode_share_length_validation(self) -> None:
+        """Test: encode_share enforces 32-byte minimum."""
+        from src.crypto.bip39 import encode_share
+
+        with pytest.raises(ValueError, match="Share must be at least 32 bytes"):
+            encode_share(b"short")
+
 
     def test_decode_24_word_mnemonic_to_32_byte_share(self) -> None:
         """Test: Decode 24-word mnemonic → 32-byte share."""
@@ -41,6 +55,22 @@ class TestBIP39Encoding:
         # Expected: 32-byte share
         assert isinstance(share, bytes)
         assert len(share) == 32
+
+    def test_decode_share_type_validation(self) -> None:
+        """Test: decode_share rejects non-string input."""
+        from src.crypto.bip39 import decode_share
+
+        with pytest.raises(TypeError, match="Mnemonic must be a string"):
+            decode_share(12345)  # type: ignore[arg-type]
+
+    def test_decode_share_valid_but_wrong_length(self) -> None:
+        """Test: decode_share raises when entropy length is not 32 bytes."""
+        from src.crypto.bip39 import decode_share
+
+        twelve_word_mnemonic = "legal winner thank year wave sausage worth useful legal winner thank yellow"
+
+        with pytest.raises(ValueError, match="Decoded share must be 32 bytes"):
+            decode_share(twelve_word_mnemonic)
 
 
     def test_checksum_validation_valid_mnemonic(self) -> None:
@@ -67,6 +97,12 @@ class TestBIP39Encoding:
 
         # Expected: False
         assert is_valid is False
+
+    def test_validate_checksum_non_string_returns_false(self) -> None:
+        """Test: validate_checksum returns False for non-string input."""
+        from src.crypto.bip39 import validate_checksum
+
+        assert validate_checksum(None) is False
 
 
     def test_invalid_word_rejection(self) -> None:
@@ -305,4 +341,3 @@ class TestIndexedShares:
 
         assert index == 255
         assert parsed_mnemonic == mnemonic
-
