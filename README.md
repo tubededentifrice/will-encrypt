@@ -239,6 +239,30 @@ Passphrase reconstructed from 3 imported shares.
 - If fewer than K shares provided, initialization fails with clear error message
 - If more than K shares provided, first K shares are used
 
+**How Import Works:**
+
+1. **Share Validation**: Each imported share validated for BIP39 checksum; minimum K shares required
+2. **Passphrase Reconstruction**: Uses Shamir Secret Sharing (Lagrange interpolation) to reconstruct 32-byte passphrase
+3. **Re-splitting**: Reconstructed passphrase split into new K/N shares (can have same or different K/N)
+
+**Security Considerations:**
+
+When to use:
+- ✅ Multiple vaults for different purposes (personal, business, family)
+- ✅ Changing threshold policy (e.g., from 3-of-5 to 2-of-3)
+- ✅ Vault migration after software upgrade
+- ✅ Testing and development
+
+When NOT to use:
+- ❌ Sharing same shares across unrelated parties
+- ❌ Creating "backup" vaults without understanding security implications
+
+**Best Practices:**
+1. Document which vaults share the same passphrase
+2. Use different passphrases for different security domains (personal vs. business)
+3. Test import before production use
+4. Store imported shares with same security as generated shares
+
 ---
 
 ### `encrypt` - Encrypt Message
@@ -985,6 +1009,21 @@ Error: Invalid BIP39 checksum in share 2
 **Example valid share format:**
 ```
 abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art
+```
+
+#### Error: `Insufficient shares for import`
+```
+Error: Insufficient shares (need 3, got 2)
+```
+
+**Cause**: Provided fewer than K shares when using `--import-share`.
+
+**Fix**: Provide at least K shares to reconstruct passphrase:
+```bash
+will-encrypt init --k 3 --n 5 --vault vault.yaml \
+  --import-share "SHARE_1" \
+  --import-share "SHARE_2" \
+  --import-share "SHARE_3"
 ```
 
 #### Error: `Decryption failed`
