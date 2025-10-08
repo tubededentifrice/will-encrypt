@@ -26,7 +26,8 @@ will-encrypt/
 │   │   ├── decrypt.py   # Decrypt with K shares
 │   │   ├── list.py      # List messages
 │   │   ├── validate.py  # Verify vault integrity
-│   │   └── rotate.py    # Rotate shares/passphrase
+│   │   ├── rotate.py    # Rotate shares/passphrase
+│   │   └── interactive.py # Interactive mode UI
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
@@ -66,10 +67,16 @@ mypy src tests                      # Enforce typing rules
 # Run CLI experiments
 ./will-encrypt <command>              # After pip install -e .
 python -m src.main <command>        # Alternative invocation
+
+# Interactive mode (no arguments)
+./will-encrypt                        # Launches guided menu for all operations
 ```
 
 ### CLI Usage
 ```bash
+# Interactive mode (recommended for non-technical users)
+./will-encrypt                        # Launches guided menu system
+
 # Initialize vault (supports --import-share for reusing BIP39 shares)
 ./will-encrypt init --k 3 --n 5 --vault vault.yaml
 

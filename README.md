@@ -49,7 +49,22 @@ pip install -e .
 
 > ℹ️ **Launcher script:** All CLI examples assume you are running `./will-encrypt` from the repository root. If you install the package (e.g., `pip install -e .`), the command is available as `will-encrypt` on your PATH, and you can omit the `./` prefix.
 
-### 2. Initialize Vault (3-of-5 threshold)
+### 2. Interactive Mode (Recommended for beginners)
+
+```bash
+./will-encrypt
+```
+
+**No arguments?** The program launches in interactive mode with a guided menu system that walks you through:
+- Creating vaults
+- Encrypting/decrypting messages
+- Validating vault integrity
+- Rotating shares
+- Learning how the system works
+
+Perfect for non-technical users or first-time usage.
+
+### 3. Initialize Vault (3-of-5 threshold)
 
 ```bash
 ./will-encrypt init --k 3 --n 5 --vault my-vault.yaml
@@ -62,7 +77,7 @@ This generates:
 
 **IMPORTANT**: Save the 5 shares securely. They are NOT stored in the vault!
 
-### 3. Encrypt a Message
+### 4. Encrypt a Message
 
 ```bash
 ./will-encrypt encrypt --vault my-vault.yaml \
@@ -70,7 +85,7 @@ This generates:
     --message "Account: 123456, PIN: 9876, Contact: John Doe"
 ```
 
-### 4. Decrypt Messages (requires 3 shares)
+### 5. Decrypt Messages (requires 3 shares)
 
 ```bash
 ./will-encrypt decrypt --vault my-vault.yaml

@@ -5,6 +5,7 @@ import sys
 from src.cli.decrypt import decrypt_command
 from src.cli.encrypt import encrypt_command
 from src.cli.init import init_command
+from src.cli.interactive import interactive_mode
 from src.cli.list import list_command
 from src.cli.rotate import rotate_command
 from src.cli.validate import validate_command
@@ -77,8 +78,8 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.command:
-        parser.print_help()
-        return 1
+        # Launch interactive mode when no command is provided
+        return interactive_mode()
 
     # Route to command handlers
     if args.command == "init":
