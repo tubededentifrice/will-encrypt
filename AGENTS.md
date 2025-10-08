@@ -110,6 +110,7 @@ python -m src.main <command>        # Alternative invocation
 - All cryptographic operations must be auditable
 - Error messages must include recovery suggestions
 - Progress indicators for operations > 1 second
+- Ensure concise comments are added (favor conciseness over grammar) whenever what/why/intent isn't trivially self-explanatory.
 
 ## Testing Requirements
 - TDD approach: write tests before implementation

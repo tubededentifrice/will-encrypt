@@ -6,13 +6,9 @@ Based on: specs/001-1-purpose-scope/contracts/init.schema.yaml
 Tests MUST fail before implementation (TDD).
 """
 
-import os
 import re
-import tempfile
 from pathlib import Path
-from typing import Any
 
-import pytest
 import yaml
 
 
@@ -139,6 +135,7 @@ class TestInitCommand:
     def test_init_performance_under_5_seconds(self, tmp_path: Path) -> None:
         """Test: Performance < 5 seconds."""
         import time
+
         from src.cli.init import init_command
 
         vault_path = tmp_path / "vault.yaml"

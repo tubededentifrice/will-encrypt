@@ -6,7 +6,7 @@ Based on: specs/001-1-purpose-scope/data-model.md (Entity 5: Vault)
 
 import base64
 import stat
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -14,7 +14,6 @@ import yaml
 
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
-from src.storage.manifest import compute_fingerprints
 from src.storage.models import Keypair, Manifest, Message, RotationEvent
 from src.storage.vault import (
     append_message,
@@ -157,7 +156,7 @@ class TestYAMLVaultOperations:
             kyber_wrapped_kek=base64.b64encode(b"kyber_wrapped").decode(),
             nonce=base64.b64encode(b"nonce" + b"0" * 6).decode(),  # 12 bytes
             auth_tag=base64.b64encode(b"tag" + b"0" * 13).decode(),  # 16 bytes
-            created=datetime.now(timezone.utc).isoformat(),
+            created=datetime.now(UTC).isoformat(),
             size_bytes=100,
         )
 
@@ -184,7 +183,7 @@ class TestYAMLVaultOperations:
             n=5,
             rotation_history=[
                 RotationEvent(
-                    date=datetime.now(timezone.utc).isoformat(),
+                    date=datetime.now(UTC).isoformat(),
                     event_type="initial_creation",
                     k=3,
                     n=5,
@@ -211,7 +210,7 @@ class TestYAMLVaultOperations:
         # Add rotation event
         vault = load_vault(str(vault_path))
         new_event = RotationEvent(
-            date=datetime.now(timezone.utc).isoformat(),
+            date=datetime.now(UTC).isoformat(),
             event_type="share_rotation",
             k=4,
             n=6,

@@ -7,10 +7,10 @@ import pytest
 
 from src.storage.manifest import (
     compute_fingerprints,
-    validate_fingerprints,
     create_share_fingerprint,
     create_share_fingerprints,
     match_share_fingerprint,
+    validate_fingerprints,
 )
 from src.storage.models import Keypair, Manifest, ShareFingerprint, Vault
 

@@ -11,7 +11,6 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
 
 from tests.test_helpers import (
     create_test_vault,

@@ -40,10 +40,14 @@ class TestHybridKeypair:
 
     def test_kyber_kem_encapsulation_decapsulation(self) -> None:
         """Test: Kyber KEM encapsulation and decapsulation produce consistent shared secrets."""
-        from pqcrypto.kem.ml_kem_1024 import (
-            generate_keypair,
-            encrypt as kyber_encrypt,
+        from pqcrypto.kem.ml_kem_1024 import (  # type: ignore[import-untyped]
             decrypt as kyber_decrypt,
+        )
+        from pqcrypto.kem.ml_kem_1024 import (  # type: ignore[import-untyped]
+            encrypt as kyber_encrypt,
+        )
+        from pqcrypto.kem.ml_kem_1024 import (  # type: ignore[import-untyped]
+            generate_keypair,
         )
 
         # Generate Kyber keypair
@@ -85,10 +89,10 @@ class TestHybridKeypair:
     def test_hybrid_decryption_verify_rsa_kek_equals_kyber_kek(self) -> None:
         """Test: Hybrid decryption (verify RSA KEK == Kyber KEK)."""
         from src.crypto.keypair import (
-            generate_hybrid_keypair,
-            hybrid_encrypt_kek,
-            hybrid_decrypt_kek,
             decrypt_private_keys,
+            generate_hybrid_keypair,
+            hybrid_decrypt_kek,
+            hybrid_encrypt_kek,
         )
 
         # Generate KEK
@@ -116,9 +120,10 @@ class TestHybridKeypair:
 
     def test_nist_cavp_rsa_oaep_test_vector(self) -> None:
         """Test: Use NIST CAVP test vectors for RSA-OAEP."""
-        from src.crypto.keypair import generate_rsa_keypair
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
+
+        from src.crypto.keypair import generate_rsa_keypair
 
         # Generate a keypair and test encrypt/decrypt roundtrip
         public_key, private_key = generate_rsa_keypair()
@@ -165,7 +170,7 @@ class TestHybridKeypair:
 
     def test_decrypt_private_keys_with_passphrase(self) -> None:
         """Test: Decrypt private keys with passphrase."""
-        from src.crypto.keypair import generate_hybrid_keypair, decrypt_private_keys
+        from src.crypto.keypair import decrypt_private_keys, generate_hybrid_keypair
 
         passphrase = secrets.token_bytes(32)  # 256-bit passphrase
 
@@ -182,7 +187,7 @@ class TestHybridKeypair:
 
     def test_wrong_passphrase_decryption_fails(self) -> None:
         """Test: Decryption with wrong passphrase fails."""
-        from src.crypto.keypair import generate_hybrid_keypair, decrypt_private_keys
+        from src.crypto.keypair import decrypt_private_keys, generate_hybrid_keypair
 
         correct_passphrase = secrets.token_bytes(32)  # 256-bit passphrase
         wrong_passphrase = secrets.token_bytes(32)
@@ -196,8 +201,8 @@ class TestHybridKeypair:
 
     def test_keypair_serialization_to_pem_and_base64(self) -> None:
         """Test: Keypair serialization (RSA to PEM, Kyber to base64)."""
+
         from src.crypto.keypair import generate_hybrid_keypair
-        import base64
 
         passphrase = secrets.token_bytes(32)  # 256-bit passphrase
 
@@ -213,8 +218,9 @@ class TestHybridKeypair:
 
     def test_keypair_deserialization_from_pem_and_base64(self) -> None:
         """Test: Keypair deserialization (PEM and base64 to keys)."""
-        from src.crypto.keypair import generate_hybrid_keypair
         from cryptography.hazmat.primitives import serialization
+
+        from src.crypto.keypair import generate_hybrid_keypair
 
         passphrase = secrets.token_bytes(32)  # 256-bit passphrase
 

@@ -1,7 +1,7 @@
 """Encrypt command implementation."""
 import base64
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.crypto.encryption import encrypt_message
 from src.storage.models import Message
@@ -9,7 +9,7 @@ from src.storage.vault import append_message, load_vault, save_vault
 
 
 def encrypt_command(
-    vault_path: str, title: str = None, message_text: str = None, stdin: bool = False
+    vault_path: str, title: str | None = None, message_text: str | None = None, stdin: bool = False
 ) -> int:
     """Encrypt message and add to vault."""
     import os
@@ -17,7 +17,7 @@ def encrypt_command(
     # Check vault exists
     if not os.path.exists(vault_path):
         print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
-        print(f"Hint: Initialize vault first with: will-encrypt init --k 3 --n 5", file=sys.stderr)
+        print("Hint: Initialize vault first with: will-encrypt init --k 3 --n 5", file=sys.stderr)
         return 2
 
     # Interactive prompt for title if not provided
@@ -71,17 +71,17 @@ def encrypt_command(
 
     try:
         # Progress indicators
-        print(f"\n🔐 Encrypting message...")
+        print("\n🔐 Encrypting message...")
 
         # Load vault
-        print(f"  [1/4] Loading vault...")
+        print("  [1/4] Loading vault...")
         vault = load_vault(vault_path)
 
         # Show progress for large messages
         if len(message_bytes) > 10000:
             print(f"  [2/4] Encrypting {len(message_bytes):,} bytes with AES-256-GCM...")
         else:
-            print(f"  [2/4] Encrypting message with AES-256-GCM...")
+            print("  [2/4] Encrypting message with AES-256-GCM...")
 
         # Encrypt message
         encrypted = encrypt_message(
@@ -91,7 +91,7 @@ def encrypt_command(
             title,
         )
 
-        print(f"  [3/4] Wrapping encryption key with RSA-4096 + Kyber-1024...")
+        print("  [3/4] Wrapping encryption key with RSA-4096 + Kyber-1024...")
 
         # Create message object
         message_id = max([m.id for m in vault.messages], default=0) + 1
@@ -103,7 +103,7 @@ def encrypt_command(
             kyber_wrapped_kek=base64.b64encode(encrypted.kyber_wrapped_kek).decode(),
             nonce=base64.b64encode(encrypted.nonce).decode(),
             auth_tag=base64.b64encode(encrypted.auth_tag).decode(),
-            created=datetime.now(timezone.utc).isoformat(),
+            created=datetime.now(UTC).isoformat(),
             size_bytes=len(message_bytes),
         )
 
@@ -111,10 +111,10 @@ def encrypt_command(
         vault = append_message(vault, message)
 
         # Save vault
-        print(f"  [4/4] Saving vault...")
+        print("  [4/4] Saving vault...")
         save_vault(vault, vault_path)
 
-        print(f"\n✓ Message encrypted successfully!")
+        print("\n✓ Message encrypted successfully!")
         print(f"  • Message ID: {message_id}")
         print(f"  • Title: '{title}'")
         print(f"  • Size: {len(message_bytes):,} bytes")

@@ -5,8 +5,8 @@ Based on: specs/001-1-purpose-scope/contracts/init.schema.yaml (share recovery)
 """
 
 import io
-import sys
 import os
+import sys
 from pathlib import Path
 
 import yaml

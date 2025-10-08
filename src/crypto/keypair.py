@@ -14,14 +14,13 @@ against both classical and quantum adversaries.
 
 import secrets
 from dataclasses import dataclass
-from typing import Tuple
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from pqcrypto.kem.ml_kem_1024 import generate_keypair as kyber_generate_keypair
-from pqcrypto.kem.ml_kem_1024 import encrypt as kyber_encrypt
-from pqcrypto.kem.ml_kem_1024 import decrypt as kyber_decrypt
+from pqcrypto.kem.ml_kem_1024 import decrypt as kyber_decrypt  # type: ignore[import-untyped]
+from pqcrypto.kem.ml_kem_1024 import encrypt as kyber_encrypt  # type: ignore[import-untyped]
+from pqcrypto.kem.ml_kem_1024 import generate_keypair as kyber_generate_keypair  # type: ignore[import-untyped]
 
 from .passphrase import derive_key
 
@@ -38,7 +37,7 @@ class HybridKeypair:
     kdf_iterations: int  # PBKDF2 iterations
 
 
-def generate_rsa_keypair() -> Tuple[rsa.RSAPublicKey, rsa.RSAPrivateKey]:
+def generate_rsa_keypair() -> tuple[rsa.RSAPublicKey, rsa.RSAPrivateKey]:
     """
     Generate RSA-4096 keypair.
 
@@ -52,7 +51,7 @@ def generate_rsa_keypair() -> Tuple[rsa.RSAPublicKey, rsa.RSAPrivateKey]:
     return public_key, private_key
 
 
-def generate_kyber_keypair() -> Tuple[bytes, bytes]:
+def generate_kyber_keypair() -> tuple[bytes, bytes]:
     """
     Generate ML-KEM-1024 (CRYSTALS-Kyber) keypair.
 
@@ -179,7 +178,7 @@ def generate_hybrid_keypair(passphrase: bytes) -> HybridKeypair:
 
 def decrypt_private_keys(
     keypair: HybridKeypair, passphrase: bytes
-) -> Tuple[rsa.RSAPrivateKey, bytes]:
+) -> tuple[rsa.RSAPrivateKey, bytes]:
     """
     Decrypt private keys from HybridKeypair using passphrase.
 
@@ -219,7 +218,7 @@ def decrypt_private_keys(
 
 def hybrid_encrypt_kek(
     kek: bytes, rsa_public_pem: bytes, kyber_public: bytes
-) -> Tuple[bytes, bytes]:
+) -> tuple[bytes, bytes]:
     """
     Encrypt KEK with both RSA and ML-KEM-1024 public keys.
 
@@ -236,14 +235,16 @@ def hybrid_encrypt_kek(
         for hybrid protection. Both RSA and Kyber must be broken to recover KEK.
     """
     # Load RSA public key
-    rsa_public = serialization.load_pem_public_key(rsa_public_pem)
+    rsa_public_key = serialization.load_pem_public_key(rsa_public_pem)
+    assert isinstance(rsa_public_key, rsa.RSAPublicKey), "Expected RSA public key"
+    rsa_public = rsa_public_key
 
     # Kyber KEM: encapsulate to get ciphertext and shared secret
     kyber_ciphertext, kyber_shared_secret = kyber_encrypt(kyber_public)
 
     # XOR KEK with Kyber shared secret for hybrid protection
     # Attacker needs both: RSA private key AND Kyber private key to recover KEK
-    hybrid_kek = bytes(a ^ b for a, b in zip(kek, kyber_shared_secret))
+    hybrid_kek = bytes(a ^ b for a, b in zip(kek, kyber_shared_secret, strict=False))
 
     # Encrypt the hybrid KEK with RSA-OAEP
     rsa_wrapped = rsa_public.encrypt(
@@ -293,6 +294,6 @@ def hybrid_decrypt_kek(
     kyber_shared_secret = kyber_decrypt(kyber_private, kyber_ciphertext)
 
     # XOR back to recover original KEK
-    kek = bytes(a ^ b for a, b in zip(hybrid_kek, kyber_shared_secret))
+    kek = bytes(a ^ b for a, b in zip(hybrid_kek, kyber_shared_secret, strict=False))
 
     return kek

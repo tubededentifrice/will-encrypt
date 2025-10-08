@@ -1,9 +1,6 @@
 """Vault YAML operations."""
-import base64
-import hashlib
 import os
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
 import yaml
 
@@ -11,7 +8,7 @@ from .models import Keypair, Manifest, Message, Vault
 
 
 def create_vault(
-    keypair_data: Dict, manifest: Manifest, guides: Dict[str, str]
+    keypair_data: dict, manifest: Manifest, guides: dict[str, str]
 ) -> Vault:
     """Create new vault with keypair and manifest."""
     keypair = Keypair(
@@ -25,7 +22,7 @@ def create_vault(
 
     vault = Vault(
         version="1.0",
-        created=datetime.now(timezone.utc).isoformat(),
+        created=datetime.now(UTC).isoformat(),
         keys=keypair,
         manifest=manifest,
         recovery_guide=guides.get("recovery_guide", ""),
@@ -82,7 +79,7 @@ def save_vault(vault: Vault, path: str) -> None:
 
 def load_vault(path: str) -> Vault:
     """Load vault from YAML file."""
-    with open(path, "r") as f:
+    with open(path) as f:
         data = yaml.safe_load(f)
 
     keypair = Keypair.from_dict(data["keys"])

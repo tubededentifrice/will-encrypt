@@ -1,7 +1,7 @@
 """Unit tests for CLI entry routing via src.main."""
 
 import sys
-from typing import Any, Tuple
+from typing import Any
 
 import pytest
 
@@ -19,7 +19,7 @@ def test_missing_command_prints_usage(monkeypatch, capsys) -> None:
 
 
 def test_init_command_forwarding(monkeypatch) -> None:
-    recorded: Tuple[Any, ...] | None = None
+    recorded: tuple[Any, ...] | None = None
 
     def fake_init(k, n, vault_path, force, import_shares, source_vault):
         nonlocal recorded
@@ -111,7 +111,7 @@ def test_init_command_forwarding(monkeypatch) -> None:
     ],
 )
 def test_handler_routing(command, argv_tail, handler_name, expected_args, monkeypatch):
-    recorded: Tuple[Any, ...] | None = None
+    recorded: tuple[Any, ...] | None = None
 
     def fake_handler(*args):
         nonlocal recorded

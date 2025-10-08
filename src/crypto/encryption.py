@@ -6,7 +6,6 @@ Based on: specs/001-1-purpose-scope/research.md (Section 4)
 
 import secrets
 from dataclasses import dataclass
-from typing import Optional
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 

@@ -1,14 +1,14 @@
 """Manifest operations."""
 import hashlib
 import secrets
-from typing import Dict, Iterable, List, Optional
+from collections.abc import Iterable
 
 import yaml
 
 from .models import Manifest, RotationEvent, ShareFingerprint, Vault
 
 
-def compute_fingerprints(vault: Vault) -> Dict[str, str]:
+def compute_fingerprints(vault: Vault) -> dict[str, str]:
     """Compute SHA-256 fingerprints."""
     return {
         "rsa_public_key_sha256": hashlib.sha256(
@@ -53,7 +53,7 @@ def _compute_share_hash(salt_hex: str, share_data: bytes) -> str:
     return hashlib.sha256(salt_bytes + share_data).hexdigest()
 
 
-def create_share_fingerprint(index: int, share_data: bytes, *, salt: Optional[bytes] = None) -> ShareFingerprint:
+def create_share_fingerprint(index: int, share_data: bytes, *, salt: bytes | None = None) -> ShareFingerprint:
     """Create a salted fingerprint entry for a single share payload."""
     if not isinstance(share_data, (bytes, bytearray)):
         raise TypeError("share_data must be bytes")
@@ -65,9 +65,9 @@ def create_share_fingerprint(index: int, share_data: bytes, *, salt: Optional[by
     return ShareFingerprint(index=index, salt=salt_hex, hash=digest, algorithm="sha256")
 
 
-def create_share_fingerprints(shares: Iterable[bytes]) -> List[ShareFingerprint]:
+def create_share_fingerprints(shares: Iterable[bytes]) -> list[ShareFingerprint]:
     """Generate fingerprint entries for an iterable of indexed shares."""
-    fingerprints: List[ShareFingerprint] = []
+    fingerprints: list[ShareFingerprint] = []
     for share in shares:
         if not isinstance(share, (bytes, bytearray)):
             raise TypeError("Each share must be bytes")
@@ -81,7 +81,7 @@ def create_share_fingerprints(shares: Iterable[bytes]) -> List[ShareFingerprint]
 
 def match_share_fingerprint(
     fingerprints: Iterable[ShareFingerprint], share_data: bytes
-) -> Optional[ShareFingerprint]:
+) -> ShareFingerprint | None:
     """Match share payload against stored fingerprints to recover index."""
     if not isinstance(share_data, (bytes, bytearray)):
         raise TypeError("share_data must be bytes")

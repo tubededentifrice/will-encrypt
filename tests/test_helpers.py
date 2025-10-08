@@ -2,10 +2,9 @@
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
-def extract_shares_from_output(output: str) -> List[str]:
+def extract_shares_from_output(output: str) -> list[str]:
     """
     Extract BIP39 shares from init command output.
 
@@ -53,7 +52,7 @@ def extract_shares_from_output(output: str) -> List[str]:
     return shares
 
 
-def create_test_vault(tmp_path: Path, k: int = 3, n: int = 5) -> Tuple[Path, List[str]]:
+def create_test_vault(tmp_path: Path, k: int = 3, n: int = 5) -> tuple[Path, list[str]]:
     """
     Create a test vault and return the path and shares.
 
@@ -65,9 +64,10 @@ def create_test_vault(tmp_path: Path, k: int = 3, n: int = 5) -> Tuple[Path, Lis
     Returns:
         Tuple of (vault_path, shares)
     """
-    from src.cli.init import init_command
     import io
     import sys
+
+    from src.cli.init import init_command
 
     vault_path = tmp_path / "test_vault.yaml"
 
@@ -109,7 +109,7 @@ def encrypt_test_message(vault_path: Path, title: str, message: str) -> int:
     )
 
 
-def decrypt_test_vault(vault_path: Path, shares: List[str]) -> List[dict]:
+def decrypt_test_vault(vault_path: Path, shares: list[str]) -> int:
     """
     Decrypt messages from vault using shares.
 
@@ -118,7 +118,7 @@ def decrypt_test_vault(vault_path: Path, shares: List[str]) -> List[dict]:
         shares: List of BIP39 share mnemonics
 
     Returns:
-        List of decrypted messages
+        Exit code from decrypt command
     """
     from src.cli.decrypt import decrypt_command
 
@@ -146,7 +146,7 @@ def get_vault_manifest(vault_path: Path) -> dict:
     return vault.get("manifest", {})
 
 
-def get_vault_messages(vault_path: Path) -> List[dict]:
+def get_vault_messages(vault_path: Path) -> list[dict]:
     """
     Load and return messages from a vault file.
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def render_share_table(indexed_shares: Sequence[tuple[int, str]]) -> str:

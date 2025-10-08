@@ -119,7 +119,7 @@ class TestBIP39Encoding:
 
     def test_bip39_spec_test_vector_1(self) -> None:
         """Test: BIP39 specification test vector 1."""
-        from src.crypto.bip39 import encode_share, decode_share
+        from src.crypto.bip39 import decode_share, encode_share
 
         # Test vector from BIP39 spec
         entropy = bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000")
@@ -134,7 +134,7 @@ class TestBIP39Encoding:
 
     def test_bip39_spec_test_vector_2(self) -> None:
         """Test: BIP39 specification test vector 2."""
-        from src.crypto.bip39 import encode_share, decode_share
+        from src.crypto.bip39 import decode_share, encode_share
 
         # Test vector from BIP39 spec
         entropy = bytes.fromhex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
@@ -149,7 +149,7 @@ class TestBIP39Encoding:
 
     def test_encode_decode_roundtrip(self) -> None:
         """Test: Encode-decode roundtrip (original share recovered)."""
-        from src.crypto.bip39 import encode_share, decode_share
+        from src.crypto.bip39 import decode_share, encode_share
 
         # Generate random 32-byte share
         original_share = secrets.token_bytes(32)

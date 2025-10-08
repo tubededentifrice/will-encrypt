@@ -7,9 +7,8 @@ Implements BIP39 (Bitcoin Improvement Proposal 39) for encoding
 32-byte shares as 24-word human-readable mnemonics with checksums.
 """
 
-from typing import Optional
-from mnemonic import Mnemonic
 
+from mnemonic import Mnemonic
 
 # Initialize BIP39 handler for English wordlist
 _mnemonic = Mnemonic("english")
@@ -125,7 +124,7 @@ def format_indexed_share(index: int, mnemonic: str) -> str:
     return f"{index}: {mnemonic}"
 
 
-def parse_indexed_share(indexed_str: str) -> tuple[Optional[int], str]:
+def parse_indexed_share(indexed_str: str) -> tuple[int | None, str]:
     """
     Parse share with optional index prefix.
 

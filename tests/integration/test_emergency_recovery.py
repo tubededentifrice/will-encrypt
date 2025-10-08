@@ -7,9 +7,9 @@ Tests MUST fail before implementation (TDD).
 """
 
 import base64
+import time
 from itertools import combinations
 from pathlib import Path
-import time
 
 import pytest
 import yaml
@@ -28,10 +28,10 @@ def decrypt_vault_messages(vault_path: Path, shares: list) -> list:
     Returns:
         List of dicts with 'title' and 'plaintext' keys
     """
-    from src.crypto.shamir import reconstruct_secret
     from src.crypto.bip39 import decode_share, parse_indexed_share
-    from src.crypto.keypair import decrypt_private_keys, HybridKeypair
     from src.crypto.encryption import EncryptedMessage, decrypt_message
+    from src.crypto.keypair import HybridKeypair, decrypt_private_keys
+    from src.crypto.shamir import reconstruct_secret
 
     with open(vault_path) as f:
         vault_data = yaml.safe_load(f)
@@ -130,10 +130,10 @@ class TestEmergencyRecovery:
 
     def test_hybrid_verification_rsa_kek_equals_kyber_kek(self, tmp_path: Path) -> None:
         """Test: Hybrid verification (RSA and Kyber both required for decryption)."""
-        from src.crypto.shamir import reconstruct_secret
         from src.crypto.bip39 import decode_share, parse_indexed_share
-        from src.crypto.keypair import decrypt_private_keys, HybridKeypair, hybrid_decrypt_kek
         from src.crypto.encryption import EncryptedMessage, decrypt_message
+        from src.crypto.keypair import HybridKeypair, decrypt_private_keys, hybrid_decrypt_kek
+        from src.crypto.shamir import reconstruct_secret
 
         # Setup: Initialize and encrypt
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)

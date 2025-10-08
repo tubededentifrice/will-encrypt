@@ -1,8 +1,7 @@
 """Cryptographic implementation notes."""
-from typing import Dict
 
 
-def generate_crypto_notes(manifest_dict: Dict) -> str:
+def generate_crypto_notes(manifest_dict: dict) -> str:
     """Generate crypto notes text."""
     return f"""# Cryptographic Implementation Notes
 

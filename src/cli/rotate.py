@@ -2,7 +2,7 @@
 import base64
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from cryptography.hazmat.primitives import serialization
 
@@ -23,16 +23,16 @@ from src.storage.manifest import (
     create_share_fingerprints,
 )
 from src.storage.models import RotationEvent
-from src.storage.vault import load_vault, save_vault, update_manifest
+from src.storage.vault import load_vault, save_vault
 
 
 def rotate_command(
     vault_path: str,
     mode: str,
-    new_k: int = None,
-    new_n: int = None,
-    shares: list = None,
-    confirm: bool = None,
+    new_k: int | None = None,
+    new_n: int | None = None,
+    shares: list | None = None,
+    confirm: bool | None = None,
 ) -> int:
     """
     Rotate shares or passphrase.
@@ -48,12 +48,11 @@ def rotate_command(
     Returns:
         Exit code (0 = success)
     """
-    import os
 
     # Check vault exists
     if not os.path.exists(vault_path):
         print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
-        print(f"Hint: Check the file path and ensure vault exists", file=sys.stderr)
+        print("Hint: Check the file path and ensure vault exists", file=sys.stderr)
         return 2
 
     try:
@@ -63,15 +62,15 @@ def rotate_command(
         n = vault.manifest.n
 
         # Interactive mode explanation
-        print(f"\n🔄 Vault Key Rotation\n")
+        print("\n🔄 Vault Key Rotation\n")
         print(f"Current configuration: {k}-of-{n} threshold")
         print(f"Mode: {mode}")
         if mode == "shares":
-            print(f"  • Keep same passphrase, change share distribution")
-            print(f"  • Useful for: adding/removing key holders, changing threshold")
+            print("  • Keep same passphrase, change share distribution")
+            print("  • Useful for: adding/removing key holders, changing threshold")
         elif mode == "passphrase":
-            print(f"  • Generate new passphrase, re-encrypt private keys")
-            print(f"  • Useful for: suspected compromise, periodic rotation")
+            print("  • Generate new passphrase, re-encrypt private keys")
+            print("  • Useful for: suspected compromise, periodic rotation")
         print(f"\nThis operation requires {k} current shares to authorize.\n")
         print("-" * 70)
 
@@ -279,12 +278,12 @@ def rotate_command(
 
             # Confirmation
             if confirm is None:
-                print(f"\n⚠️  Confirm rotation:")
+                print("\n⚠️  Confirm rotation:")
                 print(f"  • Current: {k}-of-{n}")
                 print(f"  • New: {new_k}-of-{new_n}")
-                print(f"  • Old shares will become INVALID")
+                print("  • Old shares will become INVALID")
                 try:
-                    confirm_input = input(f"\nProceed with share rotation? (yes/no): ").strip().lower()
+                    confirm_input = input("\nProceed with share rotation? (yes/no): ").strip().lower()
                     if confirm_input != "yes":
                         print("Aborted.", file=sys.stderr)
                         return 0
@@ -296,7 +295,7 @@ def rotate_command(
                 return 0
 
             # Progress indicators
-            print(f"\n🔄 Rotating shares...")
+            print("\n🔄 Rotating shares...")
             print(f"  [1/3] Splitting passphrase into {new_n} new shares...")
             new_shares = split_secret(current_passphrase, new_k, new_n)
             new_share_mnemonics = [
@@ -307,9 +306,9 @@ def rotate_command(
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
 
             # Update manifest
-            print(f"  [2/3] Updating vault manifest...")
+            print("  [2/3] Updating vault manifest...")
             rotation_event = RotationEvent(
-                date=datetime.now(timezone.utc).isoformat(),
+                date=datetime.now(UTC).isoformat(),
                 event_type="share_rotation",
                 k=new_k,
                 n=new_n,
@@ -320,19 +319,19 @@ def rotate_command(
 
             # Update fingerprints
             vault.manifest.fingerprints = compute_fingerprints(vault)
-            print(f"        ✓ Manifest updated")
+            print("        ✓ Manifest updated")
 
             # Save vault
-            print(f"  [3/3] Saving vault...")
+            print("  [3/3] Saving vault...")
             save_vault(vault, vault_path)
-            print(f"        ✓ Vault saved")
+            print("        ✓ Vault saved")
 
             # Print new shares with instructions
             print(f"\n{'='*70}")
-            print(f"✓ Share rotation complete!")
+            print("✓ Share rotation complete!")
             print(f"{'='*70}\n")
             print(f"📋 New Shares ({new_k}-of-{new_n} threshold)\n")
-            print(f"⚠️  OLD SHARES ARE NOW INVALID. Distribute these new shares:\n")
+            print("⚠️  OLD SHARES ARE NOW INVALID. Distribute these new shares:\n")
             print(f"{'-'*70}\n")
             for share_index, mnemonic in new_share_mnemonics:
                 print(f"Share {share_index}/{new_n}:")
@@ -360,14 +359,14 @@ def rotate_command(
 
             # Confirmation
             if confirm is None:
-                print(f"\n⚠️  Confirm passphrase rotation:")
-                print(f"  • Generates NEW 256-bit passphrase")
-                print(f"  • Re-encrypts private keys")
+                print("\n⚠️  Confirm passphrase rotation:")
+                print("  • Generates NEW 256-bit passphrase")
+                print("  • Re-encrypts private keys")
                 print(f"  • Threshold: {k}-of-{n} → {target_k}-of-{target_n}")
-                print(f"  • Old passphrase and shares will become INVALID")
-                print(f"  • Messages are NOT re-encrypted (hybrid design)")
+                print("  • Old passphrase and shares will become INVALID")
+                print("  • Messages are NOT re-encrypted (hybrid design)")
                 try:
-                    confirm_input = input(f"\nProceed with passphrase rotation? (yes/no): ").strip().lower()
+                    confirm_input = input("\nProceed with passphrase rotation? (yes/no): ").strip().lower()
                     if confirm_input != "yes":
                         print("Aborted.", file=sys.stderr)
                         return 0
@@ -379,13 +378,13 @@ def rotate_command(
                 return 0
 
             # Progress indicators
-            print(f"\n🔄 Rotating passphrase...")
-            print(f"  [1/5] Generating new 256-bit passphrase...")
+            print("\n🔄 Rotating passphrase...")
+            print("  [1/5] Generating new 256-bit passphrase...")
             new_passphrase = generate_passphrase()
-            print(f"        ✓ New passphrase generated")
+            print("        ✓ New passphrase generated")
 
             # Re-encrypt existing private keys with new passphrase
-            print(f"  [2/5] Re-encrypting private keys with new passphrase...")
+            print("  [2/5] Re-encrypting private keys with new passphrase...")
 
             # Use existing private keys (already decrypted above), re-encrypt with new passphrase
             new_salt = os.urandom(32)
@@ -405,14 +404,14 @@ def rotate_command(
                 kyber_private, new_passphrase, new_salt, vault.keys.kdf_iterations
             )
 
-            print(f"        ✓ Private keys re-encrypted")
+            print("        ✓ Private keys re-encrypted")
 
             # Update vault with new encrypted private keys
-            print(f"  [3/5] Updating vault...")
+            print("  [3/5] Updating vault...")
             vault.keys.rsa_private_encrypted = base64.b64encode(encrypted_rsa).decode()
             vault.keys.kyber_private_encrypted = base64.b64encode(encrypted_kyber).decode()
             vault.keys.kdf_salt = base64.b64encode(new_salt).decode()
-            print(f"        ✓ Vault updated")
+            print("        ✓ Vault updated")
 
             # Split new passphrase
             print(f"  [4/5] Splitting new passphrase into {target_n} shares...")
@@ -425,9 +424,9 @@ def rotate_command(
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
 
             # Update manifest
-            print(f"  [5/5] Updating manifest and saving vault...")
+            print("  [5/5] Updating manifest and saving vault...")
             rotation_event = RotationEvent(
-                date=datetime.now(timezone.utc).isoformat(),
+                date=datetime.now(UTC).isoformat(),
                 event_type="passphrase_rotation",
                 k=target_k,
                 n=target_n,
@@ -441,14 +440,14 @@ def rotate_command(
 
             # Save vault
             save_vault(vault, vault_path)
-            print(f"        ✓ Vault saved")
+            print("        ✓ Vault saved")
 
             # Print new shares with instructions
             print(f"\n{'='*70}")
-            print(f"✓ Passphrase rotation complete!")
+            print("✓ Passphrase rotation complete!")
             print(f"{'='*70}\n")
             print(f"📋 New Shares ({target_k}-of-{target_n} threshold)\n")
-            print(f"⚠️  OLD PASSPHRASE AND SHARES ARE NOW INVALID. Distribute these new shares:\n")
+            print("⚠️  OLD PASSPHRASE AND SHARES ARE NOW INVALID. Distribute these new shares:\n")
             print(f"{'-'*70}\n")
             for share_index, mnemonic in new_share_mnemonics:
                 print(f"Share {share_index}/{target_n}:")

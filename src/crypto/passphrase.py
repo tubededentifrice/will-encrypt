@@ -9,7 +9,6 @@ for protecting private keys.
 
 import hashlib
 import secrets
-from typing import Tuple
 
 
 def generate_passphrase() -> bytes:
