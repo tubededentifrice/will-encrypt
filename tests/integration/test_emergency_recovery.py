@@ -41,6 +41,7 @@ def decrypt_vault_messages(vault_path: Path, shares: list) -> list:
     for share_str in shares:
         index, mnemonic = parse_indexed_share(share_str)
         decoded = decode_share(mnemonic)
+        assert index is not None
         share_bytes.append(bytes([index]) + decoded)
 
     passphrase = reconstruct_secret(share_bytes)
@@ -150,6 +151,7 @@ class TestEmergencyRecovery:
         for share_str in shares[:3]:
             index, mnemonic = parse_indexed_share(share_str)
             decoded = decode_share(mnemonic)
+            assert index is not None
             share_bytes.append(bytes([index]) + decoded)
         passphrase = reconstruct_secret(share_bytes)
 

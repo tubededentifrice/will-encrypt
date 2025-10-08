@@ -10,7 +10,7 @@ from src.cli.rotate import rotate_command
 from src.cli.validate import validate_command
 
 
-def main():
+def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Will-encrypt: Threshold cryptography for emergency access"
@@ -99,6 +99,8 @@ def main():
         new_k = getattr(args, 'new_k', None)
         new_n = getattr(args, 'new_n', None)
         return rotate_command(args.vault, args.mode, new_k, new_n, args.shares)
+
+    return 1
 
 
 if __name__ == "__main__":

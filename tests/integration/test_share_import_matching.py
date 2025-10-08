@@ -9,6 +9,7 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 from tests.test_helpers import extract_shares_from_output
@@ -72,7 +73,7 @@ class TestShareImportMatching:
         fingerprints = vault["manifest"].get("share_fingerprints", [])
         assert len(fingerprints) == 5, "Share fingerprints persist across reinitialization"
 
-    def test_init_source_vault_flag_overrides_env(self, tmp_path: Path, monkeypatch) -> None:
+    def test_init_source_vault_flag_overrides_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         from src.cli.init import init_command
 
         primary_vault = tmp_path / "primary.yaml"

@@ -385,6 +385,9 @@ def init_command(
         vault = create_vault(keypair_data, manifest, guides)
 
         # Update fingerprints
+        if vault.manifest is None:
+            print("\nError: Vault manifest is missing", file=sys.stderr)
+            return 2
         vault.manifest.fingerprints = compute_fingerprints(vault)
 
         # Save vault

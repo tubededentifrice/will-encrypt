@@ -6,10 +6,12 @@ import shutil
 import sys
 from pathlib import Path
 
+import pytest
+
 from src.main import main
 
 
-def test_decrypt_current_vault_artifact(tmp_path, monkeypatch, capsys) -> None:
+def test_decrypt_current_vault_artifact(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     """Ensure decrypt command handles vault produced by current release."""
     artifacts_dir = Path(__file__).resolve().parent.parent / "artifacts" / "current_vault"
     vault_source = artifacts_dir / "current_vault.yaml"

@@ -119,6 +119,7 @@ class TestYAMLVaultOperations:
 
         # Verify parsed correctly
         assert vault.version == "1.0"
+        assert vault.manifest is not None
         assert vault.manifest.k == 3
         assert vault.manifest.n == 5
 
@@ -209,6 +210,7 @@ class TestYAMLVaultOperations:
 
         # Add rotation event
         vault = load_vault(str(vault_path))
+        assert vault.manifest is not None
         new_event = RotationEvent(
             date=datetime.now(UTC).isoformat(),
             event_type="share_rotation",
@@ -221,6 +223,7 @@ class TestYAMLVaultOperations:
 
         # Verify
         vault_reloaded = load_vault(str(vault_path))
+        assert vault_reloaded.manifest is not None
         assert len(vault_reloaded.manifest.rotation_history) == 2
 
     def test_yaml_format_validation(self, tmp_path: Path) -> None:

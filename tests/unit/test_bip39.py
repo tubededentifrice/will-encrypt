@@ -102,7 +102,7 @@ class TestBIP39Encoding:
         """Test: validate_checksum returns False for non-string input."""
         from src.crypto.bip39 import validate_checksum
 
-        assert validate_checksum(None) is False
+        assert validate_checksum(None) is False  # type: ignore[arg-type]
 
 
     def test_invalid_word_rejection(self) -> None:

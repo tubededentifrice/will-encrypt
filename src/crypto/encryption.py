@@ -81,7 +81,7 @@ def encrypt_message(
 
 def decrypt_message(
     encrypted: EncryptedMessage,
-    rsa_private,
+    rsa_private: object,
     kyber_private: bytes,
     title: str = "",
 ) -> bytes:

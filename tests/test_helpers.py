@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import Any
 
 
 def extract_shares_from_output(output: str) -> list[str]:
@@ -128,7 +129,7 @@ def decrypt_test_vault(vault_path: Path, shares: list[str]) -> int:
     )
 
 
-def get_vault_manifest(vault_path: Path) -> dict:
+def get_vault_manifest(vault_path: Path) -> dict[str, Any]:
     """
     Load and return the manifest from a vault file.
 
@@ -141,12 +142,13 @@ def get_vault_manifest(vault_path: Path) -> dict:
     import yaml
 
     with open(vault_path) as f:
-        vault = yaml.safe_load(f)
+        vault_data: Any = yaml.safe_load(f)
 
-    return vault.get("manifest", {})
+    manifest: dict[str, Any] = vault_data.get("manifest", {})
+    return manifest
 
 
-def get_vault_messages(vault_path: Path) -> list[dict]:
+def get_vault_messages(vault_path: Path) -> list[dict[str, Any]]:
     """
     Load and return messages from a vault file.
 
@@ -159,9 +161,10 @@ def get_vault_messages(vault_path: Path) -> list[dict]:
     import yaml
 
     with open(vault_path) as f:
-        vault = yaml.safe_load(f)
+        vault_data: Any = yaml.safe_load(f)
 
-    return vault.get("messages", [])
+    messages: list[dict[str, Any]] = vault_data.get("messages", [])
+    return messages
 
 
 def validate_bip39_share(share: str) -> bool:

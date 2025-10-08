@@ -141,9 +141,10 @@ class TestShareIndexPreservation:
         # Parse and reconstruct (simulating decrypt command)
         share_bytes = []
         for user_share in user_input:
-            index, mnemonic = parse_indexed_share(user_share)
+            parsed_index, mnemonic = parse_indexed_share(user_share)
             decoded = decode_share(mnemonic)
-            share_bytes.append(bytes([index]) + decoded)
+            assert parsed_index is not None
+            share_bytes.append(bytes([parsed_index]) + decoded)
 
         # Reconstruct should work with out-of-order shares
         reconstructed = reconstruct_secret(share_bytes)

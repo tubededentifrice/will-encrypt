@@ -58,6 +58,9 @@ def rotate_command(
     try:
         # Load vault
         vault = load_vault(vault_path)
+        if vault.manifest is None:
+            print("\nError: Vault manifest is missing or corrupted", file=sys.stderr)
+            return 2
         k = vault.manifest.k
         n = vault.manifest.n
 
@@ -137,7 +140,7 @@ def rotate_command(
                         print("\n\nAborted.", file=sys.stderr)
                         return 1
         else:
-            shares = list(shares)
+            shares = list(shares) if shares is not None else []
 
         # Validate shares
         if len(shares) < k:
@@ -303,6 +306,9 @@ def rotate_command(
             ]
             print(f"        ✓ {new_n} shares created")
 
+            if vault.manifest is None:
+                print("\nError: Vault manifest is missing", file=sys.stderr)
+                return 2
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
 
             # Update manifest
@@ -421,6 +427,9 @@ def rotate_command(
             ]
             print(f"        ✓ {target_n} shares created")
 
+            if vault.manifest is None:
+                print("\nError: Vault manifest is missing", file=sys.stderr)
+                return 2
             vault.manifest.share_fingerprints = create_share_fingerprints(new_shares)
 
             # Update manifest

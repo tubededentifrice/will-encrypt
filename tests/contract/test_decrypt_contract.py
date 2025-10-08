@@ -11,6 +11,7 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
 import yaml
 
 from tests.test_helpers import create_test_vault, encrypt_test_message
@@ -19,7 +20,7 @@ from tests.test_helpers import create_test_vault, encrypt_test_message
 class TestDecryptCommand:
     """Contract tests for will-encrypt decrypt command."""
 
-    def test_decrypt_with_k_valid_shares(self, tmp_path: Path, capsys) -> None:
+    def test_decrypt_with_k_valid_shares(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Test: Decrypt with K valid shares, verify all messages recovered."""
         from src.cli.decrypt import decrypt_command
 

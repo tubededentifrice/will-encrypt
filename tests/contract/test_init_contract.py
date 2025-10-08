@@ -9,6 +9,7 @@ Tests MUST fail before implementation (TDD).
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -85,7 +86,7 @@ class TestInitCommand:
         assert result == 1, "Init should fail with exit code 1 when K < 1"
         assert not vault_path.exists(), "Vault file should not be created on error"
 
-    def test_init_rejects_existing_vault_without_force(self, tmp_path: Path, monkeypatch) -> None:
+    def test_init_rejects_existing_vault_without_force(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test: Vault exists without --force rejection."""
         from src.cli.init import init_command
 
@@ -102,7 +103,7 @@ class TestInitCommand:
         result2 = init_command(k=3, n=5, vault_path=str(vault_path), force=False, import_shares=[])
         assert result2 == 2, "Second init without force should fail with exit code 2"
 
-    def test_init_generates_n_bip39_mnemonics(self, tmp_path: Path, capsys) -> None:
+    def test_init_generates_n_bip39_mnemonics(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Test: 5 BIP39 mnemonics displayed (24 words each, valid checksums)."""
         from src.cli.init import init_command
         from src.crypto.bip39 import validate_checksum
@@ -205,7 +206,7 @@ class TestInitCommand:
             assert entry["index"] not in seen_indices
             seen_indices.add(entry["index"])
 
-    def test_init_shares_never_written_to_disk(self, tmp_path: Path, capsys) -> None:
+    def test_init_shares_never_written_to_disk(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Test: BIP39 shares never stored in vault or temporary files."""
         from src.cli.init import init_command
 

@@ -41,6 +41,7 @@ def test_compute_and_validate_fingerprints() -> None:
         "vault_sha256",
     }
 
+    assert vault.manifest is not None
     vault.manifest.fingerprints = fingerprints
     assert validate_fingerprints(vault) is True
 

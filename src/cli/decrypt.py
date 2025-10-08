@@ -22,6 +22,9 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
     try:
         # Load vault
         vault = load_vault(vault_path)
+        if vault.manifest is None:
+            print("\nError: Vault manifest is missing or corrupted", file=sys.stderr)
+            return 2
         k = vault.manifest.k
         n = vault.manifest.n
 
@@ -85,6 +88,8 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
                     except (EOFError, KeyboardInterrupt):
                         print("\n\nAborted.", file=sys.stderr)
                         return 1
+        else:
+            shares = list(shares) if shares is not None else []
 
         # Validate shares count
         if len(shares) < k:
