@@ -41,11 +41,14 @@ def list_command(vault_path: str, format: str = "table", sort_by: str = "id") ->
             print(json.dumps(data, indent=2))
         else:
             # Table format
-            print(f"{'ID':<4} {'Title':<40} {'Created':<27} {'Size':<10}")
-            print("-" * 85)
+            print(f"{'ID':<4} {'Title':<40} {'Created':<20} {'Size':<10}")
+            print("-" * 78)
             for m in messages:
+                # Format timestamp: remove microseconds and timezone offset for cleaner display
+                # Example: "2025-10-08T09:59:05.932421+00:00" -> "2025-10-08 09:59:05"
+                created_clean = m.created.split('.')[0].replace('T', ' ')
                 print(
-                    f"{m.id:<4} {m.title[:39]:<40} {m.created:<27} {m.size_bytes:<10}"
+                    f"{m.id:<4} {m.title[:39]:<40} {created_clean:<20} {m.size_bytes:<10}"
                 )
 
         return 0

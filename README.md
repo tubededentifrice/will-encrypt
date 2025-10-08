@@ -230,7 +230,7 @@ This allows multiple vaults to share the same underlying key material.
    Reusing shares across vaults means compromising one vault
    compromises ALL vaults using the same shares.
 
-Do you want to use 1 or more existing shares? (yes/no): yes
+Do you want to use existing shares? (yes/no): yes
 
 You need to provide at least 3 shares to reconstruct the passphrase.
 The remaining 5 - (imported count) shares will be newly generated.
@@ -274,15 +274,28 @@ Generating 2 additional shares from the same polynomial...
 
 **Security Considerations:**
 
-When to use:
-- ✅ Multiple vaults for different purposes (personal, business, family)
-- ✅ Changing threshold policy (e.g., from 3-of-5 to 2-of-3)
+⚠️ **CRITICAL: Vault Isolation Trade-off**
+
+When you import shares from Vault A to create Vault B, both vaults share the **same passphrase**. This means:
+- **Any K shares from the combined pool can decrypt BOTH vaults**
+- Example: Vault1 (Bob + Alice), Vault2 (Bob + John) → Bob + Alice can decrypt Vault2!
+- **There is NO cryptographic isolation between vaults that share a passphrase**
+
+**For true vault isolation, use separate passphrases:**
+- ✅ Vault1: Bob1 + Alice (separate passphrase P1)
+- ✅ Vault2: Bob2 + John (separate passphrase P2)
+- Bob manages 2 different shares, but vaults are cryptographically isolated
+
+When to use share import:
+- ✅ Changing threshold policy for the SAME vault (e.g., from 3-of-5 to 2-of-3)
 - ✅ Vault migration after software upgrade
 - ✅ Testing and development
+- ✅ When all share holders should have access to all vaults (intentional shared access)
 
 When NOT to use:
-- ❌ Sharing same shares across unrelated parties
-- ❌ Creating "backup" vaults without understanding security implications
+- ❌ Trying to give someone "partial access" across vaults (doesn't work - math requires K shares)
+- ❌ Expecting vault isolation while reusing shares
+- ❌ Sharing same shares across security domains (personal vs. business)
 
 **About Share Fingerprints:**
 - Each vault manifest now records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).

@@ -137,7 +137,7 @@ def init_command(
             print("   Reusing shares across vaults means compromising one vault")
             print("   compromises ALL vaults using the same shares.")
             print("")
-            import_choice = input("Do you want to use 1 or more existing shares? (yes/no): ").strip().lower()
+            import_choice = input("Do you want to use existing shares? (yes/no): ").strip().lower()
 
             if import_choice == "yes":
                 import_shares = []

@@ -45,9 +45,9 @@ htmlcov/
 .ruff_cache/
 
 # Vault files (test artifacts)
-vault*.yaml
-*_vault.yaml
-test_vault*.yaml
+vault*.y*ml
+*_vault.y*ml
+test_vault*.y*ml
 share*.txt
 *_share*.txt
 

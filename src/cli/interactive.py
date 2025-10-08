@@ -1,6 +1,5 @@
 """Interactive mode for will-encrypt - guides users through all operations."""
 import os
-import sys
 from typing import Optional
 
 from src.cli.decrypt import decrypt_command
@@ -41,11 +40,73 @@ def get_choice(prompt: str, valid_options: list[str]) -> str:
         print(f"❌ Invalid choice. Please enter one of: {', '.join(valid_options)}\n")
 
 
-def get_vault_path() -> str:
-    """Get vault path from user."""
-    default = "vault.yaml"
-    path = input(f"Vault file path (default: {default}): ").strip()
-    return path if path else default
+_last_vault_path: Optional[str] = None  # Session memory for vault path
+
+
+def get_vault_path(for_creation: bool = False) -> str:
+    """Get vault path from user, with numbered quick-select and session memory.
+
+    Args:
+        for_creation: If True, prompts for a new vault path and validates it doesn't exist.
+                     If False, shows existing vaults with numbered quick-select.
+    """
+    global _last_vault_path
+    import glob
+
+    default = _last_vault_path if _last_vault_path else "vault.yaml"
+
+    if for_creation:
+        # For new vaults, just ask for a path without listing existing ones
+        while True:
+            user_input = input(f"New vault file path (default: {default}): ").strip()
+            result = user_input if user_input else default
+
+            # Check if file already exists
+            if os.path.exists(result):
+                print(f"  ⚠️  File already exists: {result}")
+                overwrite = input("  Overwrite? (yes/no): ").strip().lower()
+                if overwrite == "yes":
+                    break
+                else:
+                    print("  Please choose a different path.")
+                    continue
+            else:
+                break
+    else:
+        # For existing vaults, show numbered quick-select
+        yaml_files = sorted(glob.glob("*.yaml") + glob.glob("*.yml"))
+
+        # Display available vault files if any exist
+        if yaml_files:
+            print("\nAvailable vault files:")
+            for i, path in enumerate(yaml_files, 1):
+                print(f"  {i}. {path}")
+            print()
+
+        # Single prompt for number or path
+        while True:
+            user_input = input(f"Vault file (number, path, or Enter for '{default}'): ").strip()
+
+            if not user_input:
+                result = default
+                break
+
+            # Check if input is a number (quick-select)
+            if user_input.isdigit():
+                index = int(user_input)
+                if 1 <= index <= len(yaml_files):
+                    result = yaml_files[index - 1]
+                    break
+                else:
+                    print(f"  Error: Number must be 1-{len(yaml_files)}")
+                    continue
+
+            # Otherwise treat as a path
+            result = user_input
+            break
+
+    _last_vault_path = result  # Remember for next time
+    return result
 
 
 def explain_system() -> None:
@@ -96,18 +157,11 @@ def handle_init() -> int:
     print("A vault stores your encrypted messages and requires K out of N shares")
     print("to decrypt them.\n")
 
-    vault_path = get_vault_path()
+    # Get path for new vault (with overwrite check built-in)
+    vault_path = get_vault_path(for_creation=True)
 
-    # Check if vault exists
-    if os.path.exists(vault_path):
-        print(f"\n⚠️  Vault already exists at: {vault_path}")
-        overwrite = get_choice("Do you want to overwrite it? (yes/no): ", ["yes", "no"])
-        if overwrite == "no":
-            print("❌ Cancelled.")
-            return 0
-        force = True
-    else:
-        force = False
+    # Check if overwrite was confirmed (file exists)
+    force = os.path.exists(vault_path)
 
     # Let init_command handle all prompts (K, N, share import, etc.)
     return init_command(None, None, vault_path, force, None, None)

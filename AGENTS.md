@@ -91,7 +91,7 @@ python -m src.main <command>        # Alternative invocation
   --import-share "word1 word2 ... word24"
 
 # Interactive mode will prompt:
-# - "Do you want to use 1 or more existing shares?"
+# - "Do you want to use existing shares?"
 # - "How many shares do you want to import? (min K, max N)"
 # - Generates remaining (N - imported_count) shares automatically
 

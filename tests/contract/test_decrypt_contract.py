@@ -182,3 +182,27 @@ class TestDecryptCommand:
         # Expected: Exit code 7 (decryption failed - auth tag mismatch)
         result = decrypt_command(vault_path=str(vault_path), shares=shares[:3])
         assert result == 7, "Decrypt should fail with exit code 7 for tampered ciphertext"
+
+    def test_decrypt_auto_detects_share_indices(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test: Decrypt auto-detects share indices from fingerprints when indices not provided."""
+        from src.cli.decrypt import decrypt_command
+
+        # Setup: Create vault and encrypt message
+        vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
+        result = encrypt_test_message(vault_path, "Message", "Secret")
+        assert result == 0, "Encrypt should succeed"
+
+        # Strip indices from shares (simulate user providing only mnemonics)
+        shares_without_indices = [share.split(":", 1)[1].strip() for share in shares[:3]]
+
+        # Decrypt with shares without indices
+        result = decrypt_command(vault_path=str(vault_path), shares=shares_without_indices)
+
+        # Expected: Exit code 0 (success via auto-detection)
+        assert result == 0, "Decrypt should succeed with auto-detected share indices"
+
+        # Verify output contains auto-detection message
+        output = capsys.readouterr().out
+        assert "Auto-detected" in output, "Output should indicate auto-detection occurred"
+        assert "Message" in output, "Output should contain message title"
+        assert "Secret" in output, "Output should contain decrypted content"

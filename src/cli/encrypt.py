@@ -1,5 +1,6 @@
 """Encrypt command implementation."""
 import base64
+import os
 import sys
 from datetime import UTC, datetime
 
@@ -8,17 +9,26 @@ from src.storage.models import Message
 from src.storage.vault import append_message, load_vault, save_vault
 
 
+def _clear_screen() -> None:
+    """Clear the terminal screen for security."""
+    # Use ANSI escape codes to clear screen and move cursor to top
+    # Works on Unix, Linux, macOS, and modern Windows terminals
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
+
+
 def encrypt_command(
     vault_path: str, title: str | None = None, message_text: str | None = None, stdin: bool = False
 ) -> int:
     """Encrypt message and add to vault."""
-    import os
-
     # Check vault exists
     if not os.path.exists(vault_path):
         print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
         print("Hint: Initialize vault first with: will-encrypt init --k 3 --n 5", file=sys.stderr)
         return 2
+
+    # Track if we're in interactive mode for security clearing
+    interactive_mode = title is None and message_text is None
 
     # Interactive prompt for title if not provided
     if title is None:
@@ -58,6 +68,11 @@ def encrypt_command(
             if not message_text:
                 print("\nError: Message cannot be empty", file=sys.stderr)
                 return 1
+
+            # Clear screen immediately after message is entered (security)
+            # Only in fully interactive mode to avoid disrupting scripted usage
+            if interactive_mode:
+                _clear_screen()
         except KeyboardInterrupt:
             print("\nAborted.", file=sys.stderr)
             return 1
@@ -65,8 +80,14 @@ def encrypt_command(
     # Validate size
     message_bytes = message_text.encode("utf-8")
     if len(message_bytes) > 65536:
-        print(f"\nError: Message exceeds 64 KB limit (got {len(message_bytes):,} bytes)", file=sys.stderr)
-        print("Hint: Split into multiple smaller messages or store large files separately", file=sys.stderr)
+        print(
+            f"\nError: Message exceeds 64 KB limit (got {len(message_bytes):,} bytes)",
+            file=sys.stderr,
+        )
+        print(
+            "Hint: Split into multiple smaller messages or store large files separately",
+            file=sys.stderr,
+        )
         return 4
 
     try:
