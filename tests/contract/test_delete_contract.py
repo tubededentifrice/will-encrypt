@@ -47,7 +47,7 @@ class TestDeleteCommand:
 
         vault = load_vault(str(vault_path))
         assert len(vault.messages) == 2
-        assert all(m.id != "2" for m in vault.messages)
+        assert all(m.id != 2 for m in vault.messages)
 
     def test_delete_message_not_found(self, tmp_path: Path) -> None:
         """Test: Delete message with non-existent ID returns error."""

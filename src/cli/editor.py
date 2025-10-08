@@ -59,35 +59,25 @@ class SecureEditor:
         sys.stdout.write("\033[2K")
         sys.stdout.flush()
 
+    def _format_header(self) -> list[str]:
+        """Format header lines for editor display."""
+        header = f"=== {self.title} ==="
+        instructions = "Ctrl+D to finish | Ctrl+C to cancel | Arrow keys to navigate"
+        sep_length = max(len(header), len(instructions))
+        separator = "─" * len(header)
+        separator2 = "─" * sep_length
+        return [header, separator, instructions, separator2]
+
     def _draw_initial_screen(self) -> None:
         """Draw initial editor screen with header."""
         rows, cols = self._get_terminal_size()
         self._clear_screen()
 
-        # Position at top-left and draw header
-        self._move_cursor_to(1, 1)
-        header = f"=== {self.title} ==="
-        sys.stdout.write(header)
-        sys.stdout.flush()
-
-        # Draw separator on next line
-        self._move_cursor_to(2, 1)
-        separator = "─" * len(header)
-        sys.stdout.write(separator)
-        sys.stdout.flush()
-
-        # Instructions on line 3
-        self._move_cursor_to(3, 1)
-        instructions = "Ctrl+D to finish | Ctrl+C to cancel | Arrow keys to navigate"
-        sys.stdout.write(instructions)
-        sys.stdout.flush()
-
-        # Another separator on line 4
-        self._move_cursor_to(4, 1)
-        # Use longer separator that matches instructions length
-        sep_length = max(len(header), len(instructions))
-        sys.stdout.write("─" * sep_length)
-        sys.stdout.flush()
+        header_lines = self._format_header()
+        for i, line in enumerate(header_lines, start=1):
+            self._move_cursor_to(i, 1)
+            sys.stdout.write(line)
+            sys.stdout.flush()
 
     def _redraw_content(self) -> None:
         """Redraw all content lines without clearing screen."""

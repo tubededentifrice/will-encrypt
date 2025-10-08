@@ -20,19 +20,28 @@ def print_header() -> None:
     print("=" * 70 + "\n")
 
 
+def _get_menu_options() -> list[tuple[str, str]]:
+    """Get menu options as (number, description) pairs."""
+    return [
+        ("1", "Create a new vault"),
+        ("2", "Add an encrypted message"),
+        ("3", "Decrypt messages (requires recovery shares)"),
+        ("4", "View all messages"),
+        ("5", "Edit a message title"),
+        ("6", "Delete a message"),
+        ("7", "Validate vault integrity"),
+        ("8", "Rotate shares or passphrase"),
+        ("9", "Learn more about will-encrypt"),
+        ("0", "Exit"),
+    ]
+
+
 def print_menu() -> None:
     """Print main menu options."""
     print("What would you like to do?\n")
-    print("  1. Create a new vault")
-    print("  2. Add an encrypted message")
-    print("  3. Decrypt messages (requires recovery shares)")
-    print("  4. View all messages")
-    print("  5. Edit a message title")
-    print("  6. Delete a message")
-    print("  7. Validate vault integrity")
-    print("  8. Rotate shares or passphrase")
-    print("  9. Learn more about will-encrypt")
-    print("  0. Exit\n")
+    for num, desc in _get_menu_options():
+        print(f"  {num}. {desc}")
+    print()
 
 
 def get_choice(prompt: str, valid_options: list[str]) -> str:
@@ -358,9 +367,12 @@ def interactive_mode() -> int:
     """Run interactive mode."""
     print_header()
 
+    # Generate valid choices dynamically from menu
+    valid_choices = [num for num, _ in _get_menu_options()]
+
     while True:
         print_menu()
-        choice = get_choice("Enter your choice (0-9): ", ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+        choice = get_choice("Enter your choice: ", valid_choices)
 
         if choice == "0":
             print("\n👋 Goodbye!\n")
