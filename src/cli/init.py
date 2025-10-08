@@ -14,7 +14,7 @@ from src.crypto.bip39 import (
 )
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
-from src.crypto.shamir import reconstruct_secret, split_secret
+from src.crypto.shamir import generate_additional_shares, reconstruct_secret, split_secret
 from src.docs.crypto_notes import generate_crypto_notes
 from src.docs.policy import generate_policy_document
 from src.docs.recovery_guide import generate_recovery_guide
@@ -126,6 +126,7 @@ def init_command(
             return 6
 
     # Handle interactive import of shares
+    num_shares_to_import = 0
     if import_shares is None and k is not None:
         try:
             print("\n📥 Share Import (Optional)\n")
@@ -136,22 +137,27 @@ def init_command(
             print("   Reusing shares across vaults means compromising one vault")
             print("   compromises ALL vaults using the same shares.")
             print("")
-            import_choice = input("Import existing shares? (yes/no): ").strip().lower()
+            import_choice = input("Do you want to use 1 or more existing shares? (yes/no): ").strip().lower()
 
             if import_choice == "yes":
                 import_shares = []
                 print(f"\nYou need to provide at least {k} shares to reconstruct the passphrase.")
+                print(f"The remaining {n} - (imported count) shares will be newly generated.")
 
                 try:
-                    num_shares_str = input(f"How many shares do you want to import? (min {k}): ").strip()
-                    num_shares = int(num_shares_str)
+                    num_shares_str = input(f"How many shares do you want to import? (min {k}, max {n}): ").strip()
+                    num_shares_to_import = int(num_shares_str)
 
-                    if num_shares < k:
-                        print(f"\nError: You must import at least {k} shares", file=sys.stderr)
+                    if num_shares_to_import < k:
+                        print(f"\nError: You must import at least {k} shares to reconstruct the passphrase", file=sys.stderr)
+                        return 1
+
+                    if num_shares_to_import > n:
+                        print(f"\nError: Cannot import more than {n} shares (total share count)", file=sys.stderr)
                         return 1
 
                     print("")
-                    for i in range(num_shares):
+                    for i in range(num_shares_to_import):
                         while True:
                             share_str = input(f"Enter share {i+1}: ").strip()
                             if not share_str:
@@ -203,6 +209,7 @@ def init_command(
 
     try:
         # Handle passphrase generation or reconstruction from imported shares
+        imported_share_indices = set()  # Track which indices came from imported shares
         if import_shares:
             # Validate imported shares
             print(f"\n🔍 Validating {len(import_shares)} imported share(s)...")
@@ -263,6 +270,7 @@ def init_command(
 
                 share_bytes.append(bytes([index]) + decoded)
                 used_indices.add(index)
+                imported_share_indices.add(index)
 
             # If any shares are missing indices, prompt user
             if unresolved_shares:
@@ -285,6 +293,7 @@ def init_command(
                                 continue
                             share_bytes.append(bytes([index]) + decoded)
                             used_indices.add(index)
+                            imported_share_indices.add(index)
                             break
                         except ValueError:
                             print("  Error: Invalid number")
@@ -297,16 +306,38 @@ def init_command(
             passphrase = reconstruct_secret(share_bytes)
             print("      ✓ Passphrase reconstructed from imported shares")
 
-            # Split into shares (could be same K/N or different)
-            print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
-            shares = split_secret(passphrase, k, n)
-            print(f"      ✓ {n} shares created using Shamir Secret Sharing")
+            # Keep imported shares and generate additional new shares from same polynomial
+            print(f"[2/4] Generating {n - len(import_shares)} additional shares (threshold: {k})...")
+            num_new_shares = n - len(import_shares)
 
-            # Encode as BIP39 (preserve original indices)
+            if num_new_shares > 0:
+                # Find available indices for new shares (avoid imported indices)
+                new_indices = []
+                next_available_index = 1
+                while len(new_indices) < num_new_shares:
+                    if next_available_index not in used_indices:
+                        new_indices.append(next_available_index)
+                    next_available_index += 1
+
+                # Generate additional shares from the same polynomial
+                additional_shares = generate_additional_shares(share_bytes, new_indices)
+
+                # Combine imported + newly generated shares
+                shares = share_bytes + additional_shares
+                print(f"      ✓ {n} total shares: {len(import_shares)} imported + {num_new_shares} newly generated")
+            else:
+                # All shares are imported (num_shares_to_import == n)
+                shares = share_bytes
+                print(f"      ✓ Using all {n} imported shares")
+
+            # Mark which shares are imported for display purposes
+            imported_share_indices = {share[0] for share in share_bytes}
+
+            # Encode as BIP39 (preserve indices)
             print("[3/4] Encoding shares as BIP39 mnemonics...")
             indexed_mnemonics = []
             for share in shares:
-                index = share[0]  # Extract original index
+                index = share[0]  # Extract remapped index
                 mnemonic = encode_share(share[1:])  # Encode remaining 32 bytes
                 indexed_mnemonics.append((index, mnemonic))
             print(f"      ✓ {n} × 24-word mnemonics generated")
@@ -417,7 +448,9 @@ def init_command(
 
         # Print inline format for easy copy-pasting
         for index, mnemonic in indexed_mnemonics:
-            print(f"Share {index}/{n}:")
+            # Mark if this is an imported share
+            share_type = " [IMPORTED]" if index in imported_share_indices else " [NEWLY GENERATED]"
+            print(f"Share {index}/{n}{share_type if import_shares else ''}:")
             print(f"  {format_indexed_share(index, mnemonic)}\n")
 
         print(f"{'-'*70}\n")

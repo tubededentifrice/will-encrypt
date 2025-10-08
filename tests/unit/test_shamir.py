@@ -165,3 +165,93 @@ class TestShamirSecretSharing:
             selected = [shares[i] for i in combo]
             reconstructed = reconstruct_secret(selected)
             assert reconstructed == secret, f"Different result with shares {combo}"
+
+    def test_generate_additional_shares_from_existing(self) -> None:
+        """Test: Generate additional shares from existing shares (same polynomial)."""
+        from src.crypto.shamir import generate_additional_shares, reconstruct_secret, split_secret
+
+        # Generate initial 3-of-5 shares
+        secret = secrets.token_bytes(32)
+        k, n = 3, 5
+        initial_shares = split_secret(secret, k, n)
+
+        # Use first 3 shares to generate 2 additional shares with new indices
+        existing_shares = initial_shares[:3]  # Shares 1, 2, 3
+        new_indices = [6, 7]  # New shares will be 6 and 7
+
+        additional_shares = generate_additional_shares(existing_shares, new_indices)
+
+        # Verify we got 2 new shares with correct indices
+        assert len(additional_shares) == 2
+        assert additional_shares[0][0] == 6
+        assert additional_shares[1][0] == 7
+
+        # Verify new shares can reconstruct the secret when combined with original shares
+        reconstructed1 = reconstruct_secret(
+            [initial_shares[0], additional_shares[0], additional_shares[1]]
+        )
+        assert reconstructed1 == secret
+
+        # Verify mix of original and new shares works
+        reconstructed2 = reconstruct_secret(
+            [initial_shares[0], initial_shares[1], additional_shares[0]]
+        )
+        assert reconstructed2 == secret
+
+    def test_generate_additional_shares_validates_indices(self) -> None:
+        """Test: generate_additional_shares validates index constraints."""
+        from src.crypto.shamir import generate_additional_shares, split_secret
+
+        secret = secrets.token_bytes(32)
+        shares = split_secret(secret, 3, 5)
+
+        # Test: Overlapping indices should fail
+        with pytest.raises(ValueError, match="overlap"):
+            generate_additional_shares(shares[:3], [1, 6])  # Index 1 already exists
+
+        # Test: Invalid index range
+        with pytest.raises(ValueError, match="1-255"):
+            generate_additional_shares(shares[:3], [0])  # Index 0 invalid
+
+        with pytest.raises(ValueError, match="1-255"):
+            generate_additional_shares(shares[:3], [256])  # Index 256 invalid
+
+        # Test: Duplicate indices in new_indices
+        with pytest.raises(ValueError, match="Duplicate"):
+            generate_additional_shares(shares[:3], [10, 10])
+
+    def test_generate_additional_shares_empty_list(self) -> None:
+        """Test: generate_additional_shares handles empty new_indices list."""
+        from src.crypto.shamir import generate_additional_shares, split_secret
+
+        secret = secrets.token_bytes(32)
+        shares = split_secret(secret, 3, 5)
+
+        # Requesting no new shares should return empty list
+        additional = generate_additional_shares(shares[:3], [])
+        assert additional == []
+
+    def test_mixed_imported_and_generated_shares(self) -> None:
+        """Test: Imported shares + newly generated shares can work together."""
+        from src.crypto.shamir import generate_additional_shares, reconstruct_secret, split_secret
+
+        # Simulate vault 1 creating shares
+        secret = secrets.token_bytes(32)
+        vault1_shares = split_secret(secret, 3, 5)
+
+        # Simulate vault 2 importing shares 1, 2, 3 and generating new shares 6, 7
+        imported_shares = vault1_shares[:3]  # Import shares 1, 2, 3
+        new_shares = generate_additional_shares(imported_shares, [6, 7])
+
+        # All shares from vault 2 (3 imported + 2 new)
+        vault2_shares = imported_shares + new_shares
+
+        # Verify any 3 shares can reconstruct the secret
+        # Test with imported shares only
+        assert reconstruct_secret(vault2_shares[:3]) == secret
+
+        # Test with mixed (2 imported + 1 new)
+        assert reconstruct_secret([vault2_shares[0], vault2_shares[1], vault2_shares[3]]) == secret
+
+        # Test with 2 new + 1 imported
+        assert reconstruct_secret([vault2_shares[0], vault2_shares[3], vault2_shares[4]]) == secret

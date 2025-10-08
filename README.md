@@ -230,10 +230,11 @@ This allows multiple vaults to share the same underlying key material.
    Reusing shares across vaults means compromising one vault
    compromises ALL vaults using the same shares.
 
-Import existing shares? (yes/no): yes
+Do you want to use 1 or more existing shares? (yes/no): yes
 
 You need to provide at least 3 shares to reconstruct the passphrase.
-How many shares do you want to import? (min 3): 3
+The remaining 5 - (imported count) shares will be newly generated.
+How many shares do you want to import? (min 3, max 5): 3
 
 Enter share 1:
 > abandon ability able...
@@ -248,21 +249,26 @@ Enter share 3:
   ✓ Share 3 validated
 
 Passphrase reconstructed from 3 imported shares.
+Generating 2 additional shares from the same polynomial...
+✓ 5 total shares: 3 imported + 2 newly generated
 ```
 
 **Validation:**
 - Each imported share must be a valid BIP39 mnemonic (24 words)
 - BIP39 checksum is validated for each share
 - At least K shares must be provided
-- If fewer than K shares provided, initialization fails with clear error message
-- If more than K shares provided, first K shares are used
+- Maximum N shares can be imported
+- All shares (imported + generated) work together for decryption
 
-**How Import Works:**
+**How Mixed Import/Generate Works:**
 
 1. **Share Validation**: Each imported share validated for BIP39 checksum; minimum K shares required
 2. **Passphrase Reconstruction**: Uses Shamir Secret Sharing (Lagrange interpolation) to reconstruct 32-byte passphrase
-3. **Re-splitting**: Reconstructed passphrase split into new K/N shares (can have same or different K/N)
-4. **Index Recovery (new)**: Lost the numeric prefix? The CLI now matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+3. **Polynomial Reconstruction**: From K imported shares, the original polynomial is reconstructed
+4. **Additional Share Generation**: New shares are generated from the **same polynomial** at new indices
+5. **Index Recovery**: Lost the numeric prefix? The CLI matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+
+**Key Benefit:** Imported shares remain valid! You can mix old and new shares freely - any K shares (from imported OR newly generated) will decrypt the vault.
 
 > Tip: Importing into a different path? Supply `--source-vault /path/to/original/vault.yaml`. The flag takes precedence over the legacy `WILL_ENCRYPT_SOURCE_VAULT` environment variable and ensures the manifest is read even when you are overwriting a different file path.
 

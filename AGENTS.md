@@ -80,12 +80,20 @@ python -m src.main <command>        # Alternative invocation
 # Initialize vault (supports --import-share for reusing BIP39 shares)
 ./will-encrypt init --k 3 --n 5 --vault vault.yaml
 
-# Import existing shares to create vault with same passphrase
+# Import existing shares and generate additional ones (mixed mode)
+# - Import K shares to reconstruct passphrase
+# - Generate (N-K) additional shares from the same polynomial
+# - All shares (imported + new) work together for decryption
 ./will-encrypt init --k 3 --n 5 --vault vault2.yaml \
   --source-vault vault1.yaml \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24" \
   --import-share "word1 word2 ... word24"
+
+# Interactive mode will prompt:
+# - "Do you want to use 1 or more existing shares?"
+# - "How many shares do you want to import? (min K, max N)"
+# - Generates remaining (N - imported_count) shares automatically
 
 # Encrypt message (interactive prompts if args omitted)
 ./will-encrypt encrypt --vault vault.yaml --title "Title" --message "Text"
@@ -131,7 +139,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **171/171 tests passing (100% pass rate), 74% code coverage**
+- Current status: **175/175 tests passing (100% pass rate), 67% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -160,6 +168,7 @@ python -m src.main <command>        # Alternative invocation
 - Share and passphrase rotation
 - Vault integrity validation
 - Share import for multi-vault scenarios
+- **Mixed share import/generate**: Import K+ existing shares and generate additional new shares from the same polynomial (all shares work together)
 
 ✅ UX Enhancements:
 - Interactive prompts (K, N, title, message, shares)
@@ -169,9 +178,10 @@ python -m src.main <command>        # Alternative invocation
 - Pretty-printed output with boxes and emojis
 - Share index auto-recovery via manifest-managed fingerprints (supports unlabeled imports)
   - `init --source-vault` flag overrides environment-based manifest detection
+- Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (171 tests, 74% code coverage):
-- **Unit Tests (88)**: Crypto primitives, storage, CLI wiring
+✅ Test Coverage (175 tests, 67% code coverage):
+- **Unit Tests (92)**: Crypto primitives (including `generate_additional_shares`), storage, CLI wiring
 - **Contract Tests (45)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
 - **Integration Tests (38)**: Full lifecycle, emergency recovery, share rotation, validation audit
 - All tests passing with comprehensive coverage of security features
