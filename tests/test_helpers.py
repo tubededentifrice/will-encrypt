@@ -15,22 +15,42 @@ def extract_shares_from_output(output: str) -> List[str]:
     Returns:
         List of share mnemonics WITH index prefix (e.g., "1: word1 word2 ...")
     """
-    # Look for lines with pattern: "  1: word1 word2 ..." (indented with 2 spaces)
-    # This matches the format from format_indexed_share()
-    pattern = r'^\s+(\d+:\s+[^\n]+)$'
+    # New format: Parse table-based share output
+    # Format:
+    # Share 1/5:
+    #
+    # +---------------+---------------+---------------+---------------+
+    # | 1. word      | 2. word      | 3. word      | 4. word      |
+    # +---------------+---------------+---------------+---------------+
+    # ...
 
-    shares = re.findall(pattern, output, re.MULTILINE)
-    if shares:
-        return [share.strip() for share in shares]
+    shares = []
 
-    # Fallback: try alternative patterns if primary doesn't match
-    # Match patterns like "Share 1/5:\n  1: word1 word2 ..."
-    pattern2 = r'^\s*(\d+):\s+([^\n]+)$'
-    matches = re.findall(pattern2, output, re.MULTILINE)
-    if matches:
-        return [f"{idx}: {mnemonic}" for idx, mnemonic in matches]
+    # Split by "Share N/M:" to find individual share sections
+    share_pattern = r'Share (\d+)/(\d+):'
+    share_matches = list(re.finditer(share_pattern, output))
 
-    return []
+    for i, match in enumerate(share_matches):
+        share_index = int(match.group(1))
+
+        # Extract the section for this share (from current match to next match or end)
+        start_pos = match.end()
+        end_pos = share_matches[i + 1].start() if i + 1 < len(share_matches) else len(output)
+        share_section = output[start_pos:end_pos]
+
+        # Extract words from table cells: "| 1. word |" or "|10. word |"
+        # Pattern matches numbered words in table cells
+        # Note: Don't require closing | since cells can be adjacent like "|word|word|"
+        word_pattern = r'\|\s*\d+\.\s+(\w+)\s*'
+        words = re.findall(word_pattern, share_section)
+
+        if len(words) == 24:
+            # Reconstruct the mnemonic
+            mnemonic = ' '.join(words)
+            # Format with index prefix like "1: word1 word2 ..."
+            shares.append(f"{share_index}: {mnemonic}")
+
+    return shares
 
 
 def create_test_vault(tmp_path: Path, k: int = 3, n: int = 5) -> Tuple[Path, List[str]]:

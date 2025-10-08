@@ -408,12 +408,15 @@ def init_command(
         print(f"    • Store securely: paper backup, password manager, or HSM\n")
         print(f"{'-'*70}\n")
 
+        # Print inline format for easy copy-pasting
         for index, mnemonic in indexed_mnemonics:
             print(f"Share {index}/{n}:")
             print(f"  {format_indexed_share(index, mnemonic)}\n")
 
         print(f"{'-'*70}\n")
-        print("📊 Numbered Share Table\n")
+        print("📊 Numbered Share Tables (for manual transcription)\n")
+
+        # Print table format for manual transcription
         table_output = render_share_table(indexed_mnemonics)
         if table_output:
             print(table_output)

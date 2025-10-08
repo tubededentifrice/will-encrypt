@@ -735,34 +735,54 @@ grep 'rotation_history' estate-vault.yaml
 **Prerequisites:**
 - K key holders available
 - Vault file accessible
-- will-encrypt tool installed
+- Python 3.11+ installed
+- will-encrypt tool (installation steps below)
 
 **Steps:**
 
-1. **Contact Key Holders**
+1. **Install Will-Encrypt (First Time Only)**
+
+   If you don't have the tool installed yet:
+
+   ```bash
+   # Clone the repository
+   git clone https://github.com/tubededentifrice/will-encrypt.git
+   cd will-encrypt
+
+   # Install dependencies
+   pip install -r requirements.txt
+   pip install -e .
+   ```
+
+   **Alternative (without git)**: Download ZIP from https://github.com/tubededentifrice/will-encrypt, extract it, and run the same pip commands.
+
+2. **Contact Key Holders**
    ```bash
    # Executor contacts K key holders
    # Provides proof (death certificate, legal authorization)
    ```
 
-2. **Collect Shares**
+3. **Collect Shares**
    - Key holders independently verify legitimacy
    - Each provides their 24-word share
    - No need to combine shares manually (tool does this)
 
-3. **Decrypt Messages**
+4. **Decrypt Messages**
    ```bash
    ./will-encrypt decrypt --vault estate-vault.yaml
    # Enter K shares when prompted
    # All messages displayed
    ```
 
-4. **Document Access**
+5. **Document Access**
    - Log which key holders participated
    - Record date/time of decryption
    - Note which messages were accessed
 
-**Expected Duration**: 1-7 days (depends on key holder availability)
+**Expected Duration**:
+- First-time installation: 10-30 minutes
+- Share collection: 1-7 days (depends on key holder availability)
+- Decryption: < 1 minute
 
 ---
 

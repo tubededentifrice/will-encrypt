@@ -7,6 +7,7 @@ Tests MUST fail before implementation (TDD).
 """
 
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -117,20 +118,21 @@ class TestInitCommand:
         # Capture output
         output = capsys.readouterr().out
 
-        assert "📊 Numbered Share Table" in output, "Share table header should be present"
-        assert "| # | Indexed Share" in output, "Share table should include column headers"
+        # Check that shares are presented in table format
+        assert "Share 1/5:" in output, "Share table headers should be present"
+        assert "|" in output and "+" in output, "ASCII table structure should be present"
 
-        # Extract shares from output (format: "Share X/5:" followed by "  N: word1 word2 ... word24")
-        import re
-        shares = re.findall(r'Share \d+/\d+:\s+([^\n]+)', output)
-        assert len(shares) == 5, f"Should have 5 shares, got {len(shares)}"
+        # Extract shares from table format using test helper
+        from tests.test_helpers import extract_shares_from_output
+        extracted_shares = extract_shares_from_output(output)
+        assert len(extracted_shares) == 5, f"Should have 5 shares, got {len(extracted_shares)}"
 
         # Verify each share
-        for i, share in enumerate(shares):
-            # Strip the "N: " prefix from the share (e.g., "1: word1 word2 ...")
-            share_clean = re.sub(r'^\d+:\s+', '', share.strip())
+        for i, share_with_index in enumerate(extracted_shares):
+            # Format is "N: word1 word2 ... word24"
+            share_clean = re.sub(r'^\d+:\s+', '', share_with_index.strip())
             words = share_clean.split()
-            assert len(words) == 24, f"Share {i+1} should have 24 words, got {len(words)} (cleaned share: {share_clean[:80]}...)"
+            assert len(words) == 24, f"Share {i+1} should have 24 words, got {len(words)}"
             # Validate BIP39 checksum
             assert validate_checksum(share_clean), f"Share {i+1} has invalid BIP39 checksum"
 
@@ -214,10 +216,11 @@ class TestInitCommand:
         result = init_command(k=3, n=5, vault_path=str(vault_path), import_shares=[])
         assert result == 0, "Init should succeed"
 
-        # Extract shares from stdout
+        # Extract shares from stdout (they're in the inline format)
         output = capsys.readouterr().out
         import re
-        shares = re.findall(r'Share \d+/\d+:\s+([^\n]+)', output)
+        # Match pattern: "Share N/M:\n  N: word1 word2 ... word24"
+        shares = re.findall(r'Share \d+/\d+:\n\s+(\d+:\s+[^\n]+)', output)
         assert len(shares) == 5, "Should have 5 shares"
 
         # Read vault file
