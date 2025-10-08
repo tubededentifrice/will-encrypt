@@ -130,8 +130,8 @@ class TestRotateCommand:
         decrypt_result = decrypt_test_vault(vault_path, new_shares[:3])
         assert decrypt_result == 0, "Newly rotated shares should decrypt vault"
 
-    def test_share_rotation_requires_indexed_cli_shares(self, tmp_path: Path) -> None:
-        """Non-interactive rotation rejects shares without explicit indices."""
+    def test_share_rotation_requires_indexed_cli_shares(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+        """Non-interactive rotation auto-detects shares without explicit indices."""
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
 
         bare_shares = [share.split(":", 1)[1].strip() for share in old_shares[:3]]
@@ -147,7 +147,12 @@ class TestRotateCommand:
             confirm=True,
         )
 
-        assert result == 5, "Rotation must fail when share indices are omitted"
+        # Should succeed via auto-detection using share fingerprints
+        assert result == 0, "Rotation should succeed with auto-detected share indices"
+
+        # Verify auto-detection occurred
+        output = capsys.readouterr().out
+        assert "Auto-detected" in output, "Output should indicate auto-detection occurred"
 
     def test_passphrase_rotation_new_passphrase(self, tmp_path: Path) -> None:
         """Test: Passphrase rotation (new passphrase), verify private keys re-encrypted."""

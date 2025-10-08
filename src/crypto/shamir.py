@@ -224,3 +224,74 @@ def reconstruct_secret(shares: list[bytes]) -> bytes:
         secret.append(secret_byte)
 
     return bytes(secret)
+
+
+def generate_additional_shares(existing_shares: list[bytes], new_indices: list[int]) -> list[bytes]:
+    """
+    Generate additional shares from the same polynomial as existing shares.
+
+    This allows extending a share set without invalidating existing shares.
+    Requires K existing shares to reconstruct the polynomial.
+
+    Args:
+        existing_shares: List of K or more existing shares (33 bytes each)
+        new_indices: List of indices for new shares (1-255, must not overlap with existing)
+
+    Returns:
+        List of new shares with specified indices
+
+    Raises:
+        ValueError: If indices overlap or are invalid
+    """
+    if not existing_shares:
+        raise ValueError("No existing shares provided")
+
+    if not new_indices:
+        return []
+
+    # Validate new indices
+    for idx in new_indices:
+        if idx < 1 or idx > 255:
+            raise ValueError(f"Share index must be 1-255, got {idx}")
+
+    # Check for overlaps with existing indices
+    existing_indices = {share[0] for share in existing_shares}
+    overlap = set(new_indices) & existing_indices
+    if overlap:
+        raise ValueError(f"New indices overlap with existing shares: {overlap}")
+
+    # Check for duplicates in new indices
+    if len(new_indices) != len(set(new_indices)):
+        raise ValueError("Duplicate indices in new_indices")
+
+    # Extract existing share data
+    indexed_shares = []
+    for share in existing_shares:
+        index = share[0]
+        data = share[1:]
+        indexed_shares.append((index, data))
+
+    # Generate new shares byte by byte
+    new_shares = [bytearray() for _ in range(len(new_indices))]
+
+    for byte_idx in range(32):
+        # Collect (x, y) pairs for this byte position from existing shares
+        points = []
+        for index, data in indexed_shares:
+            x = index
+            y = data[byte_idx]
+            points.append((x, y))
+
+        # For each new index, evaluate the polynomial at that point
+        for share_idx, new_index in enumerate(new_indices):
+            # Use Lagrange interpolation to find polynomial value at new_index
+            value = _lagrange_interpolate(points, x=new_index)
+            new_shares[share_idx].append(value)
+
+    # Prepend indices to shares
+    result = []
+    for share_idx, new_index in enumerate(new_indices):
+        indexed_share = bytes([new_index]) + bytes(new_shares[share_idx])
+        result.append(indexed_share)
+
+    return result

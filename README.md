@@ -49,7 +49,22 @@ pip install -e .
 
 > ℹ️ **Launcher script:** All CLI examples assume you are running `./will-encrypt` from the repository root. If you install the package (e.g., `pip install -e .`), the command is available as `will-encrypt` on your PATH, and you can omit the `./` prefix.
 
-### 2. Initialize Vault (3-of-5 threshold)
+### 2. Interactive Mode (Recommended for beginners)
+
+```bash
+./will-encrypt
+```
+
+**No arguments?** The program launches in interactive mode with a guided menu system that walks you through:
+- Creating vaults
+- Encrypting/decrypting messages
+- Validating vault integrity
+- Rotating shares
+- Learning how the system works
+
+Perfect for non-technical users or first-time usage.
+
+### 3. Initialize Vault (3-of-5 threshold)
 
 ```bash
 ./will-encrypt init --k 3 --n 5 --vault my-vault.yaml
@@ -62,7 +77,7 @@ This generates:
 
 **IMPORTANT**: Save the 5 shares securely. They are NOT stored in the vault!
 
-### 3. Encrypt a Message
+### 4. Encrypt a Message
 
 ```bash
 ./will-encrypt encrypt --vault my-vault.yaml \
@@ -70,7 +85,7 @@ This generates:
     --message "Account: 123456, PIN: 9876, Contact: John Doe"
 ```
 
-### 4. Decrypt Messages (requires 3 shares)
+### 5. Decrypt Messages (requires 3 shares)
 
 ```bash
 ./will-encrypt decrypt --vault my-vault.yaml
@@ -215,10 +230,11 @@ This allows multiple vaults to share the same underlying key material.
    Reusing shares across vaults means compromising one vault
    compromises ALL vaults using the same shares.
 
-Import existing shares? (yes/no): yes
+Do you want to use existing shares? (yes/no): yes
 
 You need to provide at least 3 shares to reconstruct the passphrase.
-How many shares do you want to import? (min 3): 3
+The remaining 5 - (imported count) shares will be newly generated.
+How many shares do you want to import? (min 3, max 5): 3
 
 Enter share 1:
 > abandon ability able...
@@ -233,35 +249,53 @@ Enter share 3:
   ✓ Share 3 validated
 
 Passphrase reconstructed from 3 imported shares.
+Generating 2 additional shares from the same polynomial...
+✓ 5 total shares: 3 imported + 2 newly generated
 ```
 
 **Validation:**
 - Each imported share must be a valid BIP39 mnemonic (24 words)
 - BIP39 checksum is validated for each share
 - At least K shares must be provided
-- If fewer than K shares provided, initialization fails with clear error message
-- If more than K shares provided, first K shares are used
+- Maximum N shares can be imported
+- All shares (imported + generated) work together for decryption
 
-**How Import Works:**
+**How Mixed Import/Generate Works:**
 
 1. **Share Validation**: Each imported share validated for BIP39 checksum; minimum K shares required
 2. **Passphrase Reconstruction**: Uses Shamir Secret Sharing (Lagrange interpolation) to reconstruct 32-byte passphrase
-3. **Re-splitting**: Reconstructed passphrase split into new K/N shares (can have same or different K/N)
-4. **Index Recovery (new)**: Lost the numeric prefix? The CLI now matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+3. **Polynomial Reconstruction**: From K imported shares, the original polynomial is reconstructed
+4. **Additional Share Generation**: New shares are generated from the **same polynomial** at new indices
+5. **Index Recovery**: Lost the numeric prefix? The CLI matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+
+**Key Benefit:** Imported shares remain valid! You can mix old and new shares freely - any K shares (from imported OR newly generated) will decrypt the vault.
 
 > Tip: Importing into a different path? Supply `--source-vault /path/to/original/vault.yaml`. The flag takes precedence over the legacy `WILL_ENCRYPT_SOURCE_VAULT` environment variable and ensures the manifest is read even when you are overwriting a different file path.
 
 **Security Considerations:**
 
-When to use:
-- ✅ Multiple vaults for different purposes (personal, business, family)
-- ✅ Changing threshold policy (e.g., from 3-of-5 to 2-of-3)
+⚠️ **CRITICAL: Vault Isolation Trade-off**
+
+When you import shares from Vault A to create Vault B, both vaults share the **same passphrase**. This means:
+- **Any K shares from the combined pool can decrypt BOTH vaults**
+- Example: Vault1 (Bob + Alice), Vault2 (Bob + John) → Bob + Alice can decrypt Vault2!
+- **There is NO cryptographic isolation between vaults that share a passphrase**
+
+**For true vault isolation, use separate passphrases:**
+- ✅ Vault1: Bob1 + Alice (separate passphrase P1)
+- ✅ Vault2: Bob2 + John (separate passphrase P2)
+- Bob manages 2 different shares, but vaults are cryptographically isolated
+
+When to use share import:
+- ✅ Changing threshold policy for the SAME vault (e.g., from 3-of-5 to 2-of-3)
 - ✅ Vault migration after software upgrade
 - ✅ Testing and development
+- ✅ When all share holders should have access to all vaults (intentional shared access)
 
 When NOT to use:
-- ❌ Sharing same shares across unrelated parties
-- ❌ Creating "backup" vaults without understanding security implications
+- ❌ Trying to give someone "partial access" across vaults (doesn't work - math requires K shares)
+- ❌ Expecting vault isolation while reusing shares
+- ❌ Sharing same shares across security domains (personal vs. business)
 
 **About Share Fingerprints:**
 - Each vault manifest now records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).

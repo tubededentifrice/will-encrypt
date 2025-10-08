@@ -6,6 +6,7 @@ from src.crypto.bip39 import decode_share, parse_indexed_share, validate_checksu
 from src.crypto.encryption import EncryptedMessage, decrypt_message
 from src.crypto.keypair import HybridKeypair, decrypt_private_keys
 from src.crypto.shamir import reconstruct_secret
+from src.storage.manifest import match_share_fingerprint
 from src.storage.vault import load_vault
 
 
@@ -35,8 +36,8 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
         if interactive_mode:
             print("\n🔓 Decrypt Vault Messages\n")
             print(f"This vault requires {k} out of {n} shares to decrypt.")
-            print("Each share is a 24-word BIP39 mnemonic with its original share number.")
-            print("Format: 'N: word1 word2 ... word24' or just 'word1 word2 ... word24'\n")
+            print("Each share is a 24-word BIP39 mnemonic.")
+            print("The system will automatically detect which share number it is.\n")
             print("-" * 70)
             shares = []
             for i in range(k):
@@ -67,23 +68,15 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
                                 return 4
                             continue
 
-                        # If no index was provided, ask for it
-                        if index is None:
-                            while True:
-                                try:
-                                    idx_input = input(f"  Enter the original share number (1-{n}): ").strip()
-                                    index = int(idx_input)
-                                    if index < 1 or index > n:
-                                        print(f"    Error: Share number must be 1-{n}")
-                                        continue
-                                    break
-                                except ValueError:
-                                    print("    Error: Invalid number")
-                                    continue
-
-                        print(f"  ✓ Share {index} validated")
-                        # Store with index prefix for later parsing
-                        shares.append(f"{index}: {mnemonic}")
+                        # If index provided, validate it
+                        if index is not None:
+                            print(f"  ✓ Share {index} validated")
+                            # Store with index prefix for later parsing
+                            shares.append(f"{index}: {mnemonic}")
+                        else:
+                            # No index provided - will auto-detect later
+                            print("  ✓ Share validated (index will be auto-detected)")
+                            shares.append(mnemonic)
                         break
                     except (EOFError, KeyboardInterrupt):
                         print("\n\nAborted.", file=sys.stderr)
@@ -113,36 +106,46 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
                 print("Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
                 return 4
 
-            if index is None:
-                missing_indices.append(mnemonic)
-            else:
-                decoded = decode_share(mnemonic)  # Returns 32 bytes
-                # Prepend ORIGINAL index to make 33-byte share
-                share_bytes.append(bytes([index]) + decoded)
+            decoded = decode_share(mnemonic)  # Returns 32 bytes
 
-        # Handle missing indices
+            if index is None:
+                # Try to auto-detect index using fingerprints
+                matched_fp = match_share_fingerprint(vault.manifest.share_fingerprints, decoded)
+                if matched_fp:
+                    index = matched_fp.index
+                    print(f"  ✓ Auto-detected as share {index}")
+                else:
+                    # Store for later handling if auto-detection fails
+                    missing_indices.append((mnemonic, decoded))
+                    continue
+
+            # Prepend ORIGINAL index to make 33-byte share
+            share_bytes.append(bytes([index]) + decoded)
+
+        # Handle shares where auto-detection failed
         if missing_indices:
-            # In non-interactive mode (--shares provided via CLI), fail fast instead of prompting
+            print(f"\n⚠️  Warning: Could not auto-detect {len(missing_indices)} share(s)")
+            print("This may happen if:")
+            print("  - The share is from a different vault")
+            print("  - The vault was created before fingerprint tracking")
+            print("  - The share has been modified")
+
             if not interactive_mode:
-                print("\nError: Share indices missing in non-interactive mode", file=sys.stderr)
+                print("\nError: Share indices could not be determined in non-interactive mode", file=sys.stderr)
                 print("Recovery: Include share numbers in format 'N: mnemonic' when using --shares", file=sys.stderr)
-                print("Example: --shares '1: abandon ability...' '2: about above...' '3: absorb abstract...'", file=sys.stderr)
-                print("Hint: Share numbers are required for correct Shamir reconstruction", file=sys.stderr)
+                print("Example: --shares '1: abandon ability...' '2: about above...'", file=sys.stderr)
                 return 5
 
             # Interactive mode: prompt for missing indices
-            print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
-            print("Please provide the original share numbers for correct reconstruction.\n")
-
-            for missing_mnemonic in missing_indices:
+            print("\nPlease manually provide the original share numbers.\n")
+            for missing_mnemonic, decoded in missing_indices:
                 while True:
                     try:
                         idx_input = input(f"Enter share number for '{missing_mnemonic[:40]}...': ").strip()
                         index = int(idx_input)
-                        if index < 1 or index > 255:
-                            print("  Error: Share index must be 1-255")
+                        if index < 1 or index > n:
+                            print(f"  Error: Share index must be 1-{n}")
                             continue
-                        decoded = decode_share(missing_mnemonic)
                         share_bytes.append(bytes([index]) + decoded)
                         break
                     except ValueError:

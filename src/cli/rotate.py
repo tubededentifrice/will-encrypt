@@ -21,6 +21,7 @@ from src.storage.manifest import (
     append_rotation_event,
     compute_fingerprints,
     create_share_fingerprints,
+    match_share_fingerprint,
 )
 from src.storage.models import RotationEvent
 from src.storage.vault import load_vault, save_vault
@@ -110,21 +111,31 @@ def rotate_command(
                             continue
 
                         if index is None:
-                            while True:
-                                try:
-                                    idx_input = input(
-                                        f"  Enter the original share number (1-{n}): "
-                                    ).strip()
-                                    index = int(idx_input)
-                                    if index < 1 or index > n:
-                                        print(
-                                            f"    Error: Share number must be between 1 and {n}."
-                                        )
+                            # Try auto-detection using fingerprints
+                            decoded = decode_share(mnemonic)
+                            matched_fp = match_share_fingerprint(vault.manifest.share_fingerprints, decoded)
+                            if matched_fp:
+                                index = matched_fp.index
+                                print(f"  ✓ Auto-detected as share {index}")
+                            else:
+                                # Fallback to manual entry
+                                while True:
+                                    try:
+                                        idx_input = input(
+                                            f"  Could not auto-detect. Enter the original share number (1-{n}): "
+                                        ).strip()
+                                        index = int(idx_input)
+                                        if index < 1 or index > n:
+                                            print(
+                                                f"    Error: Share number must be between 1 and {n}."
+                                            )
+                                            continue
+                                        break
+                                    except ValueError:
+                                        print("    Error: Invalid number. Please enter digits only.")
                                         continue
-                                    break
-                                except ValueError:
-                                    print("    Error: Invalid number. Please enter digits only.")
-                                    continue
+                        else:
+                            print(f"  ✓ Share {index} validated")
 
                         if index in collected_indices:
                             print(
@@ -132,7 +143,6 @@ def rotate_command(
                             )
                             continue
 
-                        print(f"  ✓ Share {index} validated")
                         shares.append(f"{index}: {mnemonic}")
                         collected_indices.add(index)
                         break
@@ -166,9 +176,18 @@ def rotate_command(
                 )
                 return 4
 
+            decoded = decode_share(mnemonic)
+
             if index is None:
-                missing_indices.append(mnemonic)
-                continue
+                # Try auto-detection using fingerprints
+                matched_fp = match_share_fingerprint(vault.manifest.share_fingerprints, decoded)
+                if matched_fp:
+                    index = matched_fp.index
+                    print(f"  ✓ Auto-detected as share {index}")
+                else:
+                    # Store for later handling if auto-detection fails
+                    missing_indices.append(mnemonic)
+                    continue
 
             if index in seen_indices:
                 print(
@@ -181,14 +200,19 @@ def rotate_command(
                 )
                 return 4
 
-            decoded = decode_share(mnemonic)
             share_bytes.append(bytes([index]) + decoded)
             seen_indices.add(index)
 
         if missing_indices:
+            print(f"\n⚠️  Warning: Could not auto-detect {len(missing_indices)} share(s)")
+            print("This may happen if:")
+            print("  - The share is from a different vault")
+            print("  - The vault was created before fingerprint tracking")
+            print("  - The share has been modified")
+
             if not interactive_mode:
                 print(
-                    "Error: Share indices missing in non-interactive mode.",
+                    "\nError: Share indices could not be determined in non-interactive mode.",
                     file=sys.stderr,
                 )
                 print(
@@ -201,12 +225,7 @@ def rotate_command(
                 )
                 return 5
 
-            print(
-                f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information"
-            )
-            print(
-                "Please enter the original share numbers so reconstruction succeeds.\n"
-            )
+            print("\nPlease manually provide the original share numbers.\n")
 
             for mnemonic in missing_indices:
                 while True:

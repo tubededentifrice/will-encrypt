@@ -8,14 +8,22 @@ import pytest
 from src.main import main
 
 
-def test_missing_command_prints_usage(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_missing_command_launches_interactive(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that missing command launches interactive mode."""
+    interactive_called = False
+
+    def fake_interactive() -> int:
+        nonlocal interactive_called
+        interactive_called = True
+        return 0
+
+    monkeypatch.setattr("src.main.interactive_mode", fake_interactive)
     monkeypatch.setattr(sys, "argv", ["will-encrypt"])
 
     exit_code = main()
-    captured = capsys.readouterr()
 
-    assert exit_code == 1
-    assert "Commands" in captured.out
+    assert exit_code == 0
+    assert interactive_called
 
 
 def test_init_command_forwarding(monkeypatch: pytest.MonkeyPatch) -> None:
