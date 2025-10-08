@@ -109,22 +109,7 @@ def handle_init() -> int:
     else:
         force = False
 
-    print("\nDo you want to:")
-    print("  1. Create a new vault with new shares")
-    print("  2. Import existing shares to create a vault with the same passphrase")
-    choice = get_choice("Choice (1 or 2): ", ["1", "2"])
-
-    if choice == "2":
-        print("\n📋 Import Mode: You'll need to provide K existing shares.")
-        print("This creates a new vault that uses the same master passphrase.")
-        source_input = input("\nSource vault path (optional, for share index recovery): ").strip()
-        source_vault: Optional[str] = source_input if source_input else None
-
-        print("\nYou'll be prompted to enter shares during initialization.")
-        return init_command(None, None, vault_path, force, None, source_vault)
-
-    # New vault mode - let init_command handle the prompts
-    print("\nYou'll be prompted for K (threshold) and N (total shares) next.")
+    # Let init_command handle all prompts (K, N, share import, etc.)
     return init_command(None, None, vault_path, force, None, None)
 
 
