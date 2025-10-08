@@ -12,6 +12,7 @@ import termios
 import tty
 
 # ASCII threshold for printable characters (space is first printable at 32)
+# ASCII 32 is space character, first printable ASCII
 MIN_PRINTABLE_ASCII = 32
 
 
