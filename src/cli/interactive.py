@@ -1,13 +1,46 @@
 """Interactive mode for will-encrypt - guides users through all operations."""
 import os
+from enum import Enum
 from typing import Optional
 
 from src.cli.decrypt import decrypt_command
+from src.cli.delete import delete_command
+from src.cli.edit import edit_command
 from src.cli.encrypt import encrypt_command
 from src.cli.init import init_command
 from src.cli.list import list_command
 from src.cli.rotate import rotate_command
 from src.cli.validate import validate_command
+
+
+class MenuOption(Enum):
+    """Menu option choices for interactive mode."""
+
+    INIT = "1"
+    ENCRYPT = "2"
+    DECRYPT = "3"
+    LIST = "4"
+    EDIT = "5"
+    DELETE = "6"
+    VALIDATE = "7"
+    ROTATE = "8"
+    HELP = "9"
+    EXIT = "0"
+
+
+# Menu option descriptions
+MENU_DESCRIPTIONS = {
+    MenuOption.INIT: "Create a new vault",
+    MenuOption.ENCRYPT: "Add an encrypted message",
+    MenuOption.DECRYPT: "Decrypt messages (requires recovery shares)",
+    MenuOption.LIST: "View all messages",
+    MenuOption.EDIT: "Edit a message title",
+    MenuOption.DELETE: "Delete a message",
+    MenuOption.VALIDATE: "Validate vault integrity",
+    MenuOption.ROTATE: "Rotate shares or passphrase",
+    MenuOption.HELP: "Learn more about will-encrypt",
+    MenuOption.EXIT: "Exit",
+}
 
 
 def print_header() -> None:
@@ -21,14 +54,10 @@ def print_header() -> None:
 def print_menu() -> None:
     """Print main menu options."""
     print("What would you like to do?\n")
-    print("  1. Create a new vault")
-    print("  2. Add an encrypted message")
-    print("  3. Decrypt messages (requires recovery shares)")
-    print("  4. View all messages")
-    print("  5. Validate vault integrity")
-    print("  6. Rotate shares or passphrase")
-    print("  7. Learn more about will-encrypt")
-    print("  0. Exit\n")
+    # Print in enum definition order
+    for option in MenuOption:
+        print(f"  {option.value}. {MENU_DESCRIPTIONS[option]}")
+    print()
 
 
 def get_choice(prompt: str, valid_options: list[str]) -> str:
@@ -258,6 +287,70 @@ def handle_validate() -> int:
     return validate_command(vault_path, verbose_flag)
 
 
+def handle_edit() -> int:
+    """Handle message title editing."""
+    print("\n" + "=" * 70)
+    print("  Edit Message Title")
+    print("=" * 70 + "\n")
+
+    vault_path = get_vault_path()
+
+    if not os.path.exists(vault_path):
+        print(f"\n❌ Vault not found: {vault_path}")
+        return 1
+
+    # List messages first
+    print("Current messages:")
+    list_command(vault_path, "table", "id")
+    print()
+
+    # Get message ID
+    message_id = input("Enter message ID to edit: ").strip()
+    if not message_id:
+        print("❌ Message ID required")
+        return 1
+
+    # Get new title
+    new_title = input("Enter new title: ").strip()
+    if not new_title:
+        print("❌ Title cannot be empty")
+        return 1
+
+    return edit_command(vault_path, message_id, new_title)
+
+
+def handle_delete() -> int:
+    """Handle message deletion."""
+    print("\n" + "=" * 70)
+    print("  Delete Message")
+    print("=" * 70 + "\n")
+
+    vault_path = get_vault_path()
+
+    if not os.path.exists(vault_path):
+        print(f"\n❌ Vault not found: {vault_path}")
+        return 1
+
+    # List messages first
+    print("Current messages:")
+    list_command(vault_path, "table", "id")
+    print()
+
+    # Get message ID
+    message_id = input("Enter message ID to delete: ").strip()
+    if not message_id:
+        print("❌ Message ID required")
+        return 1
+
+    # Confirm deletion
+    confirm = input(f"⚠️  Delete message ID {message_id}? (yes/no): ").strip().lower()
+    if confirm != "yes":
+        print("Cancelled.")
+        return 0
+
+    return delete_command(vault_path, message_id)
+
+
 def handle_rotate() -> int:
     """Handle share/passphrase rotation."""
     print("\n" + "=" * 70)
@@ -290,38 +383,37 @@ def interactive_mode() -> int:
     """Run interactive mode."""
     print_header()
 
+    # Generate valid choices from enum
+    valid_choices = [option.value for option in MenuOption]
+
+    # Map choices to handler functions
+    handlers = {
+        MenuOption.INIT: handle_init,
+        MenuOption.ENCRYPT: handle_encrypt,
+        MenuOption.DECRYPT: handle_decrypt,
+        MenuOption.LIST: handle_list,
+        MenuOption.EDIT: handle_edit,
+        MenuOption.DELETE: handle_delete,
+        MenuOption.VALIDATE: handle_validate,
+        MenuOption.ROTATE: handle_rotate,
+    }
+
     while True:
         print_menu()
-        choice = get_choice("Enter your choice (0-7): ", ["0", "1", "2", "3", "4", "5", "6", "7"])
+        choice = get_choice("Enter your choice: ", valid_choices)
 
-        if choice == "0":
+        if choice == MenuOption.EXIT.value:
             print("\n👋 Goodbye!\n")
             return 0
-        elif choice == "1":
-            result = handle_init()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "2":
-            result = handle_encrypt()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "3":
-            result = handle_decrypt()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "4":
-            result = handle_list()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "5":
-            result = handle_validate()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "6":
-            result = handle_rotate()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "7":
+        elif choice == MenuOption.HELP.value:
             explain_system()
+        else:
+            # Find matching option and call handler
+            for option, handler in handlers.items():
+                if choice == option.value:
+                    result = handler()
+                    if result != 0:
+                        input("\nPress Enter to continue...")
+                    break
 
         print("\n")  # Spacing before next menu

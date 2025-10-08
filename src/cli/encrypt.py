@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import UTC, datetime
 
+from src.cli.editor import get_message_text
 from src.crypto.encryption import encrypt_message
 from src.storage.models import Message
 from src.storage.vault import append_message, load_vault, save_vault
@@ -54,28 +55,45 @@ def encrypt_command(
         message_text = sys.stdin.read()
     elif message_text is None:
         try:
-            print("\nEnter message content (multi-line supported, Ctrl+D to finish):")
-            print("-" * 50)
-            lines = []
-            while True:
-                try:
-                    line = input()
-                    lines.append(line)
-                except EOFError:
-                    break
-            message_text = "\n".join(lines)
-            print("-" * 50)
-            if not message_text:
+            # Use secure editor with keyboard navigation
+            message_text = get_message_text("Enter Message Content")
+
+            if message_text is None:
+                print("\nAborted.", file=sys.stderr)
+                return 1
+
+            if not message_text.strip():
                 print("\nError: Message cannot be empty", file=sys.stderr)
                 return 1
 
-            # Clear screen immediately after message is entered (security)
-            # Only in fully interactive mode to avoid disrupting scripted usage
-            if interactive_mode:
-                _clear_screen()
         except KeyboardInterrupt:
             print("\nAborted.", file=sys.stderr)
             return 1
+        except Exception as e:
+            # Fallback to basic input if terminal doesn't support raw mode
+            print("\nSecure editor not available, using basic input mode.")
+            print("Enter message content (multi-line supported, Ctrl+D to finish):")
+            print("-" * 50)
+            lines = []
+            try:
+                while True:
+                    try:
+                        line = input()
+                        lines.append(line)
+                    except EOFError:
+                        break
+                message_text = "\n".join(lines)
+                print("-" * 50)
+                if not message_text:
+                    print("\nError: Message cannot be empty", file=sys.stderr)
+                    return 1
+
+                # Clear screen immediately after message is entered (security)
+                if interactive_mode:
+                    _clear_screen()
+            except KeyboardInterrupt:
+                print("\nAborted.", file=sys.stderr)
+                return 1
 
     # Validate size
     message_bytes = message_text.encode("utf-8")

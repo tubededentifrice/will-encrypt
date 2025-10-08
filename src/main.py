@@ -3,6 +3,8 @@ import argparse
 import sys
 
 from src.cli.decrypt import decrypt_command
+from src.cli.delete import delete_command
+from src.cli.edit import edit_command
 from src.cli.encrypt import encrypt_command
 from src.cli.init import init_command
 from src.cli.interactive import interactive_mode
@@ -60,6 +62,17 @@ def main() -> int:
         "--sort", choices=["id", "title", "created", "size"], default="id", help="Sort by"
     )
 
+    # Edit command
+    edit_parser = subparsers.add_parser("edit", help="Edit message title")
+    edit_parser.add_argument("--vault", default="vault.yaml", help="Vault file")
+    edit_parser.add_argument("--id", required=True, help="Message ID")
+    edit_parser.add_argument("--title", required=True, help="New title")
+
+    # Delete command
+    delete_parser = subparsers.add_parser("delete", help="Delete message")
+    delete_parser.add_argument("--vault", default="vault.yaml", help="Vault file")
+    delete_parser.add_argument("--id", required=True, help="Message ID")
+
     # Validate command
     validate_parser = subparsers.add_parser("validate", help="Validate vault")
     validate_parser.add_argument("--vault", default="vault.yaml", help="Vault file")
@@ -94,6 +107,10 @@ def main() -> int:
         return decrypt_command(args.vault, args.shares)
     elif args.command == "list":
         return list_command(args.vault, args.format, args.sort)
+    elif args.command == "edit":
+        return edit_command(args.vault, args.id, args.title)
+    elif args.command == "delete":
+        return delete_command(args.vault, args.id)
     elif args.command == "validate":
         return validate_command(args.vault, args.verbose)
     elif args.command == "rotate":
