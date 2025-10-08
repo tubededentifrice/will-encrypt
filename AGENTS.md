@@ -187,7 +187,10 @@ python -m src.main <command>        # Alternative invocation
 - Enhanced error messages with recovery suggestions
 - BIP39 checksum validation with retry logic
 - Pretty-printed output with boxes and emojis
-- Share index auto-recovery via manifest-managed fingerprints (supports unlabeled imports)
+- **Automatic share index detection** via manifest-managed fingerprints (no need to track share numbers)
+  - Salted SHA-256 fingerprints stored in vault manifest for each share
+  - CLI automatically matches unlabeled shares during decryption
+  - Manual fallback prompt if auto-detection fails
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
