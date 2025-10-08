@@ -267,7 +267,7 @@ Generating 2 additional shares from the same polynomial...
 2. **Passphrase Reconstruction**: Uses Shamir Secret Sharing (Lagrange interpolation) to reconstruct 32-byte passphrase
 3. **Polynomial Reconstruction**: From K imported shares, the original polynomial is reconstructed
 4. **Additional Share Generation**: New shares are generated from the **same polynomial** at new indices
-5. **Index Recovery**: Lost the numeric prefix? The CLI matches unlabeled shares against salted fingerprints saved in the vault manifest and restores the correct index automatically.
+5. **Automatic Index Detection**: The CLI matches shares against salted fingerprints saved in the vault manifest and automatically detects share indices - no need to track share numbers!
 
 **Key Benefit:** Imported shares remain valid! You can mix old and new shares freely - any K shares (from imported OR newly generated) will decrypt the vault.
 
@@ -298,11 +298,12 @@ When NOT to use:
 - ❌ Expecting vault isolation while reusing shares
 - ❌ Sharing same shares across security domains (personal vs. business)
 
-**About Share Fingerprints:**
-- Each vault manifest now records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).
-- These fingerprints cannot recover the 24-word mnemonic, but they make it possible to recover share numbers when only the words remain.
-- Fingerprints refresh automatically during `init --import-share`, `rotate --mode shares`, and `rotate --mode passphrase` flows.
-- Backwards compatibility: if `--source-vault` is omitted, the CLI still consults `WILL_ENCRYPT_SOURCE_VAULT` or the existing target path when present.
+**About Share Fingerprints (Automatic Share Detection):**
+- Each vault manifest automatically records `{index, salt, hash, algorithm}` for every generated share using salted SHA-256 (`hash = SHA256(salt || share_payload)`).
+- These fingerprints **cannot recover the 24-word mnemonic** (one-way hash), but they enable automatic share number detection.
+- **You don't need to track share numbers** - just provide the 24 words during decryption, and the system automatically identifies which share it is.
+- Fingerprints refresh automatically during `init`, `rotate --mode shares`, and `rotate --mode passphrase` flows.
+- If automatic detection fails (e.g., share from different vault), the CLI will prompt you to manually enter the share number in interactive mode.
 
 **Best Practices:**
 1. Document which vaults share the same passphrase
@@ -397,7 +398,7 @@ Decrypt all messages in the vault using K shares.
 ```
 
 **Process:**
-1. Collect K shares from key holders
+1. Collect K shares from key holders (share numbers are automatically detected via fingerprints)
 2. Reconstruct passphrase using Shamir Secret Sharing
 3. Decrypt private keys (RSA + Kyber)
 4. Decrypt all messages in vault
@@ -609,7 +610,7 @@ Use when:
 4. Print new shares
 5. Old shares become invalid
 
-> ⚠️ **Share numbers matter:** The CLI prints labels such as `Share 3/6` followed by the 24-word mnemonic. When recording a share, keep the numeric prefix (for example, store it as `3: word1 ... word24`) so later commands can reconstruct the original indices correctly.
+> ℹ️ **Share numbers are optional:** The CLI prints labels such as `Share 3/6` for reference, but you don't need to track them. During decryption, the system automatically detects which share is which using secure fingerprints stored in the vault manifest.
 
 #### Passphrase Rotation (New Passphrase + Optional K/N Change)
 
@@ -868,7 +869,7 @@ grep 'rotation_history' estate-vault.yaml
 
 3. **Collect Shares**
    - Key holders independently verify legitimacy
-   - Each provides their 24-word share
+   - Each provides their 24-word share (share numbers are automatically detected)
    - No need to combine shares manually (tool does this)
 
 4. **Decrypt Messages**
@@ -1313,14 +1314,15 @@ python -m src.main init --k 3 --n 5
 ```
 1. Collect K shares from key holders
 2. Decode BIP39 mnemonics → raw shares
-3. Reconstruct passphrase (Shamir SSS)
-4. Derive AES key from passphrase (PBKDF2)
-5. Decrypt private keys (AES-256-GCM)
-6. For each message:
+3. Auto-detect share indices using fingerprints (or prompt if needed)
+4. Reconstruct passphrase (Shamir SSS)
+5. Derive AES key from passphrase (PBKDF2)
+6. Decrypt private keys (AES-256-GCM)
+7. For each message:
    a. Unwrap KEK with RSA-4096-OAEP (private key)
    b. Verify Kyber-wrapped KEK matches (hybrid check)
    c. Decrypt message with KEK (AES-256-GCM, verify AAD)
-7. Display plaintext messages
+8. Display plaintext messages
 ```
 
 ### File Structure
