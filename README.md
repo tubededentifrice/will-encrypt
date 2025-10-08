@@ -547,7 +547,7 @@ Use when:
 | Component | Algorithm | Parameters |
 |-----------|-----------|------------|
 | Asymmetric Encryption | RSA-4096-OAEP | SHA-256 hash, MGF1 |
-| Post-Quantum Encryption | Kyber-1024 | NIST PQC Round 3 (simulated) |
+| Post-Quantum Encryption | ML-KEM-1024 (Kyber) | NIST FIPS 203, hybrid with RSA |
 | Symmetric Encryption | AES-256-GCM | 96-bit nonce, 128-bit auth tag |
 | Secret Sharing | Shamir SSS | Lagrange interpolation, GF(256) |
 | Key Derivation | PBKDF2-HMAC-SHA512 | 600,000 iterations (OWASP 2023) |
@@ -1297,10 +1297,44 @@ messages:
     created: "2025-01-15T10:30:00Z"
     size_bytes: 42
 
-guides:
-  recovery_guide: "# Emergency Recovery Guide\n..."
-  policy_document: "# Access Policy\n..."
-  crypto_notes: "# Cryptographic Implementation\n..."
+recovery_guide: |
+  # Emergency Recovery Guide
+
+  ## What Is This Document?
+  This guide explains how to access encrypted messages stored in your Will-Encrypt vault.
+  It is designed for executors, family members, or trusted individuals who may not have
+  technical experience.
+
+  ## When to Use This Guide
+
+  Emergency recovery is authorized when:
+  - The vault owner is deceased (death certificate required)
+  - The vault owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+  - The vault owner has given explicit permission
+
+  [... comprehensive recovery instructions ...]
+
+policy_document: |
+  # Access Policy
+
+  ## Recovery Eligibility
+
+  Emergency recovery is authorized when:
+  - Account owner is deceased (death certificate required)
+  - Account owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+
+  [... policy details ...]
+
+crypto_notes: |
+  # Cryptographic Implementation Details
+
+  ## Core Algorithms
+
+  - **Passphrase**: 256-bit random (32 bytes from os.urandom)
+  - **Secret Sharing**: Shamir over GF(256), polynomial degree k-1
+  [... technical details ...]
 ```
 
 ---
