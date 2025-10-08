@@ -104,6 +104,12 @@ python -m src.main <command>        # Alternative invocation
 # List messages
 ./will-encrypt list --vault vault.yaml --format table --sort created
 
+# Edit message title
+./will-encrypt edit --vault vault.yaml --id 1 --title "Updated Title"
+
+# Delete message
+./will-encrypt delete --vault vault.yaml --id 2
+
 # Validate vault integrity
 ./will-encrypt validate --vault vault.yaml --verbose
 
@@ -139,7 +145,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **175/175 tests passing (100% pass rate), 67% code coverage**
+- Current status: **197/197 tests passing (100% pass rate), 65% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -180,10 +186,10 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (175 tests, 67% code coverage):
-- **Unit Tests (92)**: Crypto primitives (including `generate_additional_shares`), storage, CLI wiring
-- **Contract Tests (45)**: CLI commands (init, encrypt, decrypt, list, validate, rotate)
-- **Integration Tests (38)**: Full lifecycle, emergency recovery, share rotation, validation audit
+✅ Test Coverage (197 tests, 65% code coverage):
+- **Unit Tests (96)**: Crypto primitives (including `generate_additional_shares`), storage, CLI wiring
+- **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
+- **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management
 - All tests passing with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines

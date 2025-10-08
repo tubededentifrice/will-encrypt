@@ -454,6 +454,59 @@ ID   Title                              Created                    Size
 
 ---
 
+### `edit` - Edit Message Title
+
+Edit the title of an existing message in the vault.
+
+```bash
+./will-encrypt edit --vault FILE --id ID --title "NEW_TITLE"
+```
+
+**Arguments:**
+- `--vault`: Vault file path (default: `vault.yaml`)
+- `--id`: Message ID to edit (required)
+- `--title`: New title for the message (required)
+
+**Examples:**
+
+```bash
+# Edit message title
+./will-encrypt edit --vault vault.yaml --id 1 --title "Updated Title"
+```
+
+**Notes:**
+- Only the message title is modified; the encrypted content remains unchanged
+- The vault integrity is maintained after editing
+- No shares are required to edit message titles
+
+---
+
+### `delete` - Delete Message
+
+Delete an existing message from the vault.
+
+```bash
+./will-encrypt delete --vault FILE --id ID
+```
+
+**Arguments:**
+- `--vault`: Vault file path (default: `vault.yaml`)
+- `--id`: Message ID to delete (required)
+
+**Examples:**
+
+```bash
+# Delete message by ID
+./will-encrypt delete --vault vault.yaml --id 2
+```
+
+**Notes:**
+- Message deletion is permanent and cannot be undone
+- No shares are required to delete messages
+- The vault structure is updated immediately
+
+---
+
 ### `validate` - Validate Vault
 
 Verify vault integrity and structure.

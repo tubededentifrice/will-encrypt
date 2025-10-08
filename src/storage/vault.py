@@ -108,3 +108,27 @@ def update_manifest(vault: Vault, manifest: Manifest) -> Vault:
     """Update vault manifest."""
     vault.manifest = manifest
     return vault
+
+
+def delete_message(vault: Vault, message_id: int | str) -> Vault:
+    """Delete message from vault by ID."""
+    # Convert to int if string
+    msg_id = int(message_id) if isinstance(message_id, str) else message_id
+
+    original_count = len(vault.messages)
+    vault.messages = [m for m in vault.messages if m.id != msg_id]
+    if len(vault.messages) == original_count:
+        raise ValueError(f"Message with ID '{msg_id}' not found in vault")
+    return vault
+
+
+def edit_message_title(vault: Vault, message_id: int | str, new_title: str) -> Vault:
+    """Edit message title by ID."""
+    # Convert to int if string
+    msg_id = int(message_id) if isinstance(message_id, str) else message_id
+
+    for message in vault.messages:
+        if message.id == msg_id:
+            message.title = new_title
+            return vault
+    raise ValueError(f"Message with ID '{msg_id}' not found in vault")

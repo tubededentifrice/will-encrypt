@@ -3,6 +3,8 @@ import os
 from typing import Optional
 
 from src.cli.decrypt import decrypt_command
+from src.cli.delete import delete_command
+from src.cli.edit import edit_command
 from src.cli.encrypt import encrypt_command
 from src.cli.init import init_command
 from src.cli.list import list_command
@@ -25,9 +27,11 @@ def print_menu() -> None:
     print("  2. Add an encrypted message")
     print("  3. Decrypt messages (requires recovery shares)")
     print("  4. View all messages")
-    print("  5. Validate vault integrity")
-    print("  6. Rotate shares or passphrase")
-    print("  7. Learn more about will-encrypt")
+    print("  5. Edit a message title")
+    print("  6. Delete a message")
+    print("  7. Validate vault integrity")
+    print("  8. Rotate shares or passphrase")
+    print("  9. Learn more about will-encrypt")
     print("  0. Exit\n")
 
 
@@ -258,6 +262,70 @@ def handle_validate() -> int:
     return validate_command(vault_path, verbose_flag)
 
 
+def handle_edit() -> int:
+    """Handle message title editing."""
+    print("\n" + "=" * 70)
+    print("  Edit Message Title")
+    print("=" * 70 + "\n")
+
+    vault_path = get_vault_path()
+
+    if not os.path.exists(vault_path):
+        print(f"\n❌ Vault not found: {vault_path}")
+        return 1
+
+    # List messages first
+    print("Current messages:")
+    list_command(vault_path, "table", "id")
+    print()
+
+    # Get message ID
+    message_id = input("Enter message ID to edit: ").strip()
+    if not message_id:
+        print("❌ Message ID required")
+        return 1
+
+    # Get new title
+    new_title = input("Enter new title: ").strip()
+    if not new_title:
+        print("❌ Title cannot be empty")
+        return 1
+
+    return edit_command(vault_path, message_id, new_title)
+
+
+def handle_delete() -> int:
+    """Handle message deletion."""
+    print("\n" + "=" * 70)
+    print("  Delete Message")
+    print("=" * 70 + "\n")
+
+    vault_path = get_vault_path()
+
+    if not os.path.exists(vault_path):
+        print(f"\n❌ Vault not found: {vault_path}")
+        return 1
+
+    # List messages first
+    print("Current messages:")
+    list_command(vault_path, "table", "id")
+    print()
+
+    # Get message ID
+    message_id = input("Enter message ID to delete: ").strip()
+    if not message_id:
+        print("❌ Message ID required")
+        return 1
+
+    # Confirm deletion
+    confirm = input(f"⚠️  Delete message ID {message_id}? (yes/no): ").strip().lower()
+    if confirm != "yes":
+        print("Cancelled.")
+        return 0
+
+    return delete_command(vault_path, message_id)
+
+
 def handle_rotate() -> int:
     """Handle share/passphrase rotation."""
     print("\n" + "=" * 70)
@@ -292,7 +360,7 @@ def interactive_mode() -> int:
 
     while True:
         print_menu()
-        choice = get_choice("Enter your choice (0-7): ", ["0", "1", "2", "3", "4", "5", "6", "7"])
+        choice = get_choice("Enter your choice (0-9): ", ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
         if choice == "0":
             print("\n👋 Goodbye!\n")
@@ -314,14 +382,22 @@ def interactive_mode() -> int:
             if result != 0:
                 input("\nPress Enter to continue...")
         elif choice == "5":
-            result = handle_validate()
+            result = handle_edit()
             if result != 0:
                 input("\nPress Enter to continue...")
         elif choice == "6":
-            result = handle_rotate()
+            result = handle_delete()
             if result != 0:
                 input("\nPress Enter to continue...")
         elif choice == "7":
+            result = handle_validate()
+            if result != 0:
+                input("\nPress Enter to continue...")
+        elif choice == "8":
+            result = handle_rotate()
+            if result != 0:
+                input("\nPress Enter to continue...")
+        elif choice == "9":
             explain_system()
 
         print("\n")  # Spacing before next menu

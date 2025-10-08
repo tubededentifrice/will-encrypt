@@ -18,6 +18,8 @@ from src.storage.models import Keypair, Manifest, Message, RotationEvent
 from src.storage.vault import (
     append_message,
     create_vault,
+    delete_message,
+    edit_message_title,
     load_vault,
     save_vault,
     update_manifest,
@@ -401,3 +403,189 @@ crypto_notes: "Notes"
         assert keypair.rsa_public == "test_key"
         assert manifest.k == 3
         assert manifest.n == 5
+
+    def test_delete_message(self, tmp_path: Path) -> None:
+        """Test: Delete message from vault by ID."""
+        vault_path = tmp_path / "vault.yaml"
+
+        # Create vault with messages
+        passphrase = generate_passphrase()
+        keypair = generate_hybrid_keypair(passphrase)
+        manifest = Manifest(k=3, n=5)
+        guides = {"recovery_guide": "", "policy_document": "", "crypto_notes": ""}
+
+        keypair_data = {
+            "rsa_public": keypair.rsa_public.decode(),
+            "rsa_private_encrypted": base64.b64encode(
+                keypair.rsa_private_encrypted
+            ).decode(),
+            "kyber_public": base64.b64encode(keypair.kyber_public).decode(),
+            "kyber_private_encrypted": base64.b64encode(
+                keypair.kyber_private_encrypted
+            ).decode(),
+            "kdf_salt": base64.b64encode(keypair.kdf_salt).decode(),
+        }
+
+        vault = create_vault(keypair_data, manifest, guides)
+
+        # Add messages
+        for i in range(1, 4):
+            message = Message(
+                id=i,
+                title=f"Message {i}",
+                ciphertext=base64.b64encode(b"encrypted").decode(),
+                rsa_wrapped_kek=base64.b64encode(b"rsa").decode(),
+                kyber_wrapped_kek=base64.b64encode(b"kyber").decode(),
+                nonce=base64.b64encode(b"n" * 12).decode(),
+                auth_tag=base64.b64encode(b"t" * 16).decode(),
+                created=datetime.now(UTC).isoformat(),
+                size_bytes=100,
+            )
+            vault = append_message(vault, message)
+
+        save_vault(vault, str(vault_path))
+
+        # Delete message with ID 2
+        vault = load_vault(str(vault_path))
+        assert len(vault.messages) == 3
+        vault = delete_message(vault, "2")
+        assert len(vault.messages) == 2
+        assert all(m.id != 2 for m in vault.messages)
+        assert any(m.id == 1 for m in vault.messages)
+        assert any(m.id == 3 for m in vault.messages)
+
+    def test_delete_message_not_found(self, tmp_path: Path) -> None:
+        """Test: Delete message that doesn't exist raises ValueError."""
+        vault_path = tmp_path / "vault.yaml"
+
+        # Create vault with one message
+        passphrase = generate_passphrase()
+        keypair = generate_hybrid_keypair(passphrase)
+        manifest = Manifest(k=3, n=5)
+        guides = {"recovery_guide": "", "policy_document": "", "crypto_notes": ""}
+
+        keypair_data = {
+            "rsa_public": keypair.rsa_public.decode(),
+            "rsa_private_encrypted": base64.b64encode(
+                keypair.rsa_private_encrypted
+            ).decode(),
+            "kyber_public": base64.b64encode(keypair.kyber_public).decode(),
+            "kyber_private_encrypted": base64.b64encode(
+                keypair.kyber_private_encrypted
+            ).decode(),
+            "kdf_salt": base64.b64encode(keypair.kdf_salt).decode(),
+        }
+
+        vault = create_vault(keypair_data, manifest, guides)
+        message = Message(
+            id=1,
+            title="Test Message",
+            ciphertext=base64.b64encode(b"encrypted").decode(),
+            rsa_wrapped_kek=base64.b64encode(b"rsa").decode(),
+            kyber_wrapped_kek=base64.b64encode(b"kyber").decode(),
+            nonce=base64.b64encode(b"n" * 12).decode(),
+            auth_tag=base64.b64encode(b"t" * 16).decode(),
+            created=datetime.now(UTC).isoformat(),
+            size_bytes=100,
+        )
+        vault = append_message(vault, message)
+        save_vault(vault, str(vault_path))
+
+        # Try to delete non-existent message
+        vault = load_vault(str(vault_path))
+        with pytest.raises(ValueError, match="Message with ID '999' not found"):
+            delete_message(vault, "999")
+
+    def test_edit_message_title(self, tmp_path: Path) -> None:
+        """Test: Edit message title by ID."""
+        vault_path = tmp_path / "vault.yaml"
+
+        # Create vault with messages
+        passphrase = generate_passphrase()
+        keypair = generate_hybrid_keypair(passphrase)
+        manifest = Manifest(k=3, n=5)
+        guides = {"recovery_guide": "", "policy_document": "", "crypto_notes": ""}
+
+        keypair_data = {
+            "rsa_public": keypair.rsa_public.decode(),
+            "rsa_private_encrypted": base64.b64encode(
+                keypair.rsa_private_encrypted
+            ).decode(),
+            "kyber_public": base64.b64encode(keypair.kyber_public).decode(),
+            "kyber_private_encrypted": base64.b64encode(
+                keypair.kyber_private_encrypted
+            ).decode(),
+            "kdf_salt": base64.b64encode(keypair.kdf_salt).decode(),
+        }
+
+        vault = create_vault(keypair_data, manifest, guides)
+
+        # Add messages
+        for i in range(1, 4):
+            message = Message(
+                id=i,
+                title=f"Original Title {i}",
+                ciphertext=base64.b64encode(b"encrypted").decode(),
+                rsa_wrapped_kek=base64.b64encode(b"rsa").decode(),
+                kyber_wrapped_kek=base64.b64encode(b"kyber").decode(),
+                nonce=base64.b64encode(b"n" * 12).decode(),
+                auth_tag=base64.b64encode(b"t" * 16).decode(),
+                created=datetime.now(UTC).isoformat(),
+                size_bytes=100,
+            )
+            vault = append_message(vault, message)
+
+        save_vault(vault, str(vault_path))
+
+        # Edit message title
+        vault = load_vault(str(vault_path))
+        vault = edit_message_title(vault, "2", "Updated Title")
+
+        # Verify
+        message_2 = next(m for m in vault.messages if m.id == 2)
+        assert message_2.title == "Updated Title"
+        # Other messages unchanged
+        message_1 = next(m for m in vault.messages if m.id == 1)
+        assert message_1.title == "Original Title 1"
+
+    def test_edit_message_title_not_found(self, tmp_path: Path) -> None:
+        """Test: Edit message title for non-existent message raises ValueError."""
+        vault_path = tmp_path / "vault.yaml"
+
+        # Create vault with one message
+        passphrase = generate_passphrase()
+        keypair = generate_hybrid_keypair(passphrase)
+        manifest = Manifest(k=3, n=5)
+        guides = {"recovery_guide": "", "policy_document": "", "crypto_notes": ""}
+
+        keypair_data = {
+            "rsa_public": keypair.rsa_public.decode(),
+            "rsa_private_encrypted": base64.b64encode(
+                keypair.rsa_private_encrypted
+            ).decode(),
+            "kyber_public": base64.b64encode(keypair.kyber_public).decode(),
+            "kyber_private_encrypted": base64.b64encode(
+                keypair.kyber_private_encrypted
+            ).decode(),
+            "kdf_salt": base64.b64encode(keypair.kdf_salt).decode(),
+        }
+
+        vault = create_vault(keypair_data, manifest, guides)
+        message = Message(
+            id=1,
+            title="Test Message",
+            ciphertext=base64.b64encode(b"encrypted").decode(),
+            rsa_wrapped_kek=base64.b64encode(b"rsa").decode(),
+            kyber_wrapped_kek=base64.b64encode(b"kyber").decode(),
+            nonce=base64.b64encode(b"n" * 12).decode(),
+            auth_tag=base64.b64encode(b"t" * 16).decode(),
+            created=datetime.now(UTC).isoformat(),
+            size_bytes=100,
+        )
+        vault = append_message(vault, message)
+        save_vault(vault, str(vault_path))
+
+        # Try to edit non-existent message
+        vault = load_vault(str(vault_path))
+        with pytest.raises(ValueError, match="Message with ID '999' not found"):
+            edit_message_title(vault, "999", "New Title")
