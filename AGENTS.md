@@ -1,6 +1,6 @@
 # will-encrypt Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-10-07
+Auto-generated from all feature plans. Last updated: 2025-10-08
 
 ## Active Technologies
 - Python 3.11+ (standard library preferred)
@@ -25,17 +25,20 @@ will-encrypt/
 │   │   ├── encrypt.py   # Encrypt messages
 │   │   ├── decrypt.py   # Decrypt with K shares
 │   │   ├── list.py      # List messages
+│   │   ├── edit.py      # Edit message titles
+│   │   ├── delete.py    # Delete messages
 │   │   ├── validate.py  # Verify vault integrity
 │   │   ├── rotate.py    # Rotate shares/passphrase
+│   │   ├── editor.py    # Secure message editor with keyboard navigation
 │   │   └── interactive.py # Interactive mode UI
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 88 unit tests
-│   ├── contract/        # 45 contract tests
-│   ├── integration/     # 38 integration tests
+│   ├── unit/            # 96 unit tests
+│   ├── contract/        # 55 contract tests
+│   ├── integration/     # 46 integration tests
 │   └── test_helpers.py  # Shared test utilities
-├── README.md            # Comprehensive user guide (1,333 lines)
+├── README.md            # Comprehensive user guide
 ├── EXAMPLE_IMPORT_SHARES.md
 └── IMPLEMENTATION_SUMMARY.md
 ```
@@ -145,7 +148,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **197/197 tests passing (100% pass rate), 65% code coverage**
+- Current status: **220/220 tests passing (100% pass rate), 64% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -178,6 +181,8 @@ python -m src.main <command>        # Alternative invocation
 
 ✅ UX Enhancements:
 - Interactive prompts (K, N, title, message, shares)
+- **Secure message editor** with keyboard arrow navigation (↑ ↓ ← →), Home/End/Delete/Backspace support
+- Automatic screen clearing after message entry for security
 - Progress indicators ([1/4] Task... ✓ Done)
 - Enhanced error messages with recovery suggestions
 - BIP39 checksum validation with retry logic
@@ -186,8 +191,8 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (197 tests, 65% code coverage):
-- **Unit Tests (96)**: Crypto primitives (including `generate_additional_shares`), storage, CLI wiring
+✅ Test Coverage (220 tests, 64% code coverage):
+- **Unit Tests (119)**: Crypto primitives, storage, CLI wiring, secure editor navigation
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
 - **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management
 - All tests passing with comprehensive coverage of security features

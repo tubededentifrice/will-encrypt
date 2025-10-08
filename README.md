@@ -9,6 +9,7 @@
 - **Threshold Cryptography**: K-of-N secret sharing using Shamir's Secret Sharing Scheme
 - **Post-Quantum Ready**: Hybrid RSA-4096 + Kyber-1024 encryption
 - **BIP39 Shares**: Human-friendly 24-word mnemonics for key distribution
+- **Secure Editor**: Interactive message editor with keyboard navigation and automatic screen clearing
 - **Multiple Messages**: Store multiple encrypted messages in a single vault
 - **Tamper Detection**: SHA-256 fingerprints protect vault integrity
 - **Key Rotation**: Rotate shares or passphrase without re-encrypting messages
@@ -325,10 +326,24 @@ Add an encrypted message to the vault.
 - `--message`: Message content (max 64 KB)
 - `--stdin`: Read message from stdin
 
+**Interactive Editor:**
+
+When no `--message` or `--stdin` is provided, an interactive secure editor launches with:
+- Full keyboard arrow navigation (↑ ↓ ← →)
+- Standard editing keys (Home, End, Delete, Backspace)
+- Multi-line text editing
+- Automatic screen clearing after input (security)
+- No disk writes during editing (operates in memory only)
+- Press Ctrl+D to finish, Ctrl+C to cancel
+
 **Examples:**
 
 ```bash
-# Encrypt a short message
+# Interactive mode with secure editor
+./will-encrypt encrypt --vault vault.yaml --title "WiFi Password"
+# Opens editor for message input with arrow key navigation
+
+# Encrypt a short message (non-interactive)
 ./will-encrypt encrypt --vault vault.yaml \
     --title "WiFi Password" \
     --message "SSID: HomeNet, Password: SecurePass123!"
@@ -351,6 +366,8 @@ cat credentials.json | will-encrypt encrypt --vault vault.yaml \
 - Each message encrypted with unique AES-256-GCM key
 - Message encryption key wrapped with RSA-4096-OAEP + Kyber-1024
 - Authenticated encryption with title as additional data (AAD)
+- Screen cleared immediately after message entry in interactive mode
+- Message never written to disk unencrypted
 
 ---
 
