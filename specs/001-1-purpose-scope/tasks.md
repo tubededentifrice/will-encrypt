@@ -15,10 +15,10 @@
 
 ## Phase 3.1: Setup
 
-- [ ] T001 Create Python project structure (src/, tests/, setup.py, pyproject.toml, requirements.txt)
-- [ ] T002 Initialize Python package with dependencies (pyyaml, cryptography, pytest, mnemonic, secretsharing)
-- [ ] T003 [P] Configure linting and type checking (ruff, mypy, pre-commit hooks)
-- [ ] T004 [P] Create .gitignore for Python project (exclude __pycache__, *.pyc, venv/, vault*.yaml test files)
+- [X] T001 Create Python project structure (src/, tests/, setup.py, pyproject.toml, requirements.txt)
+- [X] T002 Initialize Python package with dependencies (pyyaml, cryptography, pytest, mnemonic, secretsharing)
+- [X] T003 [P] Configure linting and type checking (ruff, mypy, pre-commit hooks)
+- [X] T004 [P] Create .gitignore for Python project (exclude __pycache__, *.pyc, venv/, vault*.yaml test files)
 
 ---
 
@@ -28,112 +28,112 @@
 
 ### Contract Tests (Based on contracts/*.schema.yaml)
 
-- [ ] T005 [P] Contract test for init command in tests/contract/test_init_contract.py
+- [X] T005 [P] Contract test for init command in tests/contract/test_init_contract.py
   - Test: Initialize 3-of-5 vault, verify vault.yaml created with correct structure
   - Test: K > N rejection, K < 1 rejection, vault exists without --force rejection
   - Test: 5 BIP39 mnemonics displayed (24 words each, valid checksums)
   - Test: Performance < 5 seconds
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 8 tests failing)
 
-- [ ] T006 [P] Contract test for encrypt command in tests/contract/test_encrypt_contract.py
+- [X] T006 [P] Contract test for encrypt command in tests/contract/test_encrypt_contract.py
   - Test: Encrypt message via --message argument, verify vault updated
   - Test: Encrypt message via stdin, verify vault updated
   - Test: Message size > 64 KB rejection
   - Test: Performance < 1 second for 64 KB message
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
-- [ ] T007 [P] Contract test for decrypt command in tests/contract/test_decrypt_contract.py
+- [X] T007 [P] Contract test for decrypt command in tests/contract/test_decrypt_contract.py
   - Test: Decrypt with K valid shares, verify all messages recovered
   - Test: Decrypt with K-1 shares rejection (insufficient shares)
   - Test: Invalid BIP39 checksum rejection
   - Test: Performance < 5 seconds crypto operations
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
-- [ ] T008 [P] Contract test for rotate command in tests/contract/test_rotate_contract.py
+- [X] T008 [P] Contract test for rotate command in tests/contract/test_rotate_contract.py
   - Test: Share rotation (same passphrase, new K/N), verify new shares work
   - Test: Passphrase rotation (new passphrase), verify private keys re-encrypted
   - Test: Old shares invalid after rotation
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 6 tests failing)
 
-- [ ] T009 [P] Contract test for validate command in tests/contract/test_validate_contract.py
+- [X] T009 [P] Contract test for validate command in tests/contract/test_validate_contract.py
   - Test: Validation passes for valid vault
   - Test: Fingerprint mismatch detection (tampered vault)
   - Test: Missing required fields detection
   - Test: Performance < 2 seconds
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
-- [ ] T010 [P] Contract test for list command in tests/contract/test_list_contract.py
+- [X] T010 [P] Contract test for list command in tests/contract/test_list_contract.py
   - Test: List messages in table format
   - Test: List messages in JSON format
   - Test: Sort by various fields (id, title, created, size)
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
 ### Unit Tests with Test Vectors (Based on research.md)
 
-- [ ] T011 [P] Unit tests for Shamir Secret Sharing in tests/unit/test_shamir.py
+- [X] T011 [P] Unit tests for Shamir Secret Sharing in tests/unit/test_shamir.py
   - Test: Split 384-bit secret into K-of-N shares using Shamir SSS
   - Test: Reconstruct secret from any K shares
   - Test: Reconstruction fails with K-1 shares
   - Test: Information-theoretic security (K-1 shares reveal nothing)
   - Use test vectors from academic papers or generate known input/output pairs
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 9 tests failing)
 
-- [ ] T012 [P] Unit tests for BIP39 encoding in tests/unit/test_bip39.py
+- [X] T012 [P] Unit tests for BIP39 encoding in tests/unit/test_bip39.py
   - Test: Encode 32-byte share → 24-word BIP39 mnemonic
   - Test: Decode 24-word mnemonic → 32-byte share
   - Test: Checksum validation (detect invalid checksums)
   - Test: Invalid word rejection (not in BIP39 wordlist)
   - Use BIP39 specification test vectors
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 10 tests failing)
 
-- [ ] T013 [P] Unit tests for hybrid RSA+Kyber encryption in tests/unit/test_keypair.py
+- [X] T013 [P] Unit tests for hybrid RSA+Kyber encryption in tests/unit/test_keypair.py
   - Test: Generate RSA-4096 keypair
   - Test: Generate Kyber-1024 keypair
   - Test: Hybrid encryption (encrypt KEK with both RSA and Kyber)
   - Test: Hybrid decryption (verify RSA KEK == Kyber KEK)
   - Use NIST CAVP test vectors for RSA-OAEP
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 10 tests failing)
 
-- [ ] T014 [P] Unit tests for AES-256-GCM encryption in tests/unit/test_encryption.py
+- [X] T014 [P] Unit tests for AES-256-GCM encryption in tests/unit/test_encryption.py
   - Test: Encrypt message with AES-256-GCM (KEK, nonce, AAD)
   - Test: Decrypt message and verify authentication tag
   - Test: Tampered ciphertext rejection (auth tag mismatch)
   - Test: Nonce uniqueness enforcement
   - Use NIST CAVP AES-GCM test vectors
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 12 tests failing)
 
-- [ ] T015 [P] Unit tests for YAML vault operations in tests/unit/test_vault.py
+- [X] T015 [P] Unit tests for YAML vault operations in tests/unit/test_vault.py
   - Test: Create vault YAML structure from Keypair + Manifest
   - Test: Read vault YAML and parse to Python objects
   - Test: Append message to vault (update messages array)
   - Test: Update manifest (fingerprints, rotation history)
   - Test: YAML format validation
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 10 tests failing)
 
 ### Integration Tests (Based on quickstart.md scenarios)
 
-- [ ] T016 [P] Integration test for full lifecycle in tests/integration/test_full_lifecycle.py
+- [X] T016 [P] Integration test for full lifecycle in tests/integration/test_full_lifecycle.py
   - Test: Steps 1-10 from quickstart.md (init → encrypt → decrypt → rotate → validate)
   - Test: End-to-end workflow with temporary vault file
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 11 tests failing)
 
-- [ ] T017 [P] Integration test for emergency recovery in tests/integration/test_emergency_recovery.py
+- [X] T017 [P] Integration test for emergency recovery in tests/integration/test_emergency_recovery.py
   - Test: Initialize vault, encrypt messages, decrypt with K shares
   - Test: Verify plaintext matches original messages
   - Test: Hybrid verification (RSA KEK == Kyber KEK)
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
-- [ ] T018 [P] Integration test for share rotation in tests/integration/test_share_rotation.py
+- [X] T018 [P] Integration test for share rotation in tests/integration/test_share_rotation.py
   - Test: Initialize vault, rotate shares (change K/N)
   - Test: Verify new shares work, old shares fail
   - Test: Messages not re-encrypted (efficiency)
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 7 tests failing)
 
-- [ ] T019 [P] Integration test for validation and audit in tests/integration/test_validation_audit.py
+- [X] T019 [P] Integration test for validation and audit in tests/integration/test_validation_audit.py
   - Test: Validate valid vault (all checks pass)
   - Test: Detect tampered vault (fingerprint mismatch)
   - Test: Detect corrupted message (auth tag failure)
-  - Expected: ALL TESTS FAIL (no implementation yet)
+  - ✅ ALL TESTS FAIL (verified: 10 tests failing)
 
 ---
 
