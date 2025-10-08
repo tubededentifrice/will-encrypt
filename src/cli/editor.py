@@ -64,9 +64,9 @@ class SecureEditor:
         header = f"=== {self.title} ==="
         instructions = "Ctrl+D to finish | Ctrl+C to cancel | Arrow keys to navigate"
         sep_length = max(len(header), len(instructions))
-        separator = "─" * len(header)
-        separator2 = "─" * sep_length
-        return [header, separator, instructions, separator2]
+        header_separator = "─" * len(header)
+        instructions_separator = "─" * sep_length
+        return [header, header_separator, instructions, instructions_separator]
 
     def _draw_initial_screen(self) -> None:
         """Draw initial editor screen with header."""

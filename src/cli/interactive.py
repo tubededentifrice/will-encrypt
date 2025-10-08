@@ -1,5 +1,6 @@
 """Interactive mode for will-encrypt - guides users through all operations."""
 import os
+from enum import Enum
 from typing import Optional
 
 from src.cli.decrypt import decrypt_command
@@ -12,6 +13,36 @@ from src.cli.rotate import rotate_command
 from src.cli.validate import validate_command
 
 
+class MenuOption(Enum):
+    """Menu option choices for interactive mode."""
+
+    INIT = "1"
+    ENCRYPT = "2"
+    DECRYPT = "3"
+    LIST = "4"
+    EDIT = "5"
+    DELETE = "6"
+    VALIDATE = "7"
+    ROTATE = "8"
+    HELP = "9"
+    EXIT = "0"
+
+
+# Menu option descriptions
+MENU_DESCRIPTIONS = {
+    MenuOption.INIT: "Create a new vault",
+    MenuOption.ENCRYPT: "Add an encrypted message",
+    MenuOption.DECRYPT: "Decrypt messages (requires recovery shares)",
+    MenuOption.LIST: "View all messages",
+    MenuOption.EDIT: "Edit a message title",
+    MenuOption.DELETE: "Delete a message",
+    MenuOption.VALIDATE: "Validate vault integrity",
+    MenuOption.ROTATE: "Rotate shares or passphrase",
+    MenuOption.HELP: "Learn more about will-encrypt",
+    MenuOption.EXIT: "Exit",
+}
+
+
 def print_header() -> None:
     """Print welcome header."""
     print("\n" + "=" * 70)
@@ -20,27 +51,12 @@ def print_header() -> None:
     print("=" * 70 + "\n")
 
 
-def _get_menu_options() -> list[tuple[str, str]]:
-    """Get menu options as (number, description) pairs."""
-    return [
-        ("1", "Create a new vault"),
-        ("2", "Add an encrypted message"),
-        ("3", "Decrypt messages (requires recovery shares)"),
-        ("4", "View all messages"),
-        ("5", "Edit a message title"),
-        ("6", "Delete a message"),
-        ("7", "Validate vault integrity"),
-        ("8", "Rotate shares or passphrase"),
-        ("9", "Learn more about will-encrypt"),
-        ("0", "Exit"),
-    ]
-
-
 def print_menu() -> None:
     """Print main menu options."""
     print("What would you like to do?\n")
-    for num, desc in _get_menu_options():
-        print(f"  {num}. {desc}")
+    # Print in enum definition order
+    for option in MenuOption:
+        print(f"  {option.value}. {MENU_DESCRIPTIONS[option]}")
     print()
 
 
@@ -367,49 +383,37 @@ def interactive_mode() -> int:
     """Run interactive mode."""
     print_header()
 
-    # Generate valid choices dynamically from menu
-    valid_choices = [num for num, _ in _get_menu_options()]
+    # Generate valid choices from enum
+    valid_choices = [option.value for option in MenuOption]
+
+    # Map choices to handler functions
+    handlers = {
+        MenuOption.INIT: handle_init,
+        MenuOption.ENCRYPT: handle_encrypt,
+        MenuOption.DECRYPT: handle_decrypt,
+        MenuOption.LIST: handle_list,
+        MenuOption.EDIT: handle_edit,
+        MenuOption.DELETE: handle_delete,
+        MenuOption.VALIDATE: handle_validate,
+        MenuOption.ROTATE: handle_rotate,
+    }
 
     while True:
         print_menu()
         choice = get_choice("Enter your choice: ", valid_choices)
 
-        if choice == "0":
+        if choice == MenuOption.EXIT.value:
             print("\n👋 Goodbye!\n")
             return 0
-        elif choice == "1":
-            result = handle_init()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "2":
-            result = handle_encrypt()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "3":
-            result = handle_decrypt()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "4":
-            result = handle_list()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "5":
-            result = handle_edit()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "6":
-            result = handle_delete()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "7":
-            result = handle_validate()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "8":
-            result = handle_rotate()
-            if result != 0:
-                input("\nPress Enter to continue...")
-        elif choice == "9":
+        elif choice == MenuOption.HELP.value:
             explain_system()
+        else:
+            # Find matching option and call handler
+            for option, handler in handlers.items():
+                if choice == option.value:
+                    result = handler()
+                    if result != 0:
+                        input("\nPress Enter to continue...")
+                    break
 
         print("\n")  # Spacing before next menu
