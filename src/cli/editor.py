@@ -11,6 +11,9 @@ import sys
 import termios
 import tty
 
+# ASCII threshold for printable characters (space is first printable at 32)
+MIN_PRINTABLE_ASCII = 32
+
 
 class SecureEditor:
     """In-memory text editor with keyboard navigation and automatic screen clearing."""
@@ -253,7 +256,7 @@ class SecureEditor:
                         sys.stdin.read(1)  # Read the ~
                         self._delete_char()
                         self._redraw_content()
-                elif ord(char) >= 32:  # Printable character
+                elif ord(char) >= MIN_PRINTABLE_ASCII:  # Printable character
                     self._insert_char(char)
                     self._redraw_content()
 
