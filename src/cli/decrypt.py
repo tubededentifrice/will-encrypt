@@ -2,27 +2,29 @@
 import base64
 import sys
 
-from src.crypto.bip39 import decode_share, validate_checksum, parse_indexed_share
+from src.crypto.bip39 import decode_share, parse_indexed_share, validate_checksum
 from src.crypto.encryption import EncryptedMessage, decrypt_message
-from src.crypto.keypair import decrypt_private_keys
+from src.crypto.keypair import HybridKeypair, decrypt_private_keys
 from src.crypto.shamir import reconstruct_secret
-from src.crypto.keypair import HybridKeypair
 from src.storage.vault import load_vault
 
 
-def decrypt_command(vault_path: str, shares: list = None) -> int:
+def decrypt_command(vault_path: str, shares: list | None = None) -> int:
     """Decrypt messages using K shares."""
     import os
 
     # Check vault exists
     if not os.path.exists(vault_path):
         print(f"\nError: Vault not found: {vault_path}", file=sys.stderr)
-        print(f"Hint: Check the file path and ensure vault exists", file=sys.stderr)
+        print("Hint: Check the file path and ensure vault exists", file=sys.stderr)
         return 2
 
     try:
         # Load vault
         vault = load_vault(vault_path)
+        if vault.manifest is None:
+            print("\nError: Vault manifest is missing or corrupted", file=sys.stderr)
+            return 2
         k = vault.manifest.k
         n = vault.manifest.n
 
@@ -31,10 +33,10 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
         # Collect shares with interactive prompts
         if interactive_mode:
-            print(f"\n🔓 Decrypt Vault Messages\n")
+            print("\n🔓 Decrypt Vault Messages\n")
             print(f"This vault requires {k} out of {n} shares to decrypt.")
-            print(f"Each share is a 24-word BIP39 mnemonic with its original share number.")
-            print(f"Format: 'N: word1 word2 ... word24' or just 'word1 word2 ... word24'\n")
+            print("Each share is a 24-word BIP39 mnemonic with its original share number.")
+            print("Format: 'N: word1 word2 ... word24' or just 'word1 word2 ... word24'\n")
             print("-" * 70)
             shares = []
             for i in range(k):
@@ -58,7 +60,7 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
                         # Validate BIP39 checksum immediately
                         if not validate_checksum(mnemonic):
-                            print(f"  ✗ Invalid BIP39 checksum. Please check for typos.")
+                            print("  ✗ Invalid BIP39 checksum. Please check for typos.")
                             retry = input(f"  Retry share {i+1}? (yes/no): ").strip().lower()
                             if retry != "yes":
                                 print("\nAborted.", file=sys.stderr)
@@ -76,7 +78,7 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
                                         continue
                                     break
                                 except ValueError:
-                                    print(f"    Error: Invalid number")
+                                    print("    Error: Invalid number")
                                     continue
 
                         print(f"  ✓ Share {index} validated")
@@ -86,6 +88,8 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
                     except (EOFError, KeyboardInterrupt):
                         print("\n\nAborted.", file=sys.stderr)
                         return 1
+        else:
+            shares = list(shares) if shares is not None else []
 
         # Validate shares count
         if len(shares) < k:
@@ -94,7 +98,7 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
             return 3
 
         # Parse and validate shares
-        print(f"\n🔍 Validating shares...")
+        print("\n🔍 Validating shares...")
         share_bytes = []
         missing_indices = []
 
@@ -104,9 +108,9 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
             # Validate BIP39 checksum
             if not validate_checksum(mnemonic):
-                print(f"\nError: Invalid BIP39 checksum in share", file=sys.stderr)
-                print(f"Recovery: Check for typos in the mnemonic. The last word contains a checksum.", file=sys.stderr)
-                print(f"Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
+                print("\nError: Invalid BIP39 checksum in share", file=sys.stderr)
+                print("Recovery: Check for typos in the mnemonic. The last word contains a checksum.", file=sys.stderr)
+                print("Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
                 return 4
 
             if index is None:
@@ -120,15 +124,15 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
         if missing_indices:
             # In non-interactive mode (--shares provided via CLI), fail fast instead of prompting
             if not interactive_mode:
-                print(f"\nError: Share indices missing in non-interactive mode", file=sys.stderr)
-                print(f"Recovery: Include share numbers in format 'N: mnemonic' when using --shares", file=sys.stderr)
-                print(f"Example: --shares '1: abandon ability...' '2: about above...' '3: absorb abstract...'", file=sys.stderr)
-                print(f"Hint: Share numbers are required for correct Shamir reconstruction", file=sys.stderr)
+                print("\nError: Share indices missing in non-interactive mode", file=sys.stderr)
+                print("Recovery: Include share numbers in format 'N: mnemonic' when using --shares", file=sys.stderr)
+                print("Example: --shares '1: abandon ability...' '2: about above...' '3: absorb abstract...'", file=sys.stderr)
+                print("Hint: Share numbers are required for correct Shamir reconstruction", file=sys.stderr)
                 return 5
 
             # Interactive mode: prompt for missing indices
             print(f"\n⚠️  Warning: {len(missing_indices)} share(s) missing index information")
-            print(f"Please provide the original share numbers for correct reconstruction.\n")
+            print("Please provide the original share numbers for correct reconstruction.\n")
 
             for missing_mnemonic in missing_indices:
                 while True:
@@ -136,25 +140,25 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
                         idx_input = input(f"Enter share number for '{missing_mnemonic[:40]}...': ").strip()
                         index = int(idx_input)
                         if index < 1 or index > 255:
-                            print(f"  Error: Share index must be 1-255")
+                            print("  Error: Share index must be 1-255")
                             continue
                         decoded = decode_share(missing_mnemonic)
                         share_bytes.append(bytes([index]) + decoded)
                         break
                     except ValueError:
-                        print(f"  Error: Invalid number")
+                        print("  Error: Invalid number")
                         continue
 
         print(f"  ✓ All {len(share_bytes)} shares validated")
 
         # Reconstruct passphrase
-        print(f"\n🔓 Decrypting vault...")
+        print("\n🔓 Decrypting vault...")
         print(f"  [1/3] Reconstructing passphrase from {len(share_bytes)} shares...")
         passphrase = reconstruct_secret(share_bytes)
-        print(f"        ✓ Passphrase reconstructed")
+        print("        ✓ Passphrase reconstructed")
 
         # Decrypt private keys
-        print(f"  [2/3] Decrypting RSA-4096 + Kyber-1024 private keys...")
+        print("  [2/3] Decrypting RSA-4096 + Kyber-1024 private keys...")
         keypair_obj = HybridKeypair(
             rsa_public=vault.keys.rsa_public.encode(),
             rsa_private_encrypted=base64.b64decode(vault.keys.rsa_private_encrypted),
@@ -167,7 +171,7 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
         )
 
         rsa_private, kyber_private = decrypt_private_keys(keypair_obj, passphrase)
-        print(f"        ✓ Private keys decrypted")
+        print("        ✓ Private keys decrypted")
 
         # Decrypt messages
         print(f"  [3/3] Decrypting {len(vault.messages)} message(s)...")
@@ -186,7 +190,7 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
             )
             decrypted_messages.append((msg, plaintext))
 
-        print(f"        ✓ All messages decrypted\n")
+        print("        ✓ All messages decrypted\n")
 
         # Pretty print decrypted messages
         print("=" * 70)
@@ -195,17 +199,17 @@ def decrypt_command(vault_path: str, shares: list = None) -> int:
 
         for msg, plaintext in decrypted_messages:
             print(f"╔══ Message {msg.id}: {msg.title}")
-            print(f"║")
+            print("║")
             print(f"║ Created: {msg.created}")
             print(f"║ Size: {msg.size_bytes:,} bytes")
-            print(f"║")
-            print(f"╠══ Content:")
-            print(f"║")
+            print("║")
+            print("╠══ Content:")
+            print("║")
             # Indent content
             content_lines = plaintext.decode('utf-8').split('\n')
             for line in content_lines:
                 print(f"║   {line}")
-            print(f"║")
+            print("║")
             print("╚" + "═" * 68 + "\n")
 
         return 0

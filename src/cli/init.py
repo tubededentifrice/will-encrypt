@@ -2,18 +2,22 @@
 import base64
 import os
 import sys
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from src.cli.share_table import render_share_table
-from src.crypto.bip39 import encode_share, decode_share, validate_checksum, format_indexed_share, parse_indexed_share
+from src.crypto.bip39 import (
+    decode_share,
+    encode_share,
+    format_indexed_share,
+    parse_indexed_share,
+    validate_checksum,
+)
 from src.crypto.keypair import generate_hybrid_keypair
 from src.crypto.passphrase import generate_passphrase
-from src.crypto.shamir import split_secret, reconstruct_secret
+from src.crypto.shamir import reconstruct_secret, split_secret
 from src.docs.crypto_notes import generate_crypto_notes
 from src.docs.policy import generate_policy_document
 from src.docs.recovery_guide import generate_recovery_guide
-
 from src.storage.manifest import (
     RotationEvent,
     compute_fingerprints,
@@ -25,12 +29,12 @@ from src.storage.vault import create_vault, load_vault, save_vault
 
 
 def init_command(
-    k: int = None,
-    n: int = None,
+    k: int | None = None,
+    n: int | None = None,
     vault_path: str = "vault.yaml",
     force: bool = False,
     import_shares: list | None = None,
-    source_vault: Optional[str] = None,
+    source_vault: str | None = None,
 ) -> int:
     """Initialize vault with K-of-N threshold."""
     # Interactive prompts for K and N if not provided
@@ -69,7 +73,7 @@ def init_command(
 
     existing_share_fingerprints = []
     source_vault_fingerprints_found = False
-    source_vault_error: Optional[str] = None
+    source_vault_error: str | None = None
     if import_shares:
         candidate_paths = []
         if source_vault:
@@ -158,13 +162,13 @@ def init_command(
                             word_count = len(share_str.split())
                             if word_count != 24:
                                 print(f"  Warning: Expected 24 words, got {word_count}.")
-                                retry = input(f"  Continue with this share? (yes/no): ").strip().lower()
+                                retry = input("  Continue with this share? (yes/no): ").strip().lower()
                                 if retry != "yes":
                                     continue
 
                             # Validate BIP39 checksum
                             if not validate_checksum(share_str):
-                                print(f"  ✗ Invalid BIP39 checksum. Please check for typos.")
+                                print("  ✗ Invalid BIP39 checksum. Please check for typos.")
                                 retry = input(f"  Retry share {i+1}? (yes/no): ").strip().lower()
                                 if retry != "yes":
                                     print("\nAborted.", file=sys.stderr)
@@ -212,7 +216,7 @@ def init_command(
             for i, share_str in enumerate(import_shares, 1):
                 if not validate_checksum(share_str):
                     print(f"\nError: Invalid BIP39 checksum in imported share {i}", file=sys.stderr)
-                    print(f"Recovery: Check for typos in the mnemonic", file=sys.stderr)
+                    print("Recovery: Check for typos in the mnemonic", file=sys.stderr)
                     return 4
 
             print(f"      ✓ All {len(import_shares)} share(s) validated")
@@ -291,7 +295,7 @@ def init_command(
                 return 5
 
             passphrase = reconstruct_secret(share_bytes)
-            print(f"      ✓ Passphrase reconstructed from imported shares")
+            print("      ✓ Passphrase reconstructed from imported shares")
 
             # Split into shares (could be same K/N or different)
             print(f"[2/4] Splitting passphrase into {n} shares (threshold: {k})...")
@@ -299,7 +303,7 @@ def init_command(
             print(f"      ✓ {n} shares created using Shamir Secret Sharing")
 
             # Encode as BIP39 (preserve original indices)
-            print(f"[3/4] Encoding shares as BIP39 mnemonics...")
+            print("[3/4] Encoding shares as BIP39 mnemonics...")
             indexed_mnemonics = []
             for share in shares:
                 index = share[0]  # Extract original index
@@ -309,7 +313,7 @@ def init_command(
 
         else:
             # Progress: Generate passphrase
-            print(f"\n[1/4] Generating 256-bit passphrase...")
+            print("\n[1/4] Generating 256-bit passphrase...")
             passphrase = generate_passphrase()
             print("      ✓ Passphrase generated")
 
@@ -319,7 +323,7 @@ def init_command(
             print(f"      ✓ {n} shares created using Shamir Secret Sharing")
 
             # Encode as BIP39 (preserve original indices)
-            print(f"[3/4] Encoding shares as BIP39 mnemonics...")
+            print("[3/4] Encoding shares as BIP39 mnemonics...")
             indexed_mnemonics = []
             for share in shares:
                 index = share[0]  # Extract original index
@@ -330,7 +334,7 @@ def init_command(
         share_fingerprints = create_share_fingerprints(shares)
 
         # Progress: Generate keypair
-        print(f"[4/4] Generating RSA-4096 + Kyber-1024 keypair...")
+        print("[4/4] Generating RSA-4096 + Kyber-1024 keypair...")
         keypair = generate_hybrid_keypair(passphrase)
         print("      ✓ Hybrid keypair generated and encrypted")
 
@@ -348,7 +352,7 @@ def init_command(
             fingerprints={},
             rotation_history=[
                 RotationEvent(
-                    date=datetime.now(timezone.utc).isoformat(),
+                    date=datetime.now(UTC).isoformat(),
                     event_type="initial_creation",
                     k=k,
                     n=n,
@@ -381,6 +385,9 @@ def init_command(
         vault = create_vault(keypair_data, manifest, guides)
 
         # Update fingerprints
+        if vault.manifest is None:
+            print("\nError: Vault manifest is missing", file=sys.stderr)
+            return 2
         vault.manifest.fingerprints = compute_fingerprints(vault)
 
         # Save vault
@@ -393,27 +400,30 @@ def init_command(
 
         if import_shares:
             print(f"📋 Secret Shares ({k}-of-{n} threshold) - RECONSTRUCTED FROM IMPORTED SHARES\n")
-            print(f"⚠️  SECURITY WARNING:")
-            print(f"    • These shares use the SAME passphrase as the imported shares")
-            print(f"    • Compromising one vault compromises ALL vaults with this passphrase")
-            print(f"    • Only use this feature if you understand the security implications\n")
+            print("⚠️  SECURITY WARNING:")
+            print("    • These shares use the SAME passphrase as the imported shares")
+            print("    • Compromising one vault compromises ALL vaults with this passphrase")
+            print("    • Only use this feature if you understand the security implications\n")
         else:
             print(f"📋 Secret Shares ({k}-of-{n} threshold)\n")
 
-        print(f"⚠️  CRITICAL: These shares are displayed ONCE and never stored!")
+        print("⚠️  CRITICAL: These shares are displayed ONCE and never stored!")
         print(f"    • Distribute to {n} different key holders")
         print(f"    • {k} shares required to decrypt messages")
-        print(f"    • Each share is 24 words (BIP39 mnemonic)")
-        print(f"    • Share numbers are CRITICAL - they must be preserved with the mnemonics")
-        print(f"    • Store securely: paper backup, password manager, or HSM\n")
+        print("    • Each share is 24 words (BIP39 mnemonic)")
+        print("    • Share numbers are CRITICAL - they must be preserved with the mnemonics")
+        print("    • Store securely: paper backup, password manager, or HSM\n")
         print(f"{'-'*70}\n")
 
+        # Print inline format for easy copy-pasting
         for index, mnemonic in indexed_mnemonics:
             print(f"Share {index}/{n}:")
             print(f"  {format_indexed_share(index, mnemonic)}\n")
 
         print(f"{'-'*70}\n")
-        print("📊 Numbered Share Table\n")
+        print("📊 Numbered Share Tables (for manual transcription)\n")
+
+        # Print table format for manual transcription
         table_output = render_share_table(indexed_mnemonics)
         if table_output:
             print(table_output)
@@ -424,7 +434,7 @@ def init_command(
         print("  2. Distribute shares to key holders via secure channels")
         print("  3. Test decryption immediately with K shares")
         print(f"  4. Add messages: will-encrypt encrypt --vault {vault_path} --title '...'")
-        print(f"\n✓ Setup complete. Vault ready for encryption.")
+        print("\n✓ Setup complete. Vault ready for encryption.")
 
         # Zero sensitive data
         del passphrase, shares, indexed_mnemonics, keypair, share_fingerprints

@@ -6,27 +6,25 @@ Based on: specs/001-1-purpose-scope/quickstart.md
 Tests MUST fail before implementation (TDD).
 """
 
-from pathlib import Path
-import sys
+# Import decrypt helper from emergency_recovery tests
+import base64
 import io
+import sys
+from pathlib import Path
 
 import pytest
 import yaml
 
+from src.crypto.bip39 import decode_share, parse_indexed_share
+from src.crypto.encryption import EncryptedMessage, decrypt_message
+from src.crypto.keypair import HybridKeypair, decrypt_private_keys
+from src.crypto.shamir import reconstruct_secret
 from tests.test_helpers import (
     create_test_vault,
     encrypt_test_message,
-    get_vault_manifest,
-    get_vault_messages,
     extract_shares_from_output,
+    get_vault_manifest,
 )
-
-# Import decrypt helper from emergency_recovery tests
-import base64
-from src.crypto.shamir import reconstruct_secret
-from src.crypto.bip39 import decode_share, parse_indexed_share
-from src.crypto.keypair import decrypt_private_keys, HybridKeypair
-from src.crypto.encryption import EncryptedMessage, decrypt_message
 
 
 def decrypt_vault_messages(vault_path: Path, shares: list) -> list:
@@ -48,6 +46,7 @@ def decrypt_vault_messages(vault_path: Path, shares: list) -> list:
     for share_str in shares:
         index, mnemonic = parse_indexed_share(share_str)
         decoded = decode_share(mnemonic)
+        assert index is not None
         share_bytes.append(bytes([index]) + decoded)
 
     passphrase = reconstruct_secret(share_bytes)
@@ -342,8 +341,8 @@ class TestShareRotation:
         original_message = "Persistent secret across rotations"
         encrypt_test_message(vault_path, "Persistent", original_message)
 
-        from src.cli.rotate import rotate_command
         from src.cli.decrypt import decrypt_command
+        from src.cli.rotate import rotate_command
 
         old_stdout = sys.stdout
 

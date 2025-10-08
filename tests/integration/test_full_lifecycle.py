@@ -6,19 +6,15 @@ Based on: specs/001-1-purpose-scope/quickstart.md (Steps 1-10)
 Tests MUST fail before implementation (TDD).
 """
 
-from pathlib import Path
 import io
-import sys
 import json
-import yaml
-
-import pytest
+import sys
+from pathlib import Path
 
 from tests.test_helpers import (
-    extract_shares_from_output,
     create_test_vault,
     encrypt_test_message,
-    decrypt_test_vault,
+    extract_shares_from_output,
     get_vault_manifest,
     get_vault_messages,
 )
@@ -226,8 +222,8 @@ class TestFullLifecycle:
 
     def test_step_8_verify_rotated_shares_work(self, tmp_path: Path) -> None:
         """Step 8: Verify rotated shares work."""
-        from src.cli.rotate import rotate_command
         from src.cli.decrypt import decrypt_command
+        from src.cli.rotate import rotate_command
 
         # Setup: Initialize, encrypt, rotate
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
@@ -273,8 +269,8 @@ class TestFullLifecycle:
 
     def test_step_9_old_shares_invalidated_negative_test(self, tmp_path: Path) -> None:
         """Step 9: Test old shares invalidated (negative test)."""
-        from src.cli.rotate import rotate_command
         from src.cli.decrypt import decrypt_command
+        from src.cli.rotate import rotate_command
 
         # Setup: Initialize, encrypt, rotate
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
@@ -308,8 +304,8 @@ class TestFullLifecycle:
 
     def test_step_10_final_validation(self, tmp_path: Path) -> None:
         """Step 10: Final validation."""
-        from src.cli.validate import validate_command
         from src.cli.rotate import rotate_command
+        from src.cli.validate import validate_command
 
         # Setup: Complete all previous steps
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
@@ -349,11 +345,11 @@ class TestFullLifecycle:
 
     def test_full_lifecycle_integrated(self, tmp_path: Path) -> None:
         """Test: Complete lifecycle (all 10 steps in sequence)."""
+        from src.cli.decrypt import decrypt_command
         from src.cli.encrypt import encrypt_command
         from src.cli.list import list_command
-        from src.cli.validate import validate_command
-        from src.cli.decrypt import decrypt_command
         from src.cli.rotate import rotate_command
+        from src.cli.validate import validate_command
 
         # Step 1: Initialize 3-of-5 vault
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)

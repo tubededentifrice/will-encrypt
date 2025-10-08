@@ -2,44 +2,66 @@
 
 from __future__ import annotations
 
-from typing import Sequence
-
-from src.crypto.bip39 import format_indexed_share
+from collections.abc import Sequence
 
 
 def render_share_table(indexed_shares: Sequence[tuple[int, str]]) -> str:
-    """Render indexed shares as an ASCII table for easy copying.
+    """Render indexed shares as individual numbered tables for easy copying.
 
     Args:
         indexed_shares: Sequence of tuples containing the share index and mnemonic.
 
     Returns:
-        A string representation of the numbered share table. Returns an empty string
-        when no shares are provided.
+        A string representation of individual share tables, each showing the 24 words
+        numbered in cells. Returns an empty string when no shares are provided.
     """
 
     if not indexed_shares:
         return ""
 
-    rendered_shares = [format_indexed_share(index, mnemonic) for index, mnemonic in indexed_shares]
+    tables = []
+    total_shares = len(indexed_shares)
 
-    row_numbers = [str(row_number) for row_number in range(1, len(rendered_shares) + 1)]
+    for share_idx, (share_number, mnemonic) in enumerate(indexed_shares, 1):
+        # Split mnemonic into 24 words
+        words = mnemonic.split()
+        if len(words) != 24:
+            # Fallback for invalid mnemonics
+            continue
 
-    number_header = "#"
-    share_header = "Indexed Share"
+        # Create table header
+        table_lines = []
+        table_lines.append(f"Share {share_number}/{total_shares}:")
+        table_lines.append("")
 
-    number_width = max(len(number_header), max(len(number) for number in row_numbers))
-    share_width = max(len(share_header), max(len(share) for share in rendered_shares))
+        # Create a 6x4 grid (6 rows, 4 columns) for the 24 words
+        # Column widths: word number (2 chars) + word (longest word + padding)
+        max_word_len = max(len(word) for word in words)
+        col_width = max(max_word_len + 5, 15)  # At least 15 chars per column
 
-    horizontal = "+" + "-" * (number_width + 2) + "+" + "-" * (share_width + 2) + "+"
-    header = f"| {number_header.ljust(number_width)} | {share_header.ljust(share_width)} |"
+        # Cell content width (with padding on both sides)
+        cell_width = col_width + 2  # +2 for spaces around content
 
-    data_rows = [
-        f"| {row_numbers[i].ljust(number_width)} | {rendered_shares[i].ljust(share_width)} |"
-        for i in range(len(rendered_shares))
-    ]
+        # Build header with proper alignment
+        horizontal = "+" + "+".join(["-" * cell_width] * 4) + "+"
+        table_lines.append(horizontal)
 
-    table_lines = [horizontal, header, horizontal, *data_rows, horizontal]
+        # Build rows (6 rows of 4 words each)
+        for row in range(6):
+            row_cells = []
+            for col in range(4):
+                word_idx = row * 4 + col
+                if word_idx < len(words):
+                    cell_content = f"{word_idx + 1:2d}. {words[word_idx]}"
+                    # Pad with spaces: " content "
+                    row_cells.append(" " + cell_content.ljust(col_width) + " ")
+                else:
+                    row_cells.append(" " * cell_width)
 
-    return "\n".join(table_lines)
+            table_lines.append("|" + "|".join(row_cells) + "|")
+            table_lines.append(horizontal)
+
+        tables.append("\n".join(table_lines))
+
+    return "\n\n".join(tables)
 

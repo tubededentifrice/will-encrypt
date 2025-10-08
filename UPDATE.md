@@ -17,9 +17,66 @@ Maintain the will-encrypt codebase by:
 
 ---
 
+## Quick Reference
+
+**Essential commands for maintenance:**
+```bash
+# 1. Security audit (ALWAYS RUN FIRST)
+pip install pip-audit && pip-audit
+
+# 2. Check outdated packages
+pip list --outdated
+
+# 3. Run all tests
+pytest -v  # Must be 171/171 passing
+
+# 4. Check coverage
+pytest --cov=src  # Must be ≥75%
+
+# 5. Lint and type check
+ruff check src tests
+mypy src tests
+
+# 6. Full verification pipeline
+pip-audit && pytest -v && pytest --cov=src && ruff check src tests && mypy src tests
+```
+
+---
+
 ## Maintenance Checklist
 
-### 1. Dependency Updates
+### 1. Security Audit and CVE Checks
+
+**ALWAYS START HERE.** Before any dependency updates, check for security vulnerabilities:
+
+```bash
+# Install pip-audit if not already installed
+pip install pip-audit
+
+# Check for CVEs in current dependencies
+pip-audit
+
+# Alternative: Check PyPI advisory database
+pip-audit --desc
+```
+
+**For each CVE found:**
+1. Assess severity (Critical, High, Medium, Low)
+2. Check if the vulnerability affects will-encrypt's usage patterns
+3. Review the CVE details and recommended fix version
+4. Prioritize critical and high-severity CVEs
+5. Update affected package to patched version
+6. Re-run `pip-audit` to verify fix
+7. Run full test suite to ensure compatibility
+
+**If a CVE cannot be fixed without breaking changes:**
+- Document the security risk assessment
+- Consider if the vulnerability is exploitable in will-encrypt's context
+- Escalate to human reviewer for critical/high-severity issues
+
+---
+
+### 2. Dependency Updates
 
 Check and update all dependencies in `requirements.txt` and `requirements-dev.txt`:
 
@@ -27,31 +84,36 @@ Check and update all dependencies in `requirements.txt` and `requirements-dev.tx
 # Check for outdated packages
 pip list --outdated
 
-# Review each dependency:
+# Current dependencies:
 # - pyyaml>=6.0
 # - cryptography>=41.0
 # - mnemonic>=0.20
-# - secretsharing>=0.2.6
-# - pytest, pytest-cov, ruff, mypy (dev dependencies)
+# - pqcrypto>=0.3.4
+#
+# Dev dependencies:
+# - pytest>=7.4, pytest-cov>=4.1, pytest-xdist>=3.6
+# - ruff>=0.1, mypy>=1.7
 ```
 
 **For each dependency:**
-- Review CHANGELOG for breaking changes
-- Update version constraints to latest stable
-- Run full test suite after each update
-- Pay special attention to `cryptography` library changes affecting:
-  - AES-256-GCM implementation
-  - RSA-4096 key generation/serialization
-  - PBKDF2-HMAC-SHA512 parameters
-  - PEM encoding/decoding
+1. Review CHANGELOG for breaking changes
+2. Check for security advisories (CVEs)
+3. Update version constraints to latest stable
+4. Run full test suite after each update
+5. Pay special attention to `cryptography` library changes affecting:
+   - AES-256-GCM implementation
+   - RSA-4096 key generation/serialization
+   - PBKDF2-HMAC-SHA512 parameters
+   - PEM encoding/decoding
 
 **Red flags:**
 - Any changes to `cryptography.hazmat` APIs
 - Deprecation of `serialization.load_pem_private_key` or `load_pem_public_key`
 - Changes to `Cipher`, `modes.GCM`, or `AESGCM` interfaces
 - Modifications to `hashes.SHA512` or `PBKDF2HMAC`
+- Breaking changes in `pqcrypto` ML-KEM-1024 implementation
 
-### 2. Python Version Support
+### 3. Python Version Support
 
 Check if newer Python versions are available:
 
@@ -68,7 +130,7 @@ Check if newer Python versions are available:
 
 **Do NOT drop support for Python 3.11 without explicit approval.**
 
-### 3. Cryptographic Compatibility Verification
+### 4. Cryptographic Compatibility Verification
 
 **CRITICAL: These must remain unchanged to maintain vault compatibility:**
 
@@ -114,7 +176,7 @@ git stash pop
 
 **If decryption fails or produces wrong output, the update MUST be rolled back.**
 
-### 4. Deprecated API Replacement
+### 5. Deprecated API Replacement
 
 Scan for deprecation warnings:
 
@@ -136,21 +198,21 @@ pytest -W default::DeprecationWarning
 5. Run full test suite
 6. Document the change in commit message
 
-### 5. Test Suite Maintenance
+### 6. Test Suite Maintenance
 
 Ensure all tests pass and coverage is maintained:
 
 ```bash
-# Run full test suite (must be 146/146 passing)
+# Run full test suite (must be 171/171 passing)
 pytest -v
 
-# Check coverage (must be ≥69%)
+# Check coverage (must be ≥75%)
 pytest --cov=src --cov-report=term-missing
 
 # Run specific test categories
-pytest tests/unit/ -v           # 57 tests
-pytest tests/contract/ -v       # 43 tests
-pytest tests/integration/ -v    # 46 tests
+pytest tests/unit/ -v           # 88 tests
+pytest tests/contract/ -v       # 45 tests
+pytest tests/integration/ -v    # 38 tests
 ```
 
 **If tests fail:**
@@ -159,7 +221,7 @@ pytest tests/integration/ -v    # 46 tests
 3. Update tests ONLY if they're testing implementation details, not behavior
 4. Never modify tests that verify cryptographic correctness
 
-### 6. Security Audit Checklist
+### 7. Security Audit Checklist
 
 After updates, verify these security properties:
 
@@ -178,7 +240,7 @@ grep -r "random\." src/   # Should use secrets module instead
 grep -r "TODO\|FIXME\|XXX" src/  # Review any security TODOs
 ```
 
-### 7. Documentation Updates
+### 8. Documentation Updates
 
 Update documentation to reflect any changes:
 
@@ -188,7 +250,7 @@ Update documentation to reflect any changes:
 - [ ] Inline docstrings: Update for API changes
 - [ ] IMPLEMENTATION_SUMMARY.md: Note any architectural changes
 
-### 8. Linting and Type Checking
+### 9. Linting and Type Checking
 
 Ensure code quality standards are maintained:
 
@@ -205,20 +267,22 @@ mypy src tests
 - Type errors from mypy: Fix type annotations to match new library types
 - Do not disable linting rules without documenting the reason
 
-### 9. Final Verification
+### 10. Final Verification
 
 Before committing updates:
 
-1. **All tests pass:** `pytest -v`
-2. **Coverage maintained or improved:** `pytest --cov=src` (≥69%)
-3. **Linting passes:** `ruff check src tests`
-4. **Type checking passes:** `mypy src tests`
-5. **Backward compatibility verified:** Old vaults decrypt correctly
-6. **Documentation updated:** All changed behavior documented
-7. **Git status clean:** No unintended file changes
+1. **CVE check passes:** `pip-audit` reports no vulnerabilities
+2. **All tests pass:** `pytest -v` (171/171)
+3. **Coverage maintained or improved:** `pytest --cov=src` (≥75%)
+4. **Linting passes:** `ruff check src tests`
+5. **Type checking passes:** `mypy src tests`
+6. **Backward compatibility verified:** Old vaults decrypt correctly
+7. **Documentation updated:** All changed behavior documented
+8. **Git status clean:** No unintended file changes
 
 ```bash
 # Run all checks
+pip-audit && \
 pytest -v && \
 pytest --cov=src && \
 ruff check src tests && \
@@ -226,24 +290,33 @@ mypy src tests && \
 echo "✓ All checks passed"
 ```
 
-### 10. Commit and Document
+### 11. Commit and Document
 
 Create a clear commit message:
 
 ```
 Update dependencies and replace deprecated APIs
 
-- Bump cryptography to 43.0.0 (from 41.0.0)
-- Replace deprecated `rsa.generate_private_key` with new API
-- Update pytest to 8.0.0 with new fixture syntax
+Security:
+- pip-audit: No CVEs found
+- Fixed CVE-XXXX-XXXXX in cryptography (bumped to 43.0.0)
+
+Dependency updates:
+- cryptography: 41.0.0 → 43.0.0
+- pytest: 7.4.0 → 8.0.0
+- ruff: 0.1.0 → 0.2.0
 - Python 3.11-3.13 now supported
+
+API changes:
+- Replace deprecated `rsa.generate_private_key` with new API
+- Update pytest fixture syntax for pytest 8.0
 
 Backward compatibility verified:
 - Old vaults (version 1) decrypt correctly
-- All 146 tests passing
-- 69% code coverage maintained
+- All 171 tests passing (88 unit, 45 contract, 38 integration)
+- 75% code coverage maintained
 
-Security audit completed: No issues found
+Security audit: ✅ All checks passed
 ```
 
 ---
@@ -280,11 +353,13 @@ If uncertain about:
 ## Success Criteria
 
 An update is successful when:
-1. ✅ All tests pass
-3. ✅ Linting and type checking pass
-4. ✅ Old vaults decrypt with new code
-5. ✅ No security regressions
-6. ✅ Documentation reflects all changes
-7. ✅ Dependencies are current and stable
+1. ✅ CVE audit passes (pip-audit shows no vulnerabilities)
+2. ✅ All tests pass (171/171)
+3. ✅ Code coverage maintained (≥75%)
+4. ✅ Linting and type checking pass
+5. ✅ Old vaults decrypt with new code
+6. ✅ No security regressions
+7. ✅ Documentation reflects all changes
+8. ✅ Dependencies are current and CVE-free
 
-**Backward compatibility is non-negotiable. When in doubt, preserve the old behavior.**
+**Security first. Backward compatibility is non-negotiable. When in doubt, preserve the old behavior.**

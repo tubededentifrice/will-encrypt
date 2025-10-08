@@ -7,10 +7,10 @@ import pytest
 
 from src.storage.manifest import (
     compute_fingerprints,
-    validate_fingerprints,
     create_share_fingerprint,
     create_share_fingerprints,
     match_share_fingerprint,
+    validate_fingerprints,
 )
 from src.storage.models import Keypair, Manifest, ShareFingerprint, Vault
 
@@ -41,6 +41,7 @@ def test_compute_and_validate_fingerprints() -> None:
         "vault_sha256",
     }
 
+    assert vault.manifest is not None
     vault.manifest.fingerprints = fingerprints
     assert validate_fingerprints(vault) is True
 

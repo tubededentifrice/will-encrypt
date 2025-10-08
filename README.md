@@ -547,7 +547,7 @@ Use when:
 | Component | Algorithm | Parameters |
 |-----------|-----------|------------|
 | Asymmetric Encryption | RSA-4096-OAEP | SHA-256 hash, MGF1 |
-| Post-Quantum Encryption | Kyber-1024 | NIST PQC Round 3 (simulated) |
+| Post-Quantum Encryption | ML-KEM-1024 (Kyber) | NIST FIPS 203, hybrid with RSA |
 | Symmetric Encryption | AES-256-GCM | 96-bit nonce, 128-bit auth tag |
 | Secret Sharing | Shamir SSS | Lagrange interpolation, GF(256) |
 | Key Derivation | PBKDF2-HMAC-SHA512 | 600,000 iterations (OWASP 2023) |
@@ -735,34 +735,54 @@ grep 'rotation_history' estate-vault.yaml
 **Prerequisites:**
 - K key holders available
 - Vault file accessible
-- will-encrypt tool installed
+- Python 3.11+ installed
+- will-encrypt tool (installation steps below)
 
 **Steps:**
 
-1. **Contact Key Holders**
+1. **Install Will-Encrypt (First Time Only)**
+
+   If you don't have the tool installed yet:
+
+   ```bash
+   # Clone the repository
+   git clone https://github.com/tubededentifrice/will-encrypt.git
+   cd will-encrypt
+
+   # Install dependencies
+   pip install -r requirements.txt
+   pip install -e .
+   ```
+
+   **Alternative (without git)**: Download ZIP from https://github.com/tubededentifrice/will-encrypt, extract it, and run the same pip commands.
+
+2. **Contact Key Holders**
    ```bash
    # Executor contacts K key holders
    # Provides proof (death certificate, legal authorization)
    ```
 
-2. **Collect Shares**
+3. **Collect Shares**
    - Key holders independently verify legitimacy
    - Each provides their 24-word share
    - No need to combine shares manually (tool does this)
 
-3. **Decrypt Messages**
+4. **Decrypt Messages**
    ```bash
    ./will-encrypt decrypt --vault estate-vault.yaml
    # Enter K shares when prompted
    # All messages displayed
    ```
 
-4. **Document Access**
+5. **Document Access**
    - Log which key holders participated
    - Record date/time of decryption
    - Note which messages were accessed
 
-**Expected Duration**: 1-7 days (depends on key holder availability)
+**Expected Duration**:
+- First-time installation: 10-30 minutes
+- Share collection: 1-7 days (depends on key holder availability)
+- Decryption: < 1 minute
 
 ---
 
@@ -1277,10 +1297,44 @@ messages:
     created: "2025-01-15T10:30:00Z"
     size_bytes: 42
 
-guides:
-  recovery_guide: "# Emergency Recovery Guide\n..."
-  policy_document: "# Access Policy\n..."
-  crypto_notes: "# Cryptographic Implementation\n..."
+recovery_guide: |
+  # Emergency Recovery Guide
+
+  ## What Is This Document?
+  This guide explains how to access encrypted messages stored in your Will-Encrypt vault.
+  It is designed for executors, family members, or trusted individuals who may not have
+  technical experience.
+
+  ## When to Use This Guide
+
+  Emergency recovery is authorized when:
+  - The vault owner is deceased (death certificate required)
+  - The vault owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+  - The vault owner has given explicit permission
+
+  [... comprehensive recovery instructions ...]
+
+policy_document: |
+  # Access Policy
+
+  ## Recovery Eligibility
+
+  Emergency recovery is authorized when:
+  - Account owner is deceased (death certificate required)
+  - Account owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+
+  [... policy details ...]
+
+crypto_notes: |
+  # Cryptographic Implementation Details
+
+  ## Core Algorithms
+
+  - **Passphrase**: 256-bit random (32 bytes from os.urandom)
+  - **Secret Sharing**: Shamir over GF(256), polynomial degree k-1
+  [... technical details ...]
 ```
 
 ---

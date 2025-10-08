@@ -11,8 +11,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 from tests.test_helpers import create_test_vault, encrypt_test_message
 
 

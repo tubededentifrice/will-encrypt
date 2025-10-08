@@ -35,9 +35,9 @@ class TestPassphraseUtilities:
     def test_derive_key_requires_byte_inputs(self) -> None:
         salt = os.urandom(32)
         with pytest.raises(TypeError, match="Passphrase must be bytes"):
-            derive_key("not-bytes", salt)
+            derive_key("not-bytes", salt)  # type: ignore[arg-type]
         with pytest.raises(TypeError, match="Salt must be bytes"):
-            derive_key(os.urandom(32), "not-bytes")
+            derive_key(os.urandom(32), "not-bytes")  # type: ignore[arg-type]
 
     def test_derive_key_validates_lengths(self) -> None:
         salt = os.urandom(32)

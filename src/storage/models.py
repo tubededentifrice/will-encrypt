@@ -5,8 +5,6 @@ Based on: specs/001-1-purpose-scope/data-model.md
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -18,7 +16,7 @@ class ShareFingerprint:
     hash: str  # Hex-encoded digest of salt || share_data
     algorithm: str = "sha256"
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "index": self.index,
             "salt": self.salt,
@@ -27,7 +25,7 @@ class ShareFingerprint:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "ShareFingerprint":
+    def from_dict(cls, data: dict) -> "ShareFingerprint":
         return cls(
             index=data["index"],
             salt=data["salt"],
@@ -49,7 +47,7 @@ class Keypair:
     kdf_iterations: int = 600000
     kdf_salt: str = ""  # Base64
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "public": {
                 "rsa_4096": self.rsa_public,
@@ -66,7 +64,7 @@ class Keypair:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Keypair":
+    def from_dict(cls, data: dict) -> "Keypair":
         return cls(
             rsa_public=data["public"]["rsa_4096"],
             kyber_public=data["public"]["kyber_1024"],
@@ -93,7 +91,7 @@ class Message:
     created: str  # ISO 8601
     size_bytes: int
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "title": self.title,
@@ -107,7 +105,7 @@ class Message:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Message":
+    def from_dict(cls, data: dict) -> "Message":
         return cls(
             id=data["id"],
             title=data["title"],
@@ -129,10 +127,10 @@ class RotationEvent:
     event_type: str
     k: int
     n: int
-    operator: Optional[str] = None
-    notes: Optional[str] = None
+    operator: str | None = None
+    notes: str | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         result = {
             "date": self.date,
             "event": self.event_type,
@@ -152,12 +150,12 @@ class Manifest:
 
     k: int
     n: int
-    algorithms: Dict[str, str] = field(default_factory=dict)
-    fingerprints: Dict[str, str] = field(default_factory=dict)
-    rotation_history: List[RotationEvent] = field(default_factory=list)
-    share_fingerprints: List[ShareFingerprint] = field(default_factory=list)
+    algorithms: dict[str, str] = field(default_factory=dict)
+    fingerprints: dict[str, str] = field(default_factory=dict)
+    rotation_history: list[RotationEvent] = field(default_factory=list)
+    share_fingerprints: list[ShareFingerprint] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "threshold": {"k": self.k, "n": self.n},
             "algorithms": self.algorithms,
@@ -167,7 +165,7 @@ class Manifest:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Manifest":
+    def from_dict(cls, data: dict) -> "Manifest":
         rotation_events = []
         for e in data.get("rotation_history", []):
             # Handle both 'event' and 'event_type' keys
@@ -203,13 +201,13 @@ class Vault:
     version: str
     created: str  # ISO 8601
     keys: Keypair
-    messages: List[Message] = field(default_factory=list)
-    manifest: Optional[Manifest] = None
+    messages: list[Message] = field(default_factory=list)
+    manifest: Manifest | None = None
     recovery_guide: str = ""
     policy_document: str = ""
     crypto_notes: str = ""
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         result = {
             "version": self.version,
             "created": self.created,

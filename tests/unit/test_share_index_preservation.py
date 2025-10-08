@@ -6,7 +6,6 @@ reconstruction failures when shares are provided out of order.
 """
 
 import secrets
-import pytest
 
 
 class TestShareIndexPreservation:
@@ -14,8 +13,8 @@ class TestShareIndexPreservation:
 
     def test_shares_out_of_order_reconstruction(self) -> None:
         """Test: Shares can be reconstructed in any order with correct indices."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
-        from src.crypto.bip39 import encode_share, decode_share
+        from src.crypto.bip39 import decode_share, encode_share
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Generate random secret
         secret = secrets.token_bytes(32)
@@ -55,8 +54,8 @@ class TestShareIndexPreservation:
 
     def test_wrong_index_causes_reconstruction_failure(self) -> None:
         """Test: Using wrong indices causes reconstruction to fail (negative test)."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
-        from src.crypto.bip39 import encode_share, decode_share
+        from src.crypto.bip39 import decode_share, encode_share
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Generate random secret
         secret = secrets.token_bytes(32)
@@ -109,8 +108,13 @@ class TestShareIndexPreservation:
 
     def test_share_indices_preserved_through_full_workflow(self) -> None:
         """Test: Share indices preserved through split -> encode -> decode -> reconstruct."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
-        from src.crypto.bip39 import encode_share, decode_share, format_indexed_share, parse_indexed_share
+        from src.crypto.bip39 import (
+            decode_share,
+            encode_share,
+            format_indexed_share,
+            parse_indexed_share,
+        )
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Generate secret
         secret = secrets.token_bytes(32)
@@ -137,9 +141,10 @@ class TestShareIndexPreservation:
         # Parse and reconstruct (simulating decrypt command)
         share_bytes = []
         for user_share in user_input:
-            index, mnemonic = parse_indexed_share(user_share)
+            parsed_index, mnemonic = parse_indexed_share(user_share)
             decoded = decode_share(mnemonic)
-            share_bytes.append(bytes([index]) + decoded)
+            assert parsed_index is not None
+            share_bytes.append(bytes([parsed_index]) + decoded)
 
         # Reconstruct should work with out-of-order shares
         reconstructed = reconstruct_secret(share_bytes)

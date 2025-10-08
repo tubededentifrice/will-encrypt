@@ -8,7 +8,6 @@ Tests MUST fail before implementation (TDD).
 
 from pathlib import Path
 
-import pytest
 import yaml
 
 
@@ -17,8 +16,8 @@ class TestValidationAudit:
 
     def test_validate_valid_vault_all_checks_pass(self, tmp_path: Path) -> None:
         """Test: Validate valid vault (all checks pass)."""
-        from tests.test_helpers import create_test_vault, encrypt_test_message
         from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault, encrypt_test_message
 
         # Setup: Initialize vault and encrypt messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -33,8 +32,8 @@ class TestValidationAudit:
 
     def test_detect_tampered_vault_fingerprint_mismatch(self, tmp_path: Path) -> None:
         """Test: Detect tampered vault (fingerprint mismatch)."""
-        from tests.test_helpers import create_test_vault
         from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault
 
         # Setup: Initialize vault
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -57,8 +56,8 @@ class TestValidationAudit:
 
     def test_detect_corrupted_message_auth_tag_failure(self, tmp_path: Path) -> None:
         """Test: Detect corrupted message (auth tag failure during decrypt)."""
-        from tests.test_helpers import create_test_vault, encrypt_test_message
         from src.cli.decrypt import decrypt_command
+        from tests.test_helpers import create_test_vault, encrypt_test_message
 
         # Setup: Initialize, encrypt, then corrupt
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -98,8 +97,8 @@ class TestValidationAudit:
 
     def test_validate_unsupported_algorithm(self, tmp_path: Path) -> None:
         """Test: Validate detects unsupported algorithms."""
-        from tests.test_helpers import create_test_vault
         from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault
 
         # Setup: Initialize vault
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -125,8 +124,8 @@ class TestValidationAudit:
 
     def test_validate_invalid_threshold_configuration(self, tmp_path: Path) -> None:
         """Test: Validate detects invalid threshold (K > N)."""
-        from tests.test_helpers import create_test_vault
         from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault
 
         vault_path = tmp_path / "vault.yaml"
 
@@ -152,10 +151,11 @@ class TestValidationAudit:
 
     def test_audit_rotation_history(self, tmp_path: Path) -> None:
         """Test: Audit rotation history (verify all events logged)."""
-        from tests.test_helpers import create_test_vault, extract_shares_from_output
-        from src.cli.rotate import rotate_command
         import io
         import sys
+
+        from src.cli.rotate import rotate_command
+        from tests.test_helpers import create_test_vault
 
         vault_path = tmp_path / "vault.yaml"
 
@@ -209,9 +209,10 @@ class TestValidationAudit:
 
     def test_validate_timestamps_chronological_order(self, tmp_path: Path) -> None:
         """Test: Validate timestamps are in chronological order."""
-        from tests.test_helpers import create_test_vault, encrypt_test_message
-        from datetime import datetime
         import time
+        from datetime import datetime
+
+        from tests.test_helpers import create_test_vault, encrypt_test_message
 
         # Setup: Initialize and encrypt messages with timestamps
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -232,9 +233,10 @@ class TestValidationAudit:
 
     def test_validate_performance_under_2_seconds(self, tmp_path: Path) -> None:
         """Test: Validate performance < 2 seconds."""
-        from tests.test_helpers import create_test_vault, encrypt_test_message
-        from src.cli.validate import validate_command
         import time
+
+        from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault, encrypt_test_message
 
         # Setup: Initialize vault with multiple messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -256,10 +258,11 @@ class TestValidationAudit:
 
     def test_verbose_validation_output(self, tmp_path: Path) -> None:
         """Test: Verbose validation shows detailed check results."""
-        from tests.test_helpers import create_test_vault, encrypt_test_message
-        from src.cli.validate import validate_command
         import io
         import sys
+
+        from src.cli.validate import validate_command
+        from tests.test_helpers import create_test_vault, encrypt_test_message
 
         # Setup: Initialize vault and add some messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)

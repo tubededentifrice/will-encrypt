@@ -8,7 +8,6 @@ Test vectors from academic papers and custom known input/output pairs.
 """
 
 import secrets
-from typing import List
 
 import pytest
 
@@ -37,8 +36,9 @@ class TestShamirSecretSharing:
 
     def test_reconstruct_secret_from_any_k_shares(self) -> None:
         """Test: Reconstruct secret from any K shares."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
         from itertools import combinations
+
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Generate 256-bit secret
         secret = secrets.token_bytes(32)
@@ -54,7 +54,7 @@ class TestShamirSecretSharing:
 
     def test_reconstruction_fails_with_k_minus_1_shares(self) -> None:
         """Test: Reconstruction fails with K-1 shares."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         secret = secrets.token_bytes(32)
         k, n = 3, 5
@@ -68,7 +68,7 @@ class TestShamirSecretSharing:
 
     def test_information_theoretic_security(self) -> None:
         """Test: Information-theoretic security (K-1 shares reveal nothing)."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Known test vector: If K=3, any 2 shares are consistent with ANY possible secret
         secret1 = b"A" * 32
@@ -92,7 +92,7 @@ class TestShamirSecretSharing:
 
     def test_known_test_vector_from_academic_paper(self) -> None:
         """Test: Use known test vector from Shamir's original paper or academic source."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         # Simple test with known secret that can be verified
         known_secret = b"\x01" * 32  # Simple repeating pattern
@@ -137,7 +137,7 @@ class TestShamirSecretSharing:
 
     def test_deterministic_reconstruction(self) -> None:
         """Test: Reconstruction is deterministic (same shares → same secret)."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         secret = secrets.token_bytes(32)
         k, n = 3, 5
@@ -151,8 +151,9 @@ class TestShamirSecretSharing:
 
     def test_different_share_combinations_yield_same_secret(self) -> None:
         """Test: Any K shares (different combinations) reconstruct the same secret."""
-        from src.crypto.shamir import split_secret, reconstruct_secret
         from itertools import combinations
+
+        from src.crypto.shamir import reconstruct_secret, split_secret
 
         secret = secrets.token_bytes(32)
         k, n = 3, 5

@@ -12,9 +12,6 @@ import sys
 import time
 from pathlib import Path
 
-import pytest
-import yaml
-
 from tests.test_helpers import create_test_vault, get_vault_messages
 
 

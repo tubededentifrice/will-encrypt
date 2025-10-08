@@ -10,7 +10,6 @@ import io
 import sys
 import time
 from pathlib import Path
-from typing import List
 
 import pytest
 import yaml
@@ -21,7 +20,7 @@ from tests.test_helpers import create_test_vault, encrypt_test_message
 class TestDecryptCommand:
     """Contract tests for will-encrypt decrypt command."""
 
-    def test_decrypt_with_k_valid_shares(self, tmp_path: Path, capsys) -> None:
+    def test_decrypt_with_k_valid_shares(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Test: Decrypt with K valid shares, verify all messages recovered."""
         from src.cli.decrypt import decrypt_command
 
@@ -100,8 +99,9 @@ class TestDecryptCommand:
 
     def test_decrypt_hybrid_verification(self, tmp_path: Path) -> None:
         """Test: Hybrid verification (RSA KEK == Kyber KEK)."""
-        from src.cli.decrypt import decrypt_command
         import base64
+
+        from src.cli.decrypt import decrypt_command
 
         # Setup: Create vault and encrypt message
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -126,7 +126,6 @@ class TestDecryptCommand:
         """Test: Wrong passphrase (from incorrect shares) rejection."""
         from src.cli.decrypt import decrypt_command
         from src.cli.init import init_command
-        import sys
 
         # Setup: Create vault
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
@@ -159,8 +158,9 @@ class TestDecryptCommand:
 
     def test_decrypt_tampered_ciphertext_rejected(self, tmp_path: Path) -> None:
         """Test: Tampered ciphertext rejection (auth tag mismatch)."""
-        from src.cli.decrypt import decrypt_command
         import base64
+
+        from src.cli.decrypt import decrypt_command
 
         # Setup: Create vault and encrypt message
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)

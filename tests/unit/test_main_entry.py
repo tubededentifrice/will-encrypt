@@ -1,14 +1,14 @@
 """Unit tests for CLI entry routing via src.main."""
 
 import sys
-from typing import Any, Tuple
+from typing import Any
 
 import pytest
 
 from src.main import main
 
 
-def test_missing_command_prints_usage(monkeypatch, capsys) -> None:
+def test_missing_command_prints_usage(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(sys, "argv", ["will-encrypt"])
 
     exit_code = main()
@@ -18,10 +18,10 @@ def test_missing_command_prints_usage(monkeypatch, capsys) -> None:
     assert "Commands" in captured.out
 
 
-def test_init_command_forwarding(monkeypatch) -> None:
-    recorded: Tuple[Any, ...] | None = None
+def test_init_command_forwarding(monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded: tuple[Any, ...] | None = None
 
-    def fake_init(k, n, vault_path, force, import_shares, source_vault):
+    def fake_init(k: int | None, n: int | None, vault_path: str, force: bool, import_shares: list[str] | None, source_vault: str | None) -> int:
         nonlocal recorded
         recorded = (k, n, vault_path, force, import_shares, source_vault)
         return 0
@@ -110,10 +110,10 @@ def test_init_command_forwarding(monkeypatch) -> None:
         ),
     ],
 )
-def test_handler_routing(command, argv_tail, handler_name, expected_args, monkeypatch):
-    recorded: Tuple[Any, ...] | None = None
+def test_handler_routing(command: str, argv_tail: list[str], handler_name: str, expected_args: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded: tuple[Any, ...] | None = None
 
-    def fake_handler(*args):
+    def fake_handler(*args: Any) -> int:
         nonlocal recorded
         recorded = args
         return 0

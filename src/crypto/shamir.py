@@ -8,7 +8,6 @@ a 256-bit passphrase into K-of-N shares with information-theoretic security.
 """
 
 import secrets
-from typing import List
 
 
 def _gf256_add(a: int, b: int) -> int:
@@ -48,7 +47,7 @@ def _gf256_div(a: int, b: int) -> int:
     return EXP_TABLE[log_result]
 
 
-def _get_log_table() -> List[int]:
+def _get_log_table() -> list[int]:
     """Generate logarithm table for GF(256)."""
     # Cache the table
     if not hasattr(_get_log_table, 'cache'):
@@ -68,14 +67,14 @@ def _get_log_table() -> List[int]:
     return _get_log_table.cache
 
 
-def _get_exp_table() -> List[int]:
+def _get_exp_table() -> list[int]:
     """Generate exponentiation table for GF(256)."""
     if not hasattr(_get_exp_table, 'cache'):
         _get_log_table()  # Initialize both tables
     return _get_exp_table.cache
 
 
-def _eval_polynomial(coeffs: List[int], x: int) -> int:
+def _eval_polynomial(coeffs: list[int], x: int) -> int:
     """Evaluate polynomial at x using Horner's method in GF(256)."""
     result = 0
     for coeff in reversed(coeffs):
@@ -83,7 +82,7 @@ def _eval_polynomial(coeffs: List[int], x: int) -> int:
     return result
 
 
-def _lagrange_interpolate(shares: List[tuple], x: int = 0) -> int:
+def _lagrange_interpolate(shares: list[tuple], x: int = 0) -> int:
     """
     Lagrange interpolation in GF(256) to recover polynomial value at x.
 
@@ -116,7 +115,7 @@ def _lagrange_interpolate(shares: List[tuple], x: int = 0) -> int:
     return result
 
 
-def split_secret(secret: bytes, k: int, n: int) -> List[bytes]:
+def split_secret(secret: bytes, k: int, n: int) -> list[bytes]:
     """
     Split secret into K-of-N shares using Shamir Secret Sharing.
 
@@ -172,7 +171,7 @@ def split_secret(secret: bytes, k: int, n: int) -> List[bytes]:
     return result
 
 
-def reconstruct_secret(shares: List[bytes]) -> bytes:
+def reconstruct_secret(shares: list[bytes]) -> bytes:
     """
     Reconstruct secret from K or more shares using Lagrange interpolation.
 
