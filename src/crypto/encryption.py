@@ -7,6 +7,7 @@ Based on: specs/001-1-purpose-scope/research.md (Section 4)
 import secrets
 from dataclasses import dataclass
 
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from .keypair import hybrid_decrypt_kek, hybrid_encrypt_kek
@@ -81,7 +82,7 @@ def encrypt_message(
 
 def decrypt_message(
     encrypted: EncryptedMessage,
-    rsa_private: object,
+    rsa_private: RSAPrivateKey,
     kyber_private: bytes,
     title: str = "",
 ) -> bytes:
@@ -123,4 +124,4 @@ def decrypt_message(
         plaintext = aesgcm.decrypt(encrypted.nonce, full_ciphertext, aad)
         return plaintext
     except Exception as e:
-        raise ValueError(f"Decryption failed: {e}")
+        raise ValueError(f"Decryption failed: {e}") from e

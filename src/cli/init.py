@@ -51,7 +51,9 @@ def init_command(
 
     if n is None:
         try:
-            n_input = input(f"Enter total shares N (K={k}, typically N > K for redundancy): ").strip()
+            n_input = input(
+                f"Enter total shares N (K={k}, typically N > K for redundancy): "
+            ).strip()
             n = int(n_input)
         except (ValueError, EOFError, KeyboardInterrupt):
             print("\nError: Invalid input for N", file=sys.stderr)
@@ -92,12 +94,24 @@ def init_command(
             try:
                 candidate_vault = load_vault(candidate_path)
             except FileNotFoundError:
-                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
-                    source_vault_error = f"Source vault not found: {candidate_path}"
+                if (
+                    source_vault
+                    and os.path.abspath(candidate_path)
+                    == os.path.abspath(source_vault)
+                ):
+                    source_vault_error = (
+                        f"Source vault not found: {candidate_path}"
+                    )
                 continue
             except Exception as exc:  # pragma: no cover - defensive: log and continue
-                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
-                    source_vault_error = f"Failed to read source vault: {exc}"
+                if (
+                    source_vault
+                    and os.path.abspath(candidate_path)
+                    == os.path.abspath(source_vault)
+                ):
+                    source_vault_error = (
+                        f"Failed to read source vault: {exc}"
+                    )
                 else:
                     print(
                         f"Warning: Unable to read existing vault at {candidate_path}: {exc}",
@@ -114,7 +128,11 @@ def init_command(
                     continue
                 existing_share_fingerprints.append(fingerprint)
                 seen_fingerprint_keys.add(key)
-                if source_vault and os.path.abspath(candidate_path) == os.path.abspath(source_vault):
+                if (
+                    source_vault
+                    and os.path.abspath(candidate_path)
+                    == os.path.abspath(source_vault)
+                ):
                     source_vault_fingerprints_found = True
 
         if source_vault and not source_vault_fingerprints_found:
@@ -122,7 +140,11 @@ def init_command(
                 f"Source vault manifest missing share fingerprints: {source_vault}"
             )
             print(f"\nError: {error_message}", file=sys.stderr)
-            print("Recovery: Verify the --source-vault path and ensure it contains a valid manifest", file=sys.stderr)
+            print(
+                "Recovery: Verify the --source-vault path"
+                " and ensure it contains a valid manifest",
+                file=sys.stderr,
+            )
             return 6
 
     # Handle interactive import of shares
@@ -145,15 +167,26 @@ def init_command(
                 print(f"The remaining {n} - (imported count) shares will be newly generated.")
 
                 try:
-                    num_shares_str = input(f"How many shares do you want to import? (min {k}, max {n}): ").strip()
+                    num_shares_str = input(
+                        f"How many shares do you want to import?"
+                        f" (min {k}, max {n}): "
+                    ).strip()
                     num_shares_to_import = int(num_shares_str)
 
                     if num_shares_to_import < k:
-                        print(f"\nError: You must import at least {k} shares to reconstruct the passphrase", file=sys.stderr)
+                        print(
+                            f"\nError: You must import at least {k}"
+                            " shares to reconstruct the passphrase",
+                            file=sys.stderr,
+                        )
                         return 1
 
                     if num_shares_to_import > n:
-                        print(f"\nError: Cannot import more than {n} shares (total share count)", file=sys.stderr)
+                        print(
+                            f"\nError: Cannot import more than {n}"
+                            " shares (total share count)",
+                            file=sys.stderr,
+                        )
                         return 1
 
                     print("")
@@ -167,8 +200,14 @@ def init_command(
                             # Validate format
                             word_count = len(share_str.split())
                             if word_count != 24:
-                                print(f"  Warning: Expected 24 words, got {word_count}.")
-                                retry = input("  Continue with this share? (yes/no): ").strip().lower()
+                                print(
+                                    f"  Warning: Expected 24 words,"
+                                    f" got {word_count}."
+                                )
+                                retry = input(
+                                    "  Continue with this share?"
+                                    " (yes/no): "
+                                ).strip().lower()
                                 if retry != "yes":
                                     continue
 
@@ -198,7 +237,10 @@ def init_command(
         if not force:
             print(f"\n⚠️  Warning: Vault already exists at {vault_path}", file=sys.stderr)
             try:
-                confirm = input("Overwrite existing vault? This will DESTROY all data! (yes/no): ").strip().lower()
+                confirm = input(
+                    "Overwrite existing vault? This will DESTROY all data!"
+                    " (yes/no): "
+                ).strip().lower()
                 if confirm != "yes":
                     print("Aborted.", file=sys.stderr)
                     return 2
@@ -212,11 +254,22 @@ def init_command(
         imported_share_indices = set()  # Track which indices came from imported shares
         if import_shares:
             # Validate imported shares
-            print(f"\n🔍 Validating {len(import_shares)} imported share(s)...")
+            print(
+                f"\n🔍 Validating {len(import_shares)}"
+                " imported share(s)..."
+            )
 
             if len(import_shares) < k:
-                print(f"\nError: Insufficient shares (need {k}, got {len(import_shares)})", file=sys.stderr)
-                print(f"Recovery: Provide at least {k} shares to reconstruct passphrase", file=sys.stderr)
+                print(
+                    f"\nError: Insufficient shares"
+                    f" (need {k}, got {len(import_shares)})",
+                    file=sys.stderr,
+                )
+                print(
+                    f"Recovery: Provide at least {k} shares"
+                    " to reconstruct passphrase",
+                    file=sys.stderr,
+                )
                 return 5
 
             # Validate all checksums
@@ -229,7 +282,10 @@ def init_command(
             print(f"      ✓ All {len(import_shares)} share(s) validated")
 
             # Decode shares and reconstruct passphrase
-            print(f"\n[1/4] Reconstructing passphrase from {len(import_shares)} imported share(s)...")
+            print(
+                f"\n[1/4] Reconstructing passphrase from"
+                f" {len(import_shares)} imported share(s)..."
+            )
             share_bytes = []
             used_indices = set()
             unresolved_shares: list[tuple[str, bytes]] = []
@@ -274,8 +330,15 @@ def init_command(
 
             # If any shares are missing indices, prompt user
             if unresolved_shares:
-                print(f"\n⚠️  Warning: {len(unresolved_shares)} share(s) missing index information")
-                print("Attempting manual recovery. Original numbering is required for reconstruction.\n")
+                print(
+                    f"\n⚠️  Warning: {len(unresolved_shares)}"
+                    " share(s) missing index information"
+                )
+                print(
+                    "Attempting manual recovery."
+                    " Original numbering is required"
+                    " for reconstruction.\n"
+                )
 
                 for missing_share, decoded in unresolved_shares:
                     preview = missing_share[:40].strip()
@@ -300,19 +363,26 @@ def init_command(
                             continue
 
             if len(share_bytes) < k:
-                print(f"\nError: Insufficient valid shares (need {k}, got {len(share_bytes)})", file=sys.stderr)
+                print(
+                    f"\nError: Insufficient valid shares"
+                    f" (need {k}, got {len(share_bytes)})",
+                    file=sys.stderr,
+                )
                 return 5
 
             passphrase = reconstruct_secret(share_bytes)
             print("      ✓ Passphrase reconstructed from imported shares")
 
             # Keep imported shares and generate additional new shares from same polynomial
-            print(f"[2/4] Generating {n - len(import_shares)} additional shares (threshold: {k})...")
+            print(
+                f"[2/4] Generating {n - len(import_shares)}"
+                f" additional shares (threshold: {k})..."
+            )
             num_new_shares = n - len(import_shares)
 
             if num_new_shares > 0:
                 # Find available indices for new shares (avoid imported indices)
-                new_indices = []
+                new_indices: list[int] = []
                 next_available_index = 1
                 while len(new_indices) < num_new_shares:
                     if next_available_index not in used_indices:
@@ -324,7 +394,11 @@ def init_command(
 
                 # Combine imported + newly generated shares
                 shares = share_bytes + additional_shares
-                print(f"      ✓ {n} total shares: {len(import_shares)} imported + {num_new_shares} newly generated")
+                print(
+                    f"      ✓ {n} total shares:"
+                    f" {len(import_shares)} imported"
+                    f" + {num_new_shares} newly generated"
+                )
             else:
                 # All shares are imported (num_shares_to_import == n)
                 shares = share_bytes
@@ -375,7 +449,7 @@ def init_command(
             n=n,
             algorithms={
                 "keypair": "RSA-4096 + Kyber-1024 (hybrid)",
-                "passphrase_entropy": 256,
+                "passphrase_entropy": "256",
                 "secret_sharing": "Shamir SSS over GF(256)",
                 "message_encryption": "AES-256-GCM",
                 "kdf": "PBKDF2-HMAC-SHA512 (600k iterations)",

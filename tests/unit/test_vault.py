@@ -294,7 +294,12 @@ class TestYAMLVaultOperations:
                 },
             },
             "messages": [],
-            "manifest": {"threshold": {"k": 3, "n": 5}, "algorithms": {}, "fingerprints": {}, "rotation_history": []},
+            "manifest": {
+                "threshold": {"k": 3, "n": 5},
+                "algorithms": {},
+                "fingerprints": {},
+                "rotation_history": [],
+            },
         }
         with open(vault_path, "w") as f:
             yaml.dump(unsupported_vault, f)
@@ -323,7 +328,12 @@ class TestYAMLVaultOperations:
                 },
             },
             "messages": [],
-            "manifest": {"threshold": {"k": 3, "n": 5}, "algorithms": {}, "fingerprints": {}, "rotation_history": []},
+            "manifest": {
+                "threshold": {"k": 3, "n": 5},
+                "algorithms": {},
+                "fingerprints": {},
+                "rotation_history": [],
+            },
         }
         with open(vault_path, "w") as f:
             yaml.dump(valid_vault, f)

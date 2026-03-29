@@ -114,11 +114,15 @@ class TestRotateCommand:
 
         captured = capsys.readouterr()
         assert "Share 1/" in captured.out, "Share table headers should be present"
-        assert "|" in captured.out and "+" in captured.out, "ASCII table structure should be present"
+        assert "|" in captured.out and "+" in captured.out, (
+            "ASCII table structure should be present"
+        )
         from tests.test_helpers import extract_shares_from_output
 
         new_shares = extract_shares_from_output(captured.out)
-        assert len(new_shares) == 5, "Expected 5 new shares from rotation output"
+        assert len(new_shares) == 5, (
+            "Expected 5 new shares from rotation output"
+        )
 
         # Ensure the formatted shares keep their indices ("N: mnemonic")
         for share in new_shares:
@@ -130,7 +134,9 @@ class TestRotateCommand:
         decrypt_result = decrypt_test_vault(vault_path, new_shares[:3])
         assert decrypt_result == 0, "Newly rotated shares should decrypt vault"
 
-    def test_share_rotation_requires_indexed_cli_shares(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_share_rotation_requires_indexed_cli_shares(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Non-interactive rotation auto-detects shares without explicit indices."""
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
 
@@ -207,9 +213,14 @@ class TestRotateCommand:
         manifest = get_vault_manifest(vault_path)
         rotation_history = manifest.get("rotation_history", [])
         # Should have 2 events: initial_creation + passphrase_rotation
-        assert len(rotation_history) >= 2, "Rotation history should have at least 2 events"
+        assert len(rotation_history) >= 2, (
+            "Rotation history should have at least 2 events"
+        )
         # Find passphrase rotation event (field is "event", not "event_type")
-        passphrase_rotations = [e for e in rotation_history if e.get("event") == "passphrase_rotation"]
+        passphrase_rotations = [
+            e for e in rotation_history
+            if e.get("event") == "passphrase_rotation"
+        ]
         assert len(passphrase_rotations) >= 1, "Should have at least 1 passphrase rotation event"
 
     def test_old_shares_invalid_after_rotation(self, tmp_path: Path) -> None:
@@ -341,7 +352,10 @@ class TestRotateCommand:
         manifest = get_vault_manifest(vault_path)
         history = manifest.get("rotation_history", [])
         # Should have initial + 2 rotation events
-        assert len(history) >= initial_history_len + 2, f"Should have added 2 rotation events, got {len(history)} total"
+        assert len(history) >= initial_history_len + 2, (
+            f"Should have added 2 rotation events,"
+            f" got {len(history)} total"
+        )
 
         # Check event types - extract "event" field (not "event_type")
         # History items are dicts when loaded from YAML
@@ -355,8 +369,14 @@ class TestRotateCommand:
 
         # Filter out None values and check
         valid_event_types = [et for et in event_types if et is not None]
-        assert "share_rotation" in valid_event_types or "k_n_change" in valid_event_types, f"Should have share rotation event, got: {valid_event_types}"
-        assert "passphrase_rotation" in valid_event_types, f"Should have passphrase rotation event, got: {valid_event_types}"
+        assert (
+            "share_rotation" in valid_event_types
+            or "k_n_change" in valid_event_types
+        ), f"Should have share rotation event, got: {valid_event_types}"
+        assert "passphrase_rotation" in valid_event_types, (
+            f"Should have passphrase rotation event,"
+            f" got: {valid_event_types}"
+        )
 
     def test_messages_not_reencrypted_during_share_rotation(self, tmp_path: Path) -> None:
         """Test: Messages not re-encrypted during share rotation (efficiency)."""
@@ -387,4 +407,6 @@ class TestRotateCommand:
         # Verify ciphertext unchanged (messages not re-encrypted)
         messages_after = get_vault_messages(vault_path)
         assert len(messages_after) == 1, "Should still have 1 message"
-        assert messages_after[0]["ciphertext"] == original_ciphertext, "Ciphertext should remain unchanged during share rotation"
+        assert messages_after[0]["ciphertext"] == original_ciphertext, (
+            "Ciphertext should remain unchanged during share rotation"
+        )

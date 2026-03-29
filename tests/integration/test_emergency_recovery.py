@@ -257,5 +257,5 @@ class TestEmergencyRecovery:
 
         # Attempt recovery - should raise an exception
         # Expected: Authentication failure or decoding error detected
-        with pytest.raises(Exception):  # Could be ValueError, base64 error, or crypto error
+        with pytest.raises(Exception):  # noqa: B017 - multiple error types possible (ValueError, base64, crypto)
             decrypt_vault_messages(vault_path, shares[:3])

@@ -22,7 +22,7 @@ def render_share_table(indexed_shares: Sequence[tuple[int, str]]) -> str:
     tables = []
     total_shares = len(indexed_shares)
 
-    for share_idx, (share_number, mnemonic) in enumerate(indexed_shares, 1):
+    for _share_idx, (share_number, mnemonic) in enumerate(indexed_shares, 1):
         # Split mnemonic into 24 words
         words = mnemonic.split()
         if len(words) != 24:

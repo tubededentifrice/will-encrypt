@@ -35,7 +35,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="table", sort_by="id")
+            result = list_command(vault_path=str(vault_path), output_format="table", sort_by="id")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -69,7 +69,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            result = list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -102,7 +102,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            result = list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -132,7 +132,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="title")
+            result = list_command(vault_path=str(vault_path), output_format="json", sort_by="title")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -166,7 +166,11 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="created")
+            result = list_command(
+                vault_path=str(vault_path),
+                output_format="json",
+                sort_by="created",
+            )
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -196,7 +200,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="size")
+            result = list_command(vault_path=str(vault_path), output_format="json", sort_by="size")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -223,7 +227,7 @@ class TestListCommand:
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            result = list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout

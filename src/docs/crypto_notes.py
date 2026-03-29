@@ -29,7 +29,8 @@ This vault uses **true hybrid cryptography** to protect against both classical a
 ## Security Parameters
 
 - Passphrase entropy: 256 bits
-- Threshold: {manifest_dict.get('threshold', {}).get('k', 'N/A')}-of-{manifest_dict.get('threshold', {}).get('n', 'N/A')}
+- Threshold: {manifest_dict.get('threshold', {}).get('k', 'N/A')}-of-\
+{manifest_dict.get('threshold', {}).get('n', 'N/A')}
 - RSA key size: 4096 bits
 - ML-KEM public key: 1568 bytes
 - ML-KEM private key: 3168 bytes

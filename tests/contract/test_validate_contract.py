@@ -134,10 +134,13 @@ class TestValidateCommand:
         from src.cli.validate import validate_command
 
         result = validate_command(vault_path=str(vault_path), verbose=False)
-        # The current implementation will likely still pass since it doesn't validate algorithm values
+        # The current implementation will likely still pass since
+        # it doesn't validate algorithm values
         # This test documents expected behavior for future enhancement
         # For now, we just verify validation completes without crashing
-        assert result in [0, 6], "Validation should complete (0=pass, 6=algorithm check failed)"
+        assert result in [0, 6], (
+            "Validation should complete (0=pass, 6=algorithm check failed)"
+        )
 
     def test_verbose_output(self, tmp_path: Path) -> None:
         """Test: Verbose output shows detailed check results."""
@@ -162,5 +165,9 @@ class TestValidateCommand:
 
         # Expected: Validation passes and verbose output contains statistics
         assert result == 0, "Validation should pass"
-        assert "Vault Statistics" in output or "Statistics" in output, "Verbose output should contain statistics"
-        assert "Threshold" in output or "threshold" in output, "Verbose output should contain threshold info"
+        assert (
+            "Vault Statistics" in output or "Statistics" in output
+        ), "Verbose output should contain statistics"
+        assert (
+            "Threshold" in output or "threshold" in output
+        ), "Verbose output should contain threshold info"

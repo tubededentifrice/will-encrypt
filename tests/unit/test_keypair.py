@@ -219,6 +219,7 @@ class TestHybridKeypair:
     def test_keypair_deserialization_from_pem_and_base64(self) -> None:
         """Test: Keypair deserialization (PEM and base64 to keys)."""
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
 
         from src.crypto.keypair import generate_hybrid_keypair
 
@@ -229,6 +230,7 @@ class TestHybridKeypair:
 
         # Deserialize RSA public key from PEM
         rsa_public = serialization.load_pem_public_key(original.rsa_public)
+        assert isinstance(rsa_public, rsa.RSAPublicKey)
         assert rsa_public.key_size == 4096
 
         # Kyber public key is already in bytes format

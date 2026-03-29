@@ -73,7 +73,7 @@ class TestShareIndexPreservation:
 
         # Reconstruct with WRONG indices (sequential 1, 2, 3 instead of original)
         wrong_index_shares = []
-        for i, (original_index, mnemonic) in enumerate(indexed_mnemonics[:k], 1):
+        for i, (_original_index, mnemonic) in enumerate(indexed_mnemonics[:k], 1):
             decoded = decode_share(mnemonic)
             # Use SEQUENTIAL index instead of original - this is the BUG we fixed!
             wrong_index_shares.append(bytes([i]) + decoded)
@@ -95,7 +95,12 @@ class TestShareIndexPreservation:
         """Test: Indexed share format (N: mnemonic) is parsed correctly."""
         from src.crypto.bip39 import format_indexed_share, parse_indexed_share
 
-        test_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        test_mnemonic = (
+            "abandon abandon abandon abandon abandon abandon"
+            " abandon abandon abandon abandon abandon abandon"
+            " abandon abandon abandon abandon abandon abandon"
+            " abandon abandon abandon abandon abandon art"
+        )
 
         # Format share 3
         formatted = format_indexed_share(3, test_mnemonic)

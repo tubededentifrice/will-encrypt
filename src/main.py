@@ -32,12 +32,19 @@ def main() -> int:
         "--import-share",
         action="append",
         dest="import_shares",
-        help="Import existing BIP39 share (24 words). Can be used multiple times. Requires K shares to reconstruct passphrase."
+        help=(
+            "Import existing BIP39 share (24 words)."
+            " Can be used multiple times."
+            " Requires K shares to reconstruct passphrase."
+        ),
     )
     init_parser.add_argument(
         "--source-vault",
         dest="source_vault",
-        help="Optional path to a vault whose manifest should be used to recover share indices during import",
+        help=(
+            "Optional path to a vault whose manifest should be"
+            " used to recover share indices during import"
+        ),
     )
 
     # Encrypt command
@@ -106,7 +113,7 @@ def main() -> int:
     elif args.command == "decrypt":
         return decrypt_command(args.vault, args.shares)
     elif args.command == "list":
-        return list_command(args.vault, args.format, args.sort)
+        return list_command(args.vault, output_format=args.format, sort_by=args.sort)
     elif args.command == "edit":
         return edit_command(args.vault, args.id, args.title)
     elif args.command == "delete":

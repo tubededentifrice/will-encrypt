@@ -29,7 +29,14 @@ def test_missing_command_launches_interactive(monkeypatch: pytest.MonkeyPatch) -
 def test_init_command_forwarding(monkeypatch: pytest.MonkeyPatch) -> None:
     recorded: tuple[Any, ...] | None = None
 
-    def fake_init(k: int | None, n: int | None, vault_path: str, force: bool, import_shares: list[str] | None, source_vault: str | None) -> int:
+    def fake_init(
+        k: int | None,
+        n: int | None,
+        vault_path: str,
+        force: bool,
+        import_shares: list[str] | None,
+        source_vault: str | None,
+    ) -> int:
         nonlocal recorded
         recorded = (k, n, vault_path, force, import_shares, source_vault)
         return 0
@@ -118,12 +125,21 @@ def test_init_command_forwarding(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     ],
 )
-def test_handler_routing(command: str, argv_tail: list[str], handler_name: str, expected_args: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> None:
+def test_handler_routing(
+    command: str,
+    argv_tail: list[str],
+    handler_name: str,
+    expected_args: tuple[Any, ...],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     recorded: tuple[Any, ...] | None = None
 
-    def fake_handler(*args: Any) -> int:
+    def fake_handler(*args: Any, **kwargs: Any) -> int:
         nonlocal recorded
-        recorded = args
+        # Flatten kwargs values into positional tuple for comparison
+        recorded = (
+            args + tuple(kwargs.values()) if kwargs else args
+        )
         return 0
 
     monkeypatch.setattr(f"src.main.{handler_name}", fake_handler)

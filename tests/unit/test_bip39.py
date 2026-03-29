@@ -11,6 +11,28 @@ import secrets
 
 import pytest
 
+# Reusable BIP39 test vectors (24-word mnemonics)
+_ABANDON_ART = (
+    "abandon abandon abandon abandon abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon art"
+)
+_ABANDON_ZOO = (
+    "abandon abandon abandon abandon abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon zoo"
+)
+_LEGAL_TITLE = (
+    "legal winner thank year wave sausage worth useful"
+    " legal winner thank year wave sausage worth useful"
+    " legal winner thank year wave sausage worth title"
+)
+_NOTAWORD = (
+    "abandon abandon abandon notaword abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon abandon"
+    " abandon abandon abandon abandon abandon abandon abandon art"
+)
+
 
 class TestBIP39Encoding:
     """Unit tests for BIP39 mnemonic operations."""
@@ -48,7 +70,7 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Known BIP39 mnemonic (24 words with valid checksum)
-        known_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        known_mnemonic = _ABANDON_ART
 
         share = decode_share(known_mnemonic)
 
@@ -67,7 +89,10 @@ class TestBIP39Encoding:
         """Test: decode_share raises when entropy length is not 32 bytes."""
         from src.crypto.bip39 import decode_share
 
-        twelve_word_mnemonic = "legal winner thank year wave sausage worth useful legal winner thank yellow"
+        twelve_word_mnemonic = (
+            "legal winner thank year wave sausage worth useful"
+            " legal winner thank yellow"
+        )
 
         with pytest.raises(ValueError, match="Decoded share must be 32 bytes"):
             decode_share(twelve_word_mnemonic)
@@ -78,7 +103,7 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import validate_checksum
 
         # Valid BIP39 mnemonic with correct checksum
-        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        valid_mnemonic = _ABANDON_ART
 
         is_valid = validate_checksum(valid_mnemonic)
 
@@ -91,7 +116,7 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import validate_checksum
 
         # Invalid BIP39 mnemonic (last word modified to break checksum)
-        invalid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon zoo"  # 'zoo' breaks checksum
+        invalid_mnemonic = _ABANDON_ZOO  # 'zoo' breaks checksum
 
         is_valid = validate_checksum(invalid_mnemonic)
 
@@ -110,7 +135,7 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Mnemonic with word not in BIP39 wordlist
-        invalid_mnemonic = "abandon abandon abandon notaword abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        invalid_mnemonic = _NOTAWORD
 
         # Expected: ValueError for invalid word
         with pytest.raises(ValueError, match="Invalid mnemonic"):
@@ -123,7 +148,7 @@ class TestBIP39Encoding:
 
         # Test vector from BIP39 spec
         entropy = bytes.fromhex("0000000000000000000000000000000000000000000000000000000000000000")
-        expected_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        expected_mnemonic = _ABANDON_ART
 
         mnemonic = encode_share(entropy)
         assert mnemonic == expected_mnemonic
@@ -138,7 +163,7 @@ class TestBIP39Encoding:
 
         # Test vector from BIP39 spec
         entropy = bytes.fromhex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
-        expected_mnemonic = "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title"
+        expected_mnemonic = _LEGAL_TITLE
 
         mnemonic = encode_share(entropy)
         assert mnemonic == expected_mnemonic
@@ -169,7 +194,7 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Valid BIP39 mnemonic in lowercase
-        lowercase_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        lowercase_mnemonic = _ABANDON_ART
 
         # Same mnemonic in uppercase
         uppercase_mnemonic = lowercase_mnemonic.upper()
@@ -186,7 +211,12 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Valid BIP39 mnemonic with extra spaces
-        mnemonic_with_spaces = "  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  abandon  art  "
+        mnemonic_with_spaces = (
+            "  abandon  abandon  abandon  abandon  abandon  abandon"
+            "  abandon  abandon  abandon  abandon  abandon  abandon"
+            "  abandon  abandon  abandon  abandon  abandon  abandon"
+            "  abandon  abandon  abandon  abandon  abandon  art  "
+        )
 
         share = decode_share(mnemonic_with_spaces)
 
@@ -200,10 +230,13 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Full BIP39 mnemonic
-        full_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        full_mnemonic = _ABANDON_ART
 
         # Same mnemonic with 4-char prefixes
-        prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban art"
+        prefix_mnemonic = (
+            "aban aban aban aban aban aban aban aban aban aban aban aban"
+            " aban aban aban aban aban aban aban aban aban aban aban art"
+        )
 
         share_full = decode_share(full_mnemonic)
         share_prefix = decode_share(prefix_mnemonic)
@@ -218,7 +251,10 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import validate_checksum
 
         # Valid BIP39 mnemonic with 4-char prefixes
-        prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban art"
+        prefix_mnemonic = (
+            "aban aban aban aban aban aban aban aban aban aban aban aban"
+            " aban aban aban aban aban aban aban aban aban aban aban art"
+        )
 
         is_valid = validate_checksum(prefix_mnemonic)
 
@@ -231,7 +267,10 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import validate_checksum
 
         # Invalid BIP39 mnemonic with 4-char prefixes (wrong last word)
-        invalid_prefix_mnemonic = "aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban aban zoo"
+        invalid_prefix_mnemonic = (
+            "aban aban aban aban aban aban aban aban aban aban aban aban"
+            " aban aban aban aban aban aban aban aban aban aban aban zoo"
+        )
 
         is_valid = validate_checksum(invalid_prefix_mnemonic)
 
@@ -244,10 +283,14 @@ class TestBIP39Encoding:
         from src.crypto.bip39 import decode_share
 
         # Full BIP39 mnemonic
-        full_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        full_mnemonic = _ABANDON_ART
 
         # Mixed prefixes and full words
-        mixed_mnemonic = "aban abandon aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban aban abandon aban art"
+        mixed_mnemonic = (
+            "aban abandon aban abandon aban aban abandon aban"
+            " aban abandon aban aban abandon aban aban abandon"
+            " aban aban abandon aban aban abandon aban art"
+        )
 
         share_full = decode_share(full_mnemonic)
         share_mixed = decode_share(mixed_mnemonic)
@@ -263,7 +306,7 @@ class TestIndexedShares:
         """Test: Format share with index prefix."""
         from src.crypto.bip39 import format_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
 
         formatted = format_indexed_share(1, mnemonic)
 
@@ -273,7 +316,7 @@ class TestIndexedShares:
         """Test: format_indexed_share rejects invalid indices."""
         from src.crypto.bip39 import format_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
 
         # Index too low
         with pytest.raises(ValueError, match="Share index must be 1-255"):
@@ -287,7 +330,7 @@ class TestIndexedShares:
         """Test: Parse share with 'N:' format."""
         from src.crypto.bip39 import parse_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
         indexed_str = f"1: {mnemonic}"
 
         index, parsed_mnemonic = parse_indexed_share(indexed_str)
@@ -299,7 +342,7 @@ class TestIndexedShares:
         """Test: Parse share with 'Share N:' format."""
         from src.crypto.bip39 import parse_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
         indexed_str = f"Share 5: {mnemonic}"
 
         index, parsed_mnemonic = parse_indexed_share(indexed_str)
@@ -311,7 +354,7 @@ class TestIndexedShares:
         """Test: Parse share without index prefix returns None."""
         from src.crypto.bip39 import parse_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
 
         index, parsed_mnemonic = parse_indexed_share(mnemonic)
 
@@ -322,7 +365,7 @@ class TestIndexedShares:
         """Test: Parse share handles extra whitespace."""
         from src.crypto.bip39 import parse_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
         indexed_str = f"  3:   {mnemonic}  "
 
         index, parsed_mnemonic = parse_indexed_share(indexed_str)
@@ -334,7 +377,7 @@ class TestIndexedShares:
         """Test: Parse share with large valid index (255)."""
         from src.crypto.bip39 import parse_indexed_share
 
-        mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+        mnemonic = _ABANDON_ART
         indexed_str = f"255: {mnemonic}"
 
         index, parsed_mnemonic = parse_indexed_share(indexed_str)

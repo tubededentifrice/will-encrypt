@@ -113,7 +113,9 @@ def rotate_command(
                         if index is None:
                             # Try auto-detection using fingerprints
                             decoded = decode_share(mnemonic)
-                            matched_fp = match_share_fingerprint(vault.manifest.share_fingerprints, decoded)
+                            matched_fp = match_share_fingerprint(
+                                vault.manifest.share_fingerprints, decoded
+                            )
                             if matched_fp:
                                 index = matched_fp.index
                                 print(f"  ✓ Auto-detected as share {index}")
@@ -122,17 +124,22 @@ def rotate_command(
                                 while True:
                                     try:
                                         idx_input = input(
-                                            f"  Could not auto-detect. Enter the original share number (1-{n}): "
+                                            "  Could not auto-detect."
+                                            f" Enter the original share number (1-{n}): "
                                         ).strip()
                                         index = int(idx_input)
                                         if index < 1 or index > n:
                                             print(
-                                                f"    Error: Share number must be between 1 and {n}."
+                                                "    Error: Share number"
+                                                f" must be between 1 and {n}."
                                             )
                                             continue
                                         break
                                     except ValueError:
-                                        print("    Error: Invalid number. Please enter digits only.")
+                                        print(
+                                            "    Error: Invalid number."
+                                            " Please enter digits only."
+                                        )
                                         continue
                         else:
                             print(f"  ✓ Share {index} validated")
@@ -180,7 +187,9 @@ def rotate_command(
 
             if index is None:
                 # Try auto-detection using fingerprints
-                matched_fp = match_share_fingerprint(vault.manifest.share_fingerprints, decoded)
+                matched_fp = match_share_fingerprint(
+                    vault.manifest.share_fingerprints, decoded
+                )
                 if matched_fp:
                     index = matched_fp.index
                     print(f"  ✓ Auto-detected as share {index}")
@@ -295,7 +304,10 @@ def rotate_command(
 
             # Validate new K/N
             if new_k < 1 or new_k > new_n or new_n > 255:
-                print(f"\nError: Invalid K/N (got K={new_k}, N={new_n})", file=sys.stderr)
+                print(
+                    f"\nError: Invalid K/N (got K={new_k}, N={new_n})",
+                    file=sys.stderr,
+                )
                 return 1
 
             # Confirmation
@@ -305,7 +317,9 @@ def rotate_command(
                 print(f"  • New: {new_k}-of-{new_n}")
                 print("  • Old shares will become INVALID")
                 try:
-                    confirm_input = input("\nProceed with share rotation? (yes/no): ").strip().lower()
+                    confirm_input = input(
+                        "\nProceed with share rotation? (yes/no): "
+                    ).strip().lower()
                     if confirm_input != "yes":
                         print("Aborted.", file=sys.stderr)
                         return 0
@@ -391,7 +405,9 @@ def rotate_command(
                 print("  • Old passphrase and shares will become INVALID")
                 print("  • Messages are NOT re-encrypted (hybrid design)")
                 try:
-                    confirm_input = input("\nProceed with passphrase rotation? (yes/no): ").strip().lower()
+                    confirm_input = input(
+                        "\nProceed with passphrase rotation? (yes/no): "
+                    ).strip().lower()
                     if confirm_input != "yes":
                         print("Aborted.", file=sys.stderr)
                         return 0
@@ -495,7 +511,11 @@ def rotate_command(
             return 0
 
         else:
-            print(f"Error: Invalid mode '{mode}' (must be 'shares' or 'passphrase')", file=sys.stderr)
+            print(
+                f"Error: Invalid mode '{mode}'"
+                " (must be 'shares' or 'passphrase')",
+                file=sys.stderr,
+            )
             return 1
 
     except Exception as e:

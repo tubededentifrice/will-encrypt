@@ -20,7 +20,9 @@ from tests.test_helpers import create_test_vault, encrypt_test_message
 class TestDecryptCommand:
     """Contract tests for will-encrypt decrypt command."""
 
-    def test_decrypt_with_k_valid_shares(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_decrypt_with_k_valid_shares(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test: Decrypt with K valid shares, verify all messages recovered."""
         from src.cli.decrypt import decrypt_command
 
@@ -113,7 +115,9 @@ class TestDecryptCommand:
             vault_data = yaml.safe_load(f)
 
         # Corrupt the Kyber wrapped KEK with invalid base64 data
-        vault_data["messages"][0]["kyber_wrapped_kek"] = base64.b64encode(b"corrupted_data").decode()
+        vault_data["messages"][0]["kyber_wrapped_kek"] = (
+            base64.b64encode(b"corrupted_data").decode()
+        )
 
         with open(vault_path, "w") as f:
             yaml.dump(vault_data, f)
@@ -183,7 +187,9 @@ class TestDecryptCommand:
         result = decrypt_command(vault_path=str(vault_path), shares=shares[:3])
         assert result == 7, "Decrypt should fail with exit code 7 for tampered ciphertext"
 
-    def test_decrypt_auto_detects_share_indices(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_decrypt_auto_detects_share_indices(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test: Decrypt auto-detects share indices from fingerprints when indices not provided."""
         from src.cli.decrypt import decrypt_command
 

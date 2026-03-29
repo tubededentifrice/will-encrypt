@@ -74,7 +74,7 @@ def decode_share(mnemonic_str: str) -> bytes:
     try:
         share = _mnemonic.to_entropy(expanded)
     except Exception as e:
-        raise ValueError(f"Failed to decode mnemonic: {e}")
+        raise ValueError(f"Failed to decode mnemonic: {e}") from e
 
     if len(share) != 32:
         raise ValueError(f"Decoded share must be 32 bytes, got {len(share)}")

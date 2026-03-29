@@ -17,7 +17,11 @@ from src.storage.models import Keypair, Manifest, ShareFingerprint, Vault
 
 def _build_sample_vault() -> Vault:
     keypair = Keypair(
-        rsa_public="-----BEGIN PUBLIC KEY-----\nAAAAB3NzaC1yc2EAAAADAQABAAABAQCy\n-----END PUBLIC KEY-----",
+        rsa_public=(
+            "-----BEGIN PUBLIC KEY-----\n"
+            "AAAAB3NzaC1yc2EAAAADAQABAAABAQCy\n"
+            "-----END PUBLIC KEY-----"
+        ),
         rsa_private_encrypted=base64.b64encode(b"rsa-private").decode(),
         kyber_public=base64.b64encode(b"kyber-public").decode(),
         kyber_private_encrypted=base64.b64encode(b"kyber-private").decode(),

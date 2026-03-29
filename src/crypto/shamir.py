@@ -26,11 +26,11 @@ def _gf256_mul(a: int, b: int) -> int:
         return 0
 
     # GF(256) with primitive polynomial x^8 + x^4 + x^3 + x + 1
-    LOG_TABLE = _get_log_table()
-    EXP_TABLE = _get_exp_table()
+    log_table = _get_log_table()
+    exp_table = _get_exp_table()
 
-    log_result = (LOG_TABLE[a] + LOG_TABLE[b]) % 255
-    return EXP_TABLE[log_result]
+    log_result = (log_table[a] + log_table[b]) % 255
+    return exp_table[log_result]
 
 
 def _gf256_div(a: int, b: int) -> int:
@@ -40,17 +40,21 @@ def _gf256_div(a: int, b: int) -> int:
     if a == 0:
         return 0
 
-    LOG_TABLE = _get_log_table()
-    EXP_TABLE = _get_exp_table()
+    log_table = _get_log_table()
+    exp_table = _get_exp_table()
 
-    log_result = (LOG_TABLE[a] - LOG_TABLE[b]) % 255
-    return EXP_TABLE[log_result]
+    log_result = (log_table[a] - log_table[b]) % 255
+    return exp_table[log_result]
+
+
+_log_table_cache: list[int] | None = None
+_exp_table_cache: list[int] | None = None
 
 
 def _get_log_table() -> list[int]:
     """Generate logarithm table for GF(256)."""
-    # Cache the table
-    if not hasattr(_get_log_table, 'cache'):
+    global _log_table_cache, _exp_table_cache  # noqa: PLW0603
+    if _log_table_cache is None:
         log = [0] * 256
         exp = [0] * 256
         x = 1
@@ -62,16 +66,17 @@ def _get_log_table() -> list[int]:
             if x & 0x100:
                 x ^= 0x11B  # x^8 + x^4 + x^3 + x + 1
         exp[255] = exp[0]
-        _get_log_table.cache = log
-        _get_exp_table.cache = exp
-    return _get_log_table.cache
+        _log_table_cache = log
+        _exp_table_cache = exp
+    return _log_table_cache
 
 
 def _get_exp_table() -> list[int]:
     """Generate exponentiation table for GF(256)."""
-    if not hasattr(_get_exp_table, 'cache'):
+    if _exp_table_cache is None:
         _get_log_table()  # Initialize both tables
-    return _get_exp_table.cache
+    assert _exp_table_cache is not None
+    return _exp_table_cache
 
 
 def _eval_polynomial(coeffs: list[int], x: int) -> int:

@@ -244,8 +244,7 @@ class TestShareRotation:
             )
             assert result == 0, "Rotate command should succeed"
 
-            output = captured_output.getvalue()
-            new_shares = extract_shares_from_output(output)
+            captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
 
@@ -411,9 +410,10 @@ class TestShareRotation:
         result2 = decrypt_command(vault_path=str(vault_path), shares=shares_v2[:3])
         assert result2 == 3, f"shares_v2 should fail with insufficient shares, got {result2}"
 
-        # shares_v3 (4 shares) would meet threshold BUT passphrase changed, so they reconstruct wrong passphrase
+        # shares_v3 (4 shares) would meet threshold BUT passphrase changed,
+        # so they reconstruct wrong passphrase
         # This should fail with decryption error
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017 - wrong passphrase can raise multiple error types
             decrypt_vault_messages(vault_path, shares_v3[:4])
 
     def test_rotation_requires_k_shares(self, tmp_path: Path) -> None:

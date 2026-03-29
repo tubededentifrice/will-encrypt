@@ -5,7 +5,7 @@ import sys
 from src.storage.vault import load_vault
 
 
-def list_command(vault_path: str, format: str = "table", sort_by: str = "id") -> int:
+def list_command(vault_path: str, output_format: str = "table", sort_by: str = "id") -> int:
     """List messages in vault."""
     import os
 
@@ -28,7 +28,7 @@ def list_command(vault_path: str, format: str = "table", sort_by: str = "id") ->
         else:
             messages = vault.messages
 
-        if format == "json":
+        if output_format == "json":
             data = [
                 {
                     "id": m.id,

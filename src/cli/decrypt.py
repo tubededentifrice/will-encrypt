@@ -54,7 +54,11 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
                         # Validate format (should be ~24 words in mnemonic part)
                         word_count = len(mnemonic.split())
                         if word_count != 24:
-                            print(f"  Warning: Expected 24 words, got {word_count}. Continue anyway? (yes/no): ", end="")
+                            print(
+                                f"  Warning: Expected 24 words, got {word_count}."
+                                " Continue anyway? (yes/no): ",
+                                end="",
+                            )
                             confirm = input().strip().lower()
                             if confirm != "yes":
                                 continue
@@ -87,7 +91,10 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
         # Validate shares count
         if len(shares) < k:
             print(f"\nError: Insufficient shares (need {k}, got {len(shares)})", file=sys.stderr)
-            print(f"Recovery: Collect at least {k - len(shares)} more share(s) from key holders", file=sys.stderr)
+            print(
+                f"Recovery: Collect at least {k - len(shares)} more share(s) from key holders",
+                file=sys.stderr,
+            )
             return 3
 
         # Parse and validate shares
@@ -102,8 +109,16 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
             # Validate BIP39 checksum
             if not validate_checksum(mnemonic):
                 print("\nError: Invalid BIP39 checksum in share", file=sys.stderr)
-                print("Recovery: Check for typos in the mnemonic. The last word contains a checksum.", file=sys.stderr)
-                print("Hint: Use 'abandon ability able...' format (24 words, space-separated)", file=sys.stderr)
+                print(
+                    "Recovery: Check for typos in the mnemonic."
+                    " The last word contains a checksum.",
+                    file=sys.stderr,
+                )
+                print(
+                    "Hint: Use 'abandon ability able...' format"
+                    " (24 words, space-separated)",
+                    file=sys.stderr,
+                )
                 return 4
 
             decoded = decode_share(mnemonic)  # Returns 32 bytes
@@ -131,9 +146,21 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
             print("  - The share has been modified")
 
             if not interactive_mode:
-                print("\nError: Share indices could not be determined in non-interactive mode", file=sys.stderr)
-                print("Recovery: Include share numbers in format 'N: mnemonic' when using --shares", file=sys.stderr)
-                print("Example: --shares '1: abandon ability...' '2: about above...'", file=sys.stderr)
+                print(
+                    "\nError: Share indices could not be determined"
+                    " in non-interactive mode",
+                    file=sys.stderr,
+                )
+                print(
+                    "Recovery: Include share numbers in format"
+                    " 'N: mnemonic' when using --shares",
+                    file=sys.stderr,
+                )
+                print(
+                    "Example: --shares '1: abandon ability...'"
+                    " '2: about above...'",
+                    file=sys.stderr,
+                )
                 return 5
 
             # Interactive mode: prompt for missing indices
@@ -141,7 +168,9 @@ def decrypt_command(vault_path: str, shares: list | None = None) -> int:
             for missing_mnemonic, decoded in missing_indices:
                 while True:
                     try:
-                        idx_input = input(f"Enter share number for '{missing_mnemonic[:40]}...': ").strip()
+                        idx_input = input(
+                            f"Enter share number for '{missing_mnemonic[:40]}...': "
+                        ).strip()
                         index = int(idx_input)
                         if index < 1 or index > n:
                             print(f"  Error: Share index must be 1-{n}")

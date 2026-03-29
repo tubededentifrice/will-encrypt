@@ -43,7 +43,11 @@ class TestValidationAudit:
             vault_data = yaml.safe_load(f)
 
         # Change the RSA public key (tampering)
-        vault_data["keys"]["public"]["rsa_4096"] = "-----BEGIN PUBLIC KEY-----\ntampered_key\n-----END PUBLIC KEY-----"
+        vault_data["keys"]["public"]["rsa_4096"] = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "tampered_key\n"
+            "-----END PUBLIC KEY-----"
+        )
 
         with open(vault_path, "w") as f:
             yaml.dump(vault_data, f)
@@ -84,7 +88,8 @@ class TestValidationAudit:
         # Create vault with missing required fields
         incomplete_vault = {
             "version": "1.0",
-            # Missing: created, keys, messages, manifest, recovery_guide, policy_document, crypto_notes
+            # Missing: created, keys, messages, manifest,
+            # recovery_guide, policy_document, crypto_notes
         }
         with open(vault_path, "w") as f:
             yaml.dump(incomplete_vault, f)
@@ -183,7 +188,7 @@ class TestValidationAudit:
                 shares=shares_v1[:3],
                 confirm=True  # Skip interactive confirmation
             )
-            output = captured_output.getvalue()
+            captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
 
@@ -228,7 +233,12 @@ class TestValidationAudit:
         messages = vault_data["messages"]
 
         # Parse timestamps
-        timestamps = [datetime.fromisoformat(msg["created"].replace("Z", "+00:00")) for msg in messages]
+        timestamps = [
+            datetime.fromisoformat(
+                msg["created"].replace("Z", "+00:00")
+            )
+            for msg in messages
+        ]
         assert timestamps == sorted(timestamps), "Timestamps should be in chronological order"
 
     def test_validate_performance_under_2_seconds(self, tmp_path: Path) -> None:

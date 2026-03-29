@@ -20,7 +20,9 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pqcrypto.kem.ml_kem_1024 import decrypt as kyber_decrypt  # type: ignore[import-untyped]
 from pqcrypto.kem.ml_kem_1024 import encrypt as kyber_encrypt  # type: ignore[import-untyped]
-from pqcrypto.kem.ml_kem_1024 import generate_keypair as kyber_generate_keypair  # type: ignore[import-untyped]
+from pqcrypto.kem.ml_kem_1024 import (
+    generate_keypair as kyber_generate_keypair,  # type: ignore[import-untyped]
+)
 
 from .passphrase import derive_key
 
@@ -122,7 +124,7 @@ def decrypt_key_with_passphrase(
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
         return plaintext
     except Exception as e:
-        raise ValueError(f"Decryption failed (wrong passphrase or corrupted data): {e}")
+        raise ValueError(f"Decryption failed (wrong passphrase or corrupted data): {e}") from e
 
 
 def generate_hybrid_keypair(passphrase: bytes) -> HybridKeypair:
@@ -201,9 +203,10 @@ def decrypt_private_keys(
     )
 
     # Load RSA private key from PEM
-    rsa_private = serialization.load_pem_private_key(
+    rsa_private_key = serialization.load_pem_private_key(
         rsa_private_pem, password=None
     )
+    assert isinstance(rsa_private_key, rsa.RSAPrivateKey)
 
     # Decrypt Kyber private key
     kyber_private = decrypt_key_with_passphrase(
@@ -213,7 +216,7 @@ def decrypt_private_keys(
         keypair.kdf_iterations,
     )
 
-    return rsa_private, kyber_private
+    return rsa_private_key, kyber_private
 
 
 def hybrid_encrypt_kek(

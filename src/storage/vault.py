@@ -37,19 +37,23 @@ class LiteralString(str):
     pass
 
 
-def literal_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
-    """Represent LiteralString as literal block scalar (|) in YAML."""
-    if '\n' in data:
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-
-
 # Create custom dumper class to ensure representer is used
 class LiteralDumper(yaml.SafeDumper):
     pass
 
 
-LiteralDumper.add_representer(LiteralString, literal_representer)
+def _literal_representer(
+    dumper: LiteralDumper, data: LiteralString,
+) -> yaml.nodes.Node:
+    """Represent LiteralString as literal block scalar (|) in YAML."""
+    if '\n' in data:
+        return dumper.represent_scalar(
+            'tag:yaml.org,2002:str', data, style='|',
+        )
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+
+LiteralDumper.add_representer(LiteralString, _literal_representer)
 
 
 def save_vault(vault: Vault, path: str) -> None:

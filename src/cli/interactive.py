@@ -1,7 +1,6 @@
 """Interactive mode for will-encrypt - guides users through all operations."""
 import os
 from enum import Enum
-from typing import Optional
 
 from src.cli.decrypt import decrypt_command
 from src.cli.delete import delete_command
@@ -69,7 +68,7 @@ def get_choice(prompt: str, valid_options: list[str]) -> str:
         print(f"❌ Invalid choice. Please enter one of: {', '.join(valid_options)}\n")
 
 
-_last_vault_path: Optional[str] = None  # Session memory for vault path
+_last_vault_path: str | None = None  # Session memory for vault path
 
 
 def get_vault_path(for_creation: bool = False) -> str:

@@ -53,7 +53,9 @@ def _compute_share_hash(salt_hex: str, share_data: bytes) -> str:
     return hashlib.sha256(salt_bytes + share_data).hexdigest()
 
 
-def create_share_fingerprint(index: int, share_data: bytes, *, salt: bytes | None = None) -> ShareFingerprint:
+def create_share_fingerprint(
+    index: int, share_data: bytes, *, salt: bytes | None = None
+) -> ShareFingerprint:
     """Create a salted fingerprint entry for a single share payload."""
     if not isinstance(share_data, (bytes, bytearray)):
         raise TypeError("share_data must be bytes")

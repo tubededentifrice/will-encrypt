@@ -1,10 +1,10 @@
 # will-encrypt Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-10-08
+Auto-generated from all feature plans. Last updated: 2026-03-29
 
 ## Active Technologies
 - Python 3.11+ (standard library preferred)
-- Dependencies: pyyaml>=6.0, cryptography>=41.0, mnemonic>=0.20, secretsharing>=0.2.6
+- Dependencies: pyyaml>=6.0, cryptography>=41.0, mnemonic>=0.20, pqcrypto>=0.3.4
 
 ## Project Structure
 ```
@@ -34,7 +34,7 @@ will-encrypt/
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 96 unit tests
+│   ├── unit/            # 123 unit tests
 │   ├── contract/        # 55 contract tests
 │   ├── integration/     # 46 integration tests
 │   └── test_helpers.py  # Shared test utilities
@@ -60,7 +60,7 @@ pytest -n 12                        # Force 12 workers when auto-detection is un
 pytest tests/unit/ -v               # Unit tests only (parallel by default)
 pytest tests/integration/ -v        # Integration tests only (parallel by default)
 pytest tests/contract/ -v           # Contract tests (CLI flows)
-pytest --cov=src                    # With coverage report (htmlcov/) - ~74% coverage
+pytest --cov=src                    # With coverage report (htmlcov/) - ~65% coverage
 python -m pytest tests/ -v --tb=short
 
 # Linting and type checking
@@ -148,7 +148,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **220/220 tests passing (100% pass rate), 64% code coverage**
+- Current status: **224/224 tests passing (100% pass rate), 65% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -194,8 +194,8 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (220 tests, 64% code coverage):
-- **Unit Tests (119)**: Crypto primitives, storage, CLI wiring, secure editor navigation
+✅ Test Coverage (224 tests, 65% code coverage):
+- **Unit Tests (123)**: Crypto primitives, storage, CLI wiring, secure editor navigation
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
 - **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management
 - All tests passing with comprehensive coverage of security features

@@ -9,6 +9,7 @@ Test vectors from NIST CAVP AES-GCM.
 
 import secrets
 
+import cryptography.exceptions
 import pytest
 
 
@@ -65,13 +66,12 @@ class TestAESGCMEncryption:
         ciphertext = aesgcm.encrypt(nonce, plaintext, aad)
 
         # Tamper with ciphertext (flip one bit)
-        tampered_ciphertext = bytearray(ciphertext)
-        tampered_ciphertext[0] ^= 0x01
-        tampered_ciphertext = bytes(tampered_ciphertext)
+        tampered_ct = bytearray(ciphertext)
+        tampered_ct[0] ^= 0x01
 
         # Attempt decrypt - should fail authentication
-        with pytest.raises(Exception):  # Cryptography raises InvalidTag
-            aesgcm.decrypt(nonce, tampered_ciphertext, aad)
+        with pytest.raises(cryptography.exceptions.InvalidTag):
+            aesgcm.decrypt(nonce, bytes(tampered_ct), aad)
 
     def test_nonce_uniqueness_enforcement(self) -> None:
         """Test: Nonce uniqueness enforcement (nonce reuse detection)."""
@@ -103,7 +103,10 @@ class TestAESGCMEncryption:
         iv = bytes.fromhex("000000000000000000000000")
         pt = b""  # Empty plaintext
         aad = b""
-        expected_ct_with_tag = bytes.fromhex("530f8afbc74536b9a963b4f1c4cb738b")  # This is the tag for empty plaintext
+        # Tag for empty plaintext
+        expected_ct_with_tag = bytes.fromhex(
+            "530f8afbc74536b9a963b4f1c4cb738b"
+        )
 
         # Encrypt
         aesgcm = AESGCM(key)
@@ -183,7 +186,7 @@ class TestAESGCMEncryption:
         ciphertext = aesgcm.encrypt(nonce, plaintext, original_aad)
 
         # Attempt decrypt with tampered AAD - should fail
-        with pytest.raises(Exception):  # Cryptography raises InvalidTag
+        with pytest.raises(cryptography.exceptions.InvalidTag):
             aesgcm.decrypt(nonce, ciphertext, tampered_aad)
 
     def test_key_size_validation(self) -> None:

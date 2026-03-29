@@ -100,16 +100,25 @@ class TestFullLifecycle:
 
         # Setup: Initialize vault and encrypt messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
-        encrypt_test_message(vault_path, "Digital Assets", "Bitcoin wallet: bc1q...\nSeed phrase: abandon...")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
+        encrypt_test_message(
+            vault_path, "Digital Assets",
+            "Bitcoin wallet: bc1q...\nSeed phrase: abandon...",
+        )
 
         # Capture output from list command
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
 
         try:
-            result = list_command(vault_path=str(vault_path), format="table", sort_by="id")
+            result = list_command(vault_path=str(vault_path), output_format="table", sort_by="id")
             output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -129,8 +138,14 @@ class TestFullLifecycle:
 
         # Setup: Initialize vault and encrypt messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
 
         # Validate
         result = validate_command(vault_path=str(vault_path), verbose=False)
@@ -144,9 +159,18 @@ class TestFullLifecycle:
 
         # Setup: Initialize vault and encrypt messages
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
-        encrypt_test_message(vault_path, "Digital Assets", "Bitcoin wallet: bc1q...\nSeed phrase: abandon...")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
+        encrypt_test_message(
+            vault_path, "Digital Assets",
+            "Bitcoin wallet: bc1q...\nSeed phrase: abandon...",
+        )
 
         # Decrypt with 3 shares (shares 1, 3, 5)
         selected_shares = [shares[0], shares[2], shares[4]]
@@ -187,8 +211,14 @@ class TestFullLifecycle:
 
         # Setup: Initialize vault and encrypt messages
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
 
         # Capture output to extract new shares
         old_stdout = sys.stdout
@@ -227,9 +257,18 @@ class TestFullLifecycle:
 
         # Setup: Initialize, encrypt, rotate
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
-        encrypt_test_message(vault_path, "Digital Assets", "Bitcoin wallet: bc1q...\nSeed phrase: abandon...")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
+        encrypt_test_message(
+            vault_path, "Digital Assets",
+            "Bitcoin wallet: bc1q...\nSeed phrase: abandon...",
+        )
 
         # Rotate shares
         old_stdout = sys.stdout
@@ -274,11 +313,14 @@ class TestFullLifecycle:
 
         # Setup: Initialize, encrypt, rotate
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
 
         # Rotate shares
         old_stdout = sys.stdout
-        sys.stdout = captured_output = io.StringIO()
+        sys.stdout = io.StringIO()
 
         try:
             result = rotate_command(
@@ -309,12 +351,18 @@ class TestFullLifecycle:
 
         # Setup: Complete all previous steps
         vault_path, old_shares = create_test_vault(tmp_path, k=3, n=5)
-        encrypt_test_message(vault_path, "Bank Passwords", "Account: 123-456\nPassword: secret123")
-        encrypt_test_message(vault_path, "Estate Instructions", "Executor: Jane Doe\nLawyer: John Smith")
+        encrypt_test_message(
+            vault_path, "Bank Passwords",
+            "Account: 123-456\nPassword: secret123",
+        )
+        encrypt_test_message(
+            vault_path, "Estate Instructions",
+            "Executor: Jane Doe\nLawyer: John Smith",
+        )
 
         # Rotate shares (step 7)
         old_stdout = sys.stdout
-        sys.stdout = captured_output = io.StringIO()
+        sys.stdout = io.StringIO()
 
         try:
             rotate_result = rotate_command(
@@ -339,9 +387,16 @@ class TestFullLifecycle:
         # Verify rotation history shows 2 events (initial + rotation)
         manifest = get_vault_manifest(vault_path)
         assert "rotation_history" in manifest, "Manifest should have rotation_history"
-        assert len(manifest["rotation_history"]) == 2, f"Expected 2 rotation events, got {len(manifest['rotation_history'])}"
-        assert manifest["rotation_history"][0]["event"] == "initial_creation", "First event should be initial_creation"
-        assert manifest["rotation_history"][1]["event"] == "share_rotation", "Second event should be share_rotation"
+        assert len(manifest["rotation_history"]) == 2, (
+            "Expected 2 rotation events,"
+            f" got {len(manifest['rotation_history'])}"
+        )
+        assert manifest["rotation_history"][0]["event"] == (
+            "initial_creation"
+        ), "First event should be initial_creation"
+        assert manifest["rotation_history"][1]["event"] == (
+            "share_rotation"
+        ), "Second event should be share_rotation"
 
     def test_full_lifecycle_integrated(self, tmp_path: Path) -> None:
         """Test: Complete lifecycle (all 10 steps in sequence)."""
@@ -357,16 +412,28 @@ class TestFullLifecycle:
         assert vault_path.exists(), "Vault should exist"
 
         # Step 2: Encrypt 3 messages
-        result1 = encrypt_command(vault_path=str(vault_path), title="Message 1", message_text="Content 1")
-        result2 = encrypt_command(vault_path=str(vault_path), title="Message 2", message_text="Content 2")
-        result3 = encrypt_command(vault_path=str(vault_path), title="Message 3", message_text="Content 3")
+        result1 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 1", message_text="Content 1",
+        )
+        result2 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 2", message_text="Content 2",
+        )
+        result3 = encrypt_command(
+            vault_path=str(vault_path),
+            title="Message 3", message_text="Content 3",
+        )
         assert result1 == 0 and result2 == 0 and result3 == 0, "All encrypts should succeed"
 
         # Step 3: List messages (no decryption)
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
         try:
-            list_result = list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            list_result = list_command(
+                vault_path=str(vault_path),
+                output_format="json", sort_by="id",
+            )
             list_output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout

@@ -69,7 +69,7 @@ def encrypt_command(
         except KeyboardInterrupt:
             print("\nAborted.", file=sys.stderr)
             return 1
-        except Exception as e:
+        except Exception:
             # Fallback to basic input if terminal doesn't support raw mode
             print("\nSecure editor not available, using basic input mode.")
             print("Enter message content (multi-line supported, Ctrl+D to finish):")

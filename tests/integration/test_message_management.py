@@ -20,17 +20,18 @@ class TestMessageManagement:
         encrypt_test_message(vault_path, "Message 2", "Content 2")
         encrypt_test_message(vault_path, "Message 3", "Content 3")
 
-        from src.cli.delete import delete_command
-        from src.cli.list import list_command
         import io
         import json
         import sys
+
+        from src.cli.delete import delete_command
+        from src.cli.list import list_command
 
         # List before delete
         old_stdout = sys.stdout
         sys.stdout = captured = io.StringIO()
         try:
-            list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -46,7 +47,7 @@ class TestMessageManagement:
         old_stdout = sys.stdout
         sys.stdout = captured = io.StringIO()
         try:
-            list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -62,11 +63,12 @@ class TestMessageManagement:
         encrypt_test_message(vault_path, "Original Title 1", "Content 1")
         encrypt_test_message(vault_path, "Original Title 2", "Content 2")
 
-        from src.cli.edit import edit_command
-        from src.cli.list import list_command
         import io
         import json
         import sys
+
+        from src.cli.edit import edit_command
+        from src.cli.list import list_command
 
         # Edit message 1
         result = edit_command(
@@ -78,7 +80,7 @@ class TestMessageManagement:
         old_stdout = sys.stdout
         sys.stdout = captured = io.StringIO()
         try:
-            list_command(vault_path=str(vault_path), format="json", sort_by="id")
+            list_command(vault_path=str(vault_path), output_format="json", sort_by="id")
             output = captured.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -182,17 +184,18 @@ class TestMessageManagement:
         encrypt_test_message(vault_path, "Message 1", "Content 1")
         encrypt_test_message(vault_path, "Message 2", "Content 2")
 
-        from src.cli.delete import delete_command
-        from src.cli.validate import validate_command
         import io
         import sys
+
+        from src.cli.delete import delete_command
+        from src.cli.validate import validate_command
 
         # Delete message
         delete_command(vault_path=str(vault_path), message_id="1")
 
         # Validate vault
         old_stdout = sys.stdout
-        sys.stdout = captured = io.StringIO()
+        sys.stdout = io.StringIO()
         try:
             result = validate_command(vault_path=str(vault_path), verbose=False)
         finally:
@@ -206,17 +209,18 @@ class TestMessageManagement:
         vault_path, shares = create_test_vault(tmp_path, k=3, n=5)
         encrypt_test_message(vault_path, "Original", "Content")
 
-        from src.cli.edit import edit_command
-        from src.cli.validate import validate_command
         import io
         import sys
+
+        from src.cli.edit import edit_command
+        from src.cli.validate import validate_command
 
         # Edit message
         edit_command(vault_path=str(vault_path), message_id="1", new_title="Updated")
 
         # Validate vault
         old_stdout = sys.stdout
-        sys.stdout = captured = io.StringIO()
+        sys.stdout = io.StringIO()
         try:
             result = validate_command(vault_path=str(vault_path), verbose=False)
         finally:

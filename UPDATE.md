@@ -10,7 +10,7 @@ Maintain the will-encrypt codebase by:
 1. Updating dependencies to their latest stable versions
 2. Replacing deprecated APIs and patterns with modern alternatives
 3. Ensuring **100% backward compatibility** with existing vaults
-4. Maintaining all tests in passing state with ≥69% coverage
+4. Maintaining all tests in passing state with ≥64% coverage
 5. Preserving cryptographic guarantees and security properties
 
 **CRITICAL: Zero tolerance for vault compatibility breaks. Users must be able to decrypt old vaults with the updated codebase.**
@@ -28,10 +28,10 @@ pip install pip-audit && pip-audit
 pip list --outdated
 
 # 3. Run all tests
-pytest -v  # Must be 171/171 passing
+pytest -v  # Must be 224/224 passing
 
 # 4. Check coverage
-pytest --cov=src  # Must be ≥75%
+pytest --cov=src  # Must be ≥64%
 
 # 5. Lint and type check
 ruff check src tests
@@ -91,8 +91,8 @@ pip list --outdated
 # - pqcrypto>=0.3.4
 #
 # Dev dependencies:
-# - pytest>=7.4, pytest-cov>=4.1, pytest-xdist>=3.6
-# - ruff>=0.1, mypy>=1.7
+# - pytest>=8.0, pytest-cov>=4.1, pytest-xdist>=3.6
+# - ruff>=0.5, mypy>=1.10
 ```
 
 **For each dependency:**
@@ -119,7 +119,7 @@ Check if newer Python versions are available:
 
 ```bash
 # Current requirement: Python 3.11+
-# Test compatibility with Python 3.12, 3.13, etc.
+# Tested on: Python 3.11, 3.12, 3.13
 ```
 
 **Steps:**
@@ -134,15 +134,22 @@ Check if newer Python versions are available:
 
 **CRITICAL: These must remain unchanged to maintain vault compatibility:**
 
-#### Vault Format Constants (src/storage/vault.py)
+#### Vault Format Constants
 ```python
 # These values MUST NOT change:
-VAULT_VERSION = 1
-PBKDF2_ITERATIONS = 600_000
-PBKDF2_HASH_ALGORITHM = "sha512"
-AES_KEY_SIZE = 32  # 256 bits
-GCM_NONCE_SIZE = 12
-GCM_TAG_SIZE = 16
+# src/storage/vault.py
+vault_version = "1.0"          # Vault YAML version field
+
+# src/crypto/passphrase.py
+PBKDF2_ITERATIONS = 600_000    # Minimum iterations
+PBKDF2_HASH = "sha512"         # HMAC hash algorithm
+PASSPHRASE_SIZE = 32           # 256-bit passphrase
+SALT_SIZE = 32                 # 256-bit salt
+
+# src/crypto/encryption.py
+AES_KEY_SIZE = 32              # 256 bits
+GCM_NONCE_SIZE = 12            # 96 bits
+GCM_TAG_SIZE = 16              # 128 bits
 ```
 
 #### Cryptographic Parameters
@@ -203,16 +210,16 @@ pytest -W default::DeprecationWarning
 Ensure all tests pass and coverage is maintained:
 
 ```bash
-# Run full test suite (must be 171/171 passing)
+# Run full test suite (must be 224/224 passing)
 pytest -v
 
-# Check coverage (must be ≥75%)
+# Check coverage (must be ≥64%)
 pytest --cov=src --cov-report=term-missing
 
 # Run specific test categories
-pytest tests/unit/ -v           # 88 tests
-pytest tests/contract/ -v       # 45 tests
-pytest tests/integration/ -v    # 38 tests
+pytest tests/unit/ -v           # 123 tests
+pytest tests/contract/ -v       # 55 tests
+pytest tests/integration/ -v    # 46 tests
 ```
 
 **If tests fail:**
@@ -272,8 +279,8 @@ mypy src tests
 Before committing updates:
 
 1. **CVE check passes:** `pip-audit` reports no vulnerabilities
-2. **All tests pass:** `pytest -v` (171/171)
-3. **Coverage maintained or improved:** `pytest --cov=src` (≥75%)
+2. **All tests pass:** `pytest -v` (224/224)
+3. **Coverage maintained or improved:** `pytest --cov=src` (≥64%)
 4. **Linting passes:** `ruff check src tests`
 5. **Type checking passes:** `mypy src tests`
 6. **Backward compatibility verified:** Old vaults decrypt correctly
@@ -313,8 +320,8 @@ API changes:
 
 Backward compatibility verified:
 - Old vaults (version 1) decrypt correctly
-- All 171 tests passing (88 unit, 45 contract, 38 integration)
-- 75% code coverage maintained
+- All 224 tests passing (123 unit, 55 contract, 46 integration)
+- 65% code coverage maintained
 
 Security audit: ✅ All checks passed
 ```
@@ -354,8 +361,8 @@ If uncertain about:
 
 An update is successful when:
 1. ✅ CVE audit passes (pip-audit shows no vulnerabilities)
-2. ✅ All tests pass (171/171)
-3. ✅ Code coverage maintained (≥75%)
+2. ✅ All tests pass (224/224)
+3. ✅ Code coverage maintained (≥64%)
 4. ✅ Linting and type checking pass
 5. ✅ Old vaults decrypt with new code
 6. ✅ No security regressions

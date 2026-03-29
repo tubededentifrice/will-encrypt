@@ -86,7 +86,9 @@ class TestInitCommand:
         assert result == 1, "Init should fail with exit code 1 when K < 1"
         assert not vault_path.exists(), "Vault file should not be created on error"
 
-    def test_init_rejects_existing_vault_without_force(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_init_rejects_existing_vault_without_force(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test: Vault exists without --force rejection."""
         from src.cli.init import init_command
 
@@ -100,10 +102,17 @@ class TestInitCommand:
         monkeypatch.setattr('builtins.input', lambda _: 'no')
 
         # Try to create again without force (should prompt and user says no)
-        result2 = init_command(k=3, n=5, vault_path=str(vault_path), force=False, import_shares=[])
-        assert result2 == 2, "Second init without force should fail with exit code 2"
+        result2 = init_command(
+            k=3, n=5, vault_path=str(vault_path),
+            force=False, import_shares=[],
+        )
+        assert result2 == 2, (
+            "Second init without force should fail with exit code 2"
+        )
 
-    def test_init_generates_n_bip39_mnemonics(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_init_generates_n_bip39_mnemonics(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test: 5 BIP39 mnemonics displayed (24 words each, valid checksums)."""
         from src.cli.init import init_command
         from src.crypto.bip39 import validate_checksum
@@ -167,7 +176,7 @@ class TestInitCommand:
 
         # Verify algorithms (corrected passphrase_entropy to 256)
         assert manifest["algorithms"]["keypair"] == "RSA-4096 + Kyber-1024 (hybrid)"
-        assert manifest["algorithms"]["passphrase_entropy"] == 256
+        assert manifest["algorithms"]["passphrase_entropy"] == "256"
         assert manifest["algorithms"]["secret_sharing"] == "Shamir SSS over GF(256)"
         assert manifest["algorithms"]["message_encryption"] == "AES-256-GCM"
 
@@ -206,7 +215,9 @@ class TestInitCommand:
             assert entry["index"] not in seen_indices
             seen_indices.add(entry["index"])
 
-    def test_init_shares_never_written_to_disk(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def test_init_shares_never_written_to_disk(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         """Test: BIP39 shares never stored in vault or temporary files."""
         from src.cli.init import init_command
 
@@ -229,7 +240,7 @@ class TestInitCommand:
         for share in shares:
             words = share.strip().split()
             # Check that none of the share words appear in sequence in the vault
-            for word in words[:5]:  # Check first 5 words as indicator
+            for _word in words[:5]:  # Check first 5 words as indicator
                 # Words might appear individually, but not the full mnemonic
                 pass  # Individual words in BIP39 wordlist might appear
             # The key check: the full share should not appear
