@@ -1,0 +1,482 @@
+version: '1.0'
+created: '2026-03-29T17:55:41.726449+00:00'
+keys:
+  public:
+    rsa_4096: '-----BEGIN PUBLIC KEY-----
+
+      MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA7mppN4R02l6T2PvGb5Lr
+
+      8G7Lg14qcpgo+uZQQ6Zq/R9RtQYwU7kU6j+2b8znGTbWt5/Tkf/jnEigk54rT9Fg
+
+      e+0x2Ddj98ByInfH/D4MvOe273niPsjaxeE4g+wwU6HkoUid/4FjxVMAXWtm44Dc
+
+      cZq29UvYg14CSfZeRt3V0zVfWstHDlXvfMXOm5ApEEy1nuYhZRsip0qKE3GCRnmr
+
+      dgAG4eLfetjdL3oRooXSeSwB6zJB4DFDsIdaI1tHDp7S2ImLL41pw5iJ2fvrMRQZ
+
+      xgBiqtXhfMRAH7A49e2C57IRcgi+L/78SKBN8izuMZuVY1dE/gp7mafnxjrhBMnD
+
+      RA715XCNKHc7qzZ5glsn8RakP0erxFQ6oeFijhfEAaUhNyBeFy81o03oUZXSr1/2
+
+      RukQCvHV3kwun/DzrxejmFHjXHG1OR4CLGHMGKikkSHpxaCx3EHNzfxk/9bpghp5
+
+      d8sOcmNoJHKQgxGCZCd2f7CkeliBzl4pLDsvmmPhxqoio4IyKDRK7JcwypZvFTWj
+
+      sx4SMoUY137fevYhFrWqQkbimnnHU8rZPxpa0YkbRTSrqacaLhcgtEgwBPH9U5WM
+
+      nxPWFcG5zLWQIVzmqXlYOfK7TVgtlf1FaXv+M0HQlukfTqPs3AmxR1MIyrk38ieJ
+
+      wyGx5RBPzXeZ/BsqkawLcpUCAwEAAQ==
+
+      -----END PUBLIC KEY-----
+
+      '
+    kyber_1024: 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
+  encrypted_private:
+    rsa_4096: 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
+    kyber_1024: 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
+    encryption: AES-256-GCM
+    kdf: PBKDF2-HMAC-SHA512
+    iterations: 600000
+    salt: A4ZB/v2xRcMEUJBFBwC4esl4sT9pgjy9IJtuYjPkE90=
+messages:
+- id: 1
+  title: Backward Compat Test Message 1
+  created: '2026-03-29T17:55:41.748207+00:00'
+  ciphertext: aN2K9cXxX2ibVJe7paIzUs1m+5A+wVMMA5E7lpbueFllZury4SjOBC3uKBOhjXArnbk=
+  rsa_wrapped_kek: m7A6+A0/D3UYXSTKwncpjQFgNBcK1hCrcLplY5fq9BBqIOTMO88gHsovyUL/2sQtGMVeujrCkTP7oXF2PtpUvk2QX4d+U+gUQhaCjC90gEe3jnMdf1KYW+3SKD4bWjZ+tRBkUC5y98w9H89RWQZYwwTGi/0nasLtEWxmJ8T6B51XDmfz9KK2ImqfG8d5bwtDR1zQ3ULCbJwRY7Cxlq4+3IRlOllMZrULz2b5HhrURjocydMY/r7EVqzmtCBDxpZKFcLzT4L7AuP9uKme/2he9bAAIfqiHKeZ7wjbFSF33P7V8G3aQAgdLlxmiTBXIthUX9AfFHtOBTAbcAwXV1npnbFF4R4ki65dXNGDvmU7TsdLCQUT/vpl6rIxhSRMNmp/NKvGI7h1eSxis+4Nq2Bnw8bDplM0N/fjsmIcDvR0FDvpn0pjpo8aflygiXPcyDIjxTxWVKQxNd4nKoh/+1M9lESIAtuu9OVj74WR3XsXEM9jeQ3D9qUH7Ng5qaCkbCIf3GiTjC3/GZvSLwbZApw6Lhbc1X3GoA8J7UJ1wuv3gdEa5znPCp57a6JaQh8F3k5cVc8YMgpPbopY0BTDMwomUVsvJcSIgbtxh1hZX7KeBiacOVdjXC7kfvDnCI2xARtrN4CDmnSAdYIc2v8kbLbqy0RNDmK9UeC1/1vh5K3k7rg=
+  kyber_wrapped_kek: 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
+  nonce: F/p1jyKvf5RputHy
+  tag: h3uAGhexuAToYUcZQMOxug==
+  size_bytes: 50
+- id: 2
+  title: Backward Compat Test Message 2
+  created: '2026-03-29T17:55:41.761891+00:00'
+  ciphertext: ZZafKp+DBS+b/5yDnaub98WO+djB9+4A0qhp3Ynld9kFlHazyju0ihUoJbEmCUUOf9A=
+  rsa_wrapped_kek: SAHupICKuccyEi2hdwMCb3jXVrw6F0uwi+csXHX4grE6H3INkk9bZhPvauokt4wO8tkSJ+qnxFjAEbtxYgjOEJ4cknOdCaotNBhgQHwWcZ51Gh4JEXinBuDrAoiC1jLvwO+4rhPQ/Bjtr5YQ7B07rvaGF6F0QBFsiILPJOAfcERVhR0biLCCMXgsE7+yuWmGMYOnn9YZghcDrfo9QaVhjILyBw5S9pqx9bZxkzUnO53ro3QAzRk3xJAc0yvZwL4FYx/HVZqvUV41MhjT9wYZQ+3tFNq9wFut88dq4/1EORs1Pjp6qm/uWtTcRTvWaab9HnZQo6BROF8GlaJ1/53o30JPGCf6w0nmtPZF7pH3PDH7pUjG4tuH7izNljpIEKuInnIAsBFdvcwFysdBtvxnxSg9RcIfPXG1JAMZti3XRgofyrJNMruhQCqqwvdMic2OTXUgBLvhp3b/n87aGHN6JYLu28gYcf/86+lVW1tX7ENLoLpSxfAnWeQ+F2GGyM41YXgLhDQBmEdh7DFeJ/G7GTkAJJFASyUIuF9Byo0i+plK5PXtGsF/8vN/hyt4GCqM7yx17OVsLmwTAQlsgeiGU/JAltg4ZCrmeUdNIsuZQhTKGNSTgOm0Ypx2k20mLNVmJL7cl2kfcIKXca6molQjQglLcs5xUi941JIHhFbxe7k=
+  kyber_wrapped_kek: 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
+  nonce: UESHQ2/fxSNTo4vJ
+  tag: ofpzDy2nDmHJAlxBQiGRBw==
+  size_bytes: 50
+- id: 3
+  title: Backward Compat Test Message 3
+  created: '2026-03-29T17:55:41.776841+00:00'
+  ciphertext: 1Dzi1vwfJttuQrP3W6hMMZ8OMf61UWkdu5c+wKbrzjhgHcYcjXL+p4yUMPvGNouin3c=
+  rsa_wrapped_kek: O/VLW5TAzm80BYzYP6H1ICNnfu0VNLuNusYdHewvS1xyKhnd9UFV5HzF8329pzhACPaRiWKvT2ueDWqhfslZv1AGk+9K+a51O+sgyGOw2iHpEYAMg6K+EOQCIaV9HW9XmJI3Lpbfi9pB+kNZtcS+WeN/ZAo8ZaXb0xWiMzMQpM/L5hc6aiORcVMgUQIlmfTZ6hAdpRPmz7RXBu/TYCBZBI3cnvVZx0Wwg/sIvGoUbCS3Bau0WB688v12/rVIV1pUet0NaYoGkqbN8IB9lhQY+Ix31PlCNBZRKNQQo5Tzknzep0t7sv7bHb2l6QYLNsUxuXejrwpmwxJLYxbsJyfL8Y/lVJkDVoU/Q8Tx88dWLGEiNMjpd0f+xC7NvX+3ONo0EBScfVCi4zQComVyfsNZSXuu0Hgd1urEgafq95G4XQkzFA5vGxAnuXv312+6YpDkbNCn0UJyfUCwyyiMXG70DlVchh9WWA/CgLN/VHirOehcMcgHk0DKkfb0MC9OL8ytTWvqWRGk2XZgvY/qQ+GeQ/F/johN2hulhKbUgJkpocDeTYwLZhrQGbaptCSPPWJsSvt/ZhDuLo1sGVlRalL6LBULdkWFokSiurgA9Ixe6FpjZJAj4W94XAWklsGQpxJ4kuHyuXn5QH4U0Zi6oHRVR4TKk/6WBldsp4lj2SR3JJ8=
+  kyber_wrapped_kek: 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
+  nonce: AV1HMBfNLSPpvffd
+  tag: L+0z79rx8CDdqNVrxqw/+w==
+  size_bytes: 50
+manifest:
+  threshold:
+    k: 3
+    n: 5
+  algorithms:
+    keypair: RSA-4096 + Kyber-1024 (hybrid)
+    passphrase_entropy: '256'
+    secret_sharing: Shamir SSS over GF(256)
+    message_encryption: AES-256-GCM
+    kdf: PBKDF2-HMAC-SHA512 (600k iterations)
+  fingerprints:
+    rsa_public_key_sha256: 2b2cbc13c56468eb19ab8bfcb2d7e5eba34546c69e9d2e647f6432efc82536e9
+    kyber_public_key_sha256: 357f7a2a9a0fdaca39736862fdd03cd06bcc0a0e874a3ceea2942b5d053d289a
+    vault_sha256: e4ae1be42a6d6fd3bf30787815c3fae8e9556f520aa55d547473e53b5cc9d600
+  rotation_history:
+  - date: '2026-03-29T17:55:41.726370+00:00'
+    event: initial_creation
+    k: 3
+    n: 5
+  share_fingerprints:
+  - index: 1
+    salt: 3379b625756bfcca54cf3319e4180774f8a025af9b32bf53b47d1bdde5616cb2
+    hash: 69706e350b43c2700a2cdc6f7bc404bbb41c2d945245b27d1329a6b856cbba6d
+    algorithm: sha256
+  - index: 2
+    salt: 0defdd7cf29b2038cc7d15deccbba343babcb91159c08d7e5d812345e27e6712
+    hash: d40ce11571f50d34b1795ba68bbb1f4fcfc91b890c1843fc7b6ec985eb86efec
+    algorithm: sha256
+  - index: 3
+    salt: c8876f731b6b2147fa950a84d4c4098759765ecef67ea3feea254e1a853575eb
+    hash: 130b7a54a6efbb1102e6f9736ffa11f3b364a9567beef9c582621f48f604d3e0
+    algorithm: sha256
+  - index: 4
+    salt: 8583d70c84ef8fb1f47ff34da48f249029a2b6246541aa3070d18bdafede626b
+    hash: 452a50bb8c9d06201417e957ad9a1875d16d0fbdc168b02ac8731434da22257f
+    algorithm: sha256
+  - index: 5
+    salt: 74aae3e36c9cc05d31e1f59d8b96b1e114cbdd5ae5057ccbc3eba190d0cc6364
+    hash: d150f2021d708601e1cd0841485c1f6a69ac3a8a366035281d481db061399e32
+    algorithm: sha256
+recovery_guide: |
+  # Emergency Recovery Guide
+
+  ## What Is This Document?
+  This guide explains how to access encrypted messages stored in your Will-Encrypt vault.
+  It is designed for executors, family members, or trusted individuals who may not have
+  technical experience.
+
+  ## When to Use This Guide
+
+  Emergency recovery is authorized when:
+  - The vault owner is deceased (death certificate required)
+  - The vault owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+  - The vault owner has given explicit permission
+
+  ⚠️  **IMPORTANT**: Before starting recovery, ensure you have proper legal authorization
+  to access this vault. Key holders are responsible for verifying legitimacy before
+  releasing their shares.
+
+  ## What You Need
+
+  To decrypt messages in this vault, you need:
+  1. **At least 3 secret shares** (out of 5 total shares)
+     - Each share is a sequence of exactly 24 words (called a "BIP39 mnemonic")
+     - These shares are held by different trusted key holders
+  2. **The vault file** (typically named "vault.yaml")
+     - This file can be safely stored anywhere (it contains no secrets by itself)
+  3. **A computer** with internet access (any Windows, macOS, or Linux computer)
+
+  ## Key Holder Coordination
+
+  ### Step 1: Initial Contact
+  As the person coordinating recovery (executor, family member, etc.):
+  1. Contact all key holders who have secret shares
+  2. Explain the situation and reason for recovery
+  3. Provide proof of authorization (death certificate, court order, etc.)
+
+  ### Step 2: Collecting Shares
+  Each key holder should:
+  1. Independently verify the legitimacy of your recovery request
+  2. Review the proof of authorization you provided
+  3. If satisfied, provide their secret share (24 words)
+  4. Keep a record of when and why they released their share
+
+  ⚠️  **SECURITY NOTE**: You only need 3 shares, but 5 shares exist for redundancy.
+  If some key holders are unreachable, you can still proceed with 3 shares.
+
+  ## Installation Steps (First Time Only)
+
+  ### Step 1: Install Python (if not already installed)
+
+  Python is the programming language needed to run Will-Encrypt.
+
+  - **Windows**:
+    1. Visit https://www.python.org/downloads/
+    2. Download the latest Python 3.11 or higher
+    3. Run the installer
+    4. ✓ CHECK the box "Add Python to PATH" during installation
+    5. Complete the installation
+
+  - **macOS**:
+    - Python 3 is pre-installed on recent versions
+    - Or install via Homebrew: Open Terminal and type `brew install python3`
+
+  - **Linux**:
+    - Use your package manager: Open Terminal and type `sudo apt install python3 python3-pip`
+
+  ### Step 2: Verify Python Installation
+
+  Open a terminal/command prompt:
+  - **Windows**: Press Windows+R, type `cmd`, press Enter
+  - **macOS**: Press Command+Space, type "Terminal", press Enter
+  - **Linux**: Press Ctrl+Alt+T
+
+  Type this command and press Enter:
+  ```bash
+  python3 --version
+  ```
+
+  You should see "Python 3.11" or higher. If not, repeat Step 1.
+
+  ### Step 3: Download Will-Encrypt
+
+  **Option A: Using Git (recommended if available)**
+
+  In the terminal, type:
+  ```bash
+  git clone https://github.com/tubededentifrice/will-encrypt.git
+  cd will-encrypt
+  ```
+
+  If git is not installed:
+  - **Windows**: Download from https://git-scm.com/download/win
+  - **macOS**: Type `xcode-select --install` in Terminal
+  - **Linux**: Type `sudo apt install git` in Terminal
+
+  **Option B: Download ZIP File (easier for non-technical users)**
+
+  1. Visit https://github.com/tubededentifrice/will-encrypt
+  2. Click the green "Code" button
+  3. Select "Download ZIP"
+  4. Extract the ZIP file to your Desktop or Documents folder
+  5. Open a terminal in that folder
+
+  ### Step 4: Install Dependencies
+
+  In the terminal, make sure you're in the will-encrypt folder, then type:
+  ```bash
+  pip install -r requirements.txt
+  pip install -e .
+  ```
+
+  This installs the necessary software components. It may take a few minutes.
+
+  ## Step-by-Step Recovery Process
+
+  ### Step 1: Collect at Least 3 Shares
+  Contact key holders and ask them to provide their 24-word shares. Write them down
+  carefully or have them sent securely (encrypted email, secure messaging).
+
+  Each share looks like this:
+  ```
+  word1 word2 word3 word4 ... word24
+  ```
+
+  ### Step 2: Locate the Vault File
+  Find the vault file (typically "vault.yaml"). This might be:
+  - On a backup drive
+  - In cloud storage
+  - Attached to a document
+  - Provided by the vault owner
+
+  Place the vault file in the will-encrypt folder you extracted earlier.
+
+  ### Step 3: Run Decryption Command
+  In the terminal, navigate to the will-encrypt folder and type:
+  ```bash
+  ./will-encrypt decrypt --vault vault.yaml
+  ```
+
+  If the vault file is in a different location, use its full path:
+  ```bash
+  ./will-encrypt decrypt --vault /path/to/vault.yaml
+  ```
+
+  ### Step 4: Enter Shares
+  The tool will prompt you to enter shares one at a time.
+
+  When prompted:
+  1. Type or paste the first share (all 24 words, separated by spaces)
+  2. Press Enter
+  3. Repeat for each additional share (you need 3 total)
+
+  ⚠️  **IMPORTANT**:
+  - Enter exactly 24 words per share
+  - Check for typos - even one wrong letter will cause failure
+  - If a share is rejected, verify it and try again
+
+  ### Step 5: View and Save Messages
+  Once you've entered 3 valid shares, all encrypted messages will be decrypted
+  and displayed on screen.
+
+  **To save the messages**:
+  1. Copy the text from the terminal window
+  2. Paste into a text editor (Notepad, TextEdit, etc.)
+  3. Save to a secure location
+  4. Or take screenshots for documentation
+
+  ## Expected Time Required
+  - **First-time installation**: 10-30 minutes (depending on internet speed)
+  - **Share collection**: Variable (depends on key holder availability)
+  - **Decryption process**: Less than 1 minute once you have the shares
+
+  ## Troubleshooting Common Issues
+
+  ### "Invalid BIP39 checksum" or Share Rejected
+  **Problem**: One or more shares contain typos or are incorrect.
+  **Solution**:
+  1. Double-check each word in the share
+  2. Verify there are exactly 24 words
+  3. Contact the key holder to re-verify the share
+  4. Try entering the shares again
+
+  ### "Insufficient shares"
+  **Problem**: You need 3 shares but provided fewer.
+  **Solution**:
+  1. Contact additional key holders
+  2. Collect more shares until you have at least 3
+
+  ### "Vault not found" or "File not found"
+  **Problem**: The vault file path is incorrect.
+  **Solution**:
+  1. Verify the vault file exists
+  2. Check the file name (usually "vault.yaml")
+  3. Use the full path to the file (e.g., `/Users/john/Documents/vault.yaml`)
+
+  ### "Python not found" or "Command not found"
+  **Problem**: Python is not installed or not in your system PATH.
+  **Solution**:
+  1. Reinstall Python and ensure "Add to PATH" is checked
+  2. Restart your terminal/command prompt after installation
+  3. Try `python` instead of `python3` (Windows may use this)
+
+  ### Permission Denied
+  **Problem**: You don't have permission to access the vault file.
+  **Solution**:
+  1. Make sure you're the owner of the file or have read permissions
+  2. On macOS/Linux: Try `chmod 600 vault.yaml` to set proper permissions
+
+  ### Other Issues
+  - Visit the project's issue tracker: https://github.com/tubededentifrice/will-encrypt/issues
+  - Search for similar problems or create a new issue with details
+  - Contact a technically savvy friend or IT professional for help
+
+  ## Security and Privacy
+
+  ### What's Safe to Share?
+  - **Vault file**: YES - Safe to backup, email, or store in cloud storage
+  - **Secret shares**: NO - Must be kept confidential by key holders
+  - **Decrypted messages**: NO - Handle with same care as the original secrets
+
+  ### After Recovery
+  1. **Document everything**: Record which shares were used, when, and by whom
+  2. **Secure the messages**: Store decrypted content in a safe location
+  3. **Notify key holders**: Let them know recovery was completed successfully
+  4. **Consider destroying shares**: If appropriate, key holders may choose to
+     securely destroy their shares after successful recovery
+
+  ### Audit Trail
+  It's good practice to maintain a record of:
+  - Date and time of recovery attempt
+  - Who coordinated the recovery (your name and contact)
+  - Which key holders provided shares
+  - What proof of authorization was provided
+  - Date and time of successful decryption
+  - How the decrypted messages were handled
+
+  ## Technical Notes (for Advanced Users)
+
+  This vault uses:
+  - **Threshold cryptography**: 3-of-5 Shamir Secret Sharing over GF(256)
+  - **BIP39 encoding**: 24-word mnemonics with checksums for error detection
+  - **Hybrid post-quantum encryption**: RSA-4096 + Kyber-1024
+  - **Message encryption**: AES-256-GCM authenticated encryption
+  - **Key derivation**: PBKDF2-HMAC-SHA512 with 600K iterations
+
+  The vault file itself contains only public keys and encrypted data. Private keys
+  are encrypted with a passphrase derived from the secret shares, so the vault
+  is useless without at least 3 shares.
+
+  ## Questions or Help Needed?
+
+  If you're stuck or need assistance:
+  1. Read the troubleshooting section above
+  2. Check the project documentation: https://github.com/tubededentifrice/will-encrypt
+  3. Ask a technically experienced friend or IT professional to help
+  4. Contact the key holders - they may have additional guidance
+
+  Remember: The vault owner chose this system to protect important information.
+  Take your time, follow the steps carefully, and don't hesitate to ask for help.
+policy_document: |
+  # Access Policy
+
+  ## Recovery Eligibility
+
+  Emergency recovery is authorized when:
+  - Account owner is deceased (death certificate required)
+  - Account owner is incapacitated (medical certification required)
+  - Legal authorization is provided (court order, power of attorney)
+
+  ## Key Holder Coordination
+
+  1. **Initial Contact**: Executor contacts all key holders
+  2. **Proof Requirements**: Death certificate or legal documentation
+  3. **Share Release**: Key holders independently verify legitimacy
+  4. **Recovery Execution**: Executor follows recovery guide with collected shares
+
+  ## Key Holder Responsibilities
+
+  - Protect share custody (paper backup, password manager, or HSM)
+  - Verify recovery legitimacy before releasing share
+  - Do not share with other key holders (prevents collusion)
+  - Report lost shares immediately to executor
+
+  ## Audit Trail
+
+  - Document all recovery attempts
+  - Log share collection (who, when, what verification)
+  - Record decrypted message access
+
+  ## Customization
+
+  This is a template. Customize for your specific requirements:
+  - Add specific key holder names and contact information
+  - Define your proof requirements
+  - Specify recovery approval process
+crypto_notes: |
+  # Cryptographic Implementation Notes
+
+  ## Algorithm Choices
+
+  - **RSA-4096**: FIPS 186-4, OAEP padding with SHA-256
+  - **ML-KEM-1024**: NIST FIPS 203 (CRYSTALS-Kyber), post-quantum KEM
+  - **Shamir SSS**: Lagrange interpolation over GF(256)
+  - **AES-256-GCM**: AEAD with 96-bit nonce, 128-bit auth tag
+  - **BIP39**: Bitcoin Improvement Proposal 39 (2013 standard)
+  - **PBKDF2**: HMAC-SHA512, 600,000 iterations (OWASP 2023)
+
+  ## Hybrid Post-Quantum Encryption
+
+  This vault uses **true hybrid cryptography** to protect against both classical and quantum attacks:
+
+  1. **Key Encapsulation**: ML-KEM-1024 generates a quantum-resistant shared secret
+  2. **Hybrid KEK**: The KEK is XORed with the Kyber shared secret
+  3. **Classical Layer**: The hybrid KEK is then wrapped with RSA-4096-OAEP
+
+  **Security Property**: Both RSA AND Kyber must be broken to compromise the KEK.
+  - If quantum computers break RSA → Kyber still protects the data
+  - If Kyber has a flaw → RSA still protects the data
+
+  ## Security Parameters
+
+  - Passphrase entropy: 256 bits
+  - Threshold: 3-of-5
+  - RSA key size: 4096 bits
+  - ML-KEM public key: 1568 bytes
+  - ML-KEM private key: 3168 bytes
+  - ML-KEM ciphertext: 1568 bytes
+  - AES key size: 256 bits
+
+  ## Test Vectors
+
+  - BIP39: Specification test vectors (entropy 0x00...00 and 0x7f...7f)
+  - RSA-OAEP: NIST CAVP test vectors
+  - AES-GCM: NIST CAVP test vectors
+  - ML-KEM-1024: NIST FIPS 203 known-answer tests
+
+  ## Interoperability Notes
+
+  ### Decryption Without will-encrypt
+
+  1. Parse vault.yaml with any YAML library
+  2. Reconstruct passphrase from K shares using Shamir SSS over GF(256)
+  3. Derive AES key with PBKDF2 (SHA-512, 600k iterations, stored salt)
+  4. Decrypt private keys (RSA and Kyber) with AES-256-GCM
+  5. Decrypt Kyber ciphertext to get shared secret (32 bytes)
+  6. Decrypt RSA-wrapped hybrid KEK with RSA-4096-OAEP (SHA-256)
+  7. XOR hybrid KEK with Kyber shared secret to recover original KEK
+  8. Decrypt messages with AES-256-GCM (KEK, nonce, AAD=title)
+
+  ### Migration Path
+
+  If RSA, Kyber, or AES are broken:
+  1. Decrypt all messages with current vault
+  2. Generate new vault with updated algorithms
+  3. Re-encrypt messages with new keys
+  4. Generate new shares
+
+  The hybrid design provides graceful migration: if only one algorithm is broken,
+  data remains secure while you migrate to a new vault.
+
+  ## Implementation Status
+
+  - **Production Ready**: All algorithms (RSA, ML-KEM-1024, AES, BIP39, Shamir, PBKDF2)
+  - **Library**: pqcrypto>=0.3.4 for ML-KEM-1024 implementation
+
+  ## References
+
+  - BIP39: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
+  - Shamir SSS: Shamir, Adi (1979). "How to share a secret"
+  - NIST FIPS 203: ML-KEM (Module-Lattice-Based Key-Encapsulation Mechanism)
+  - pqcrypto: https://github.com/PQClean/PQClean-Python

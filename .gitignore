@@ -50,8 +50,9 @@ vault*.y*ml
 test_vault*.y*ml
 share*.txt
 *_share*.txt
-# Exception: backward compatibility test artifact
+# Exception: backward compatibility test artifacts
 !tests/artifacts/current_vault/current_vault.yaml
+!tests/artifacts/v*/vault.yaml
 
 # Logs
 *.log

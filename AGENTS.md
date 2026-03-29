@@ -148,7 +148,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **224/224 tests passing (100% pass rate), 65% code coverage**
+- Current status: **247/247 tests passing (100% pass rate), 65% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -194,10 +194,10 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (224 tests, 65% code coverage):
+✅ Test Coverage (247 tests, 65% code coverage):
 - **Unit Tests (123)**: Crypto primitives, storage, CLI wiring, secure editor navigation
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
-- **Integration Tests (46)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management
+- **Integration Tests (69)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management, backward compatibility
 - All tests passing with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines

@@ -1,0 +1,18 @@
+{
+  "format_version": "1.0",
+  "description": "1-message vault for backward compat testing",
+  "created_by": "generate_artifact.py",
+  "created_at": "2026-03-29T17:55:36.759933+00:00",
+  "threshold": {
+    "k": 3,
+    "n": 5
+  },
+  "messages": [
+    {
+      "id": 1,
+      "title": "Backward Compat Test Message 1",
+      "plaintext": "This is test message 1 for backward compatibility.",
+      "size_bytes": 50
+    }
+  ]
+}
