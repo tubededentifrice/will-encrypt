@@ -9,12 +9,3 @@ updates:
       all-pip-updates:
         patterns:
           - "*"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-actions-updates:
-        patterns:
-          - "*"
