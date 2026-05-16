@@ -24,7 +24,14 @@ from pqcrypto.kem.ml_kem_1024 import (
     generate_keypair as kyber_generate_keypair,  # type: ignore[import-untyped]
 )
 
-from .passphrase import derive_key
+from .passphrase import MIN_PBKDF2_ITERATIONS, SALT_BYTES, derive_key
+
+AES_GCM_NONCE_BYTES = 12
+AES_GCM_TAG_BYTES = 16
+KEK_BYTES = 32
+KYBER_1024_PUBLIC_BYTES = 1568
+KYBER_1024_PRIVATE_BYTES = 3168
+KYBER_1024_CIPHERTEXT_BYTES = 1568
 
 
 @dataclass
@@ -86,7 +93,7 @@ def encrypt_key_with_passphrase(
 
     # Encrypt with AES-256-GCM
     aesgcm = AESGCM(encryption_key)
-    nonce = secrets.token_bytes(12)  # 96-bit nonce
+    nonce = secrets.token_bytes(AES_GCM_NONCE_BYTES)
     ciphertext = aesgcm.encrypt(nonce, key_bytes, None)
 
     # Return: nonce || ciphertext (ciphertext includes auth tag)
@@ -111,12 +118,15 @@ def decrypt_key_with_passphrase(
     Raises:
         ValueError: If decryption fails (wrong passphrase or tampered data)
     """
+    if len(encrypted_bytes) < AES_GCM_NONCE_BYTES + AES_GCM_TAG_BYTES:
+        raise ValueError("Encrypted key is too short to contain nonce and auth tag")
+
     # Derive decryption key from passphrase
     decryption_key = derive_key(passphrase, salt, iterations)
 
     # Extract nonce and ciphertext
-    nonce = encrypted_bytes[:12]
-    ciphertext = encrypted_bytes[12:]
+    nonce = encrypted_bytes[:AES_GCM_NONCE_BYTES]
+    ciphertext = encrypted_bytes[AES_GCM_NONCE_BYTES:]
 
     # Decrypt with AES-256-GCM
     try:
@@ -138,8 +148,8 @@ def generate_hybrid_keypair(passphrase: bytes) -> HybridKeypair:
         HybridKeypair with public keys (plaintext) and encrypted private keys
     """
     # Generate salt for KDF
-    kdf_salt = secrets.token_bytes(32)
-    kdf_iterations = 600000
+    kdf_salt = secrets.token_bytes(SALT_BYTES)
+    kdf_iterations = MIN_PBKDF2_ITERATIONS
 
     # Generate RSA keypair
     rsa_public, rsa_private = generate_rsa_keypair()
@@ -237,6 +247,13 @@ def hybrid_encrypt_kek(
         Kyber KEM generates its own shared secret; we XOR it with our KEK
         for hybrid protection. Both RSA and Kyber must be broken to recover KEK.
     """
+    if len(kek) != KEK_BYTES:
+        raise ValueError("KEK must be exactly 32 bytes")
+    if len(kyber_public) != KYBER_1024_PUBLIC_BYTES:
+        raise ValueError(
+            f"ML-KEM-1024 public key must be {KYBER_1024_PUBLIC_BYTES} bytes"
+        )
+
     # Load RSA public key
     rsa_public_key = serialization.load_pem_public_key(rsa_public_pem)
     assert isinstance(rsa_public_key, rsa.RSAPublicKey), "Expected RSA public key"
@@ -247,7 +264,9 @@ def hybrid_encrypt_kek(
 
     # XOR KEK with Kyber shared secret for hybrid protection
     # Attacker needs both: RSA private key AND Kyber private key to recover KEK
-    hybrid_kek = bytes(a ^ b for a, b in zip(kek, kyber_shared_secret, strict=False))
+    if len(kyber_shared_secret) != KEK_BYTES:
+        raise ValueError("ML-KEM-1024 shared secret must be exactly 32 bytes")
+    hybrid_kek = bytes(a ^ b for a, b in zip(kek, kyber_shared_secret, strict=True))
 
     # Encrypt the hybrid KEK with RSA-OAEP
     rsa_wrapped = rsa_public.encrypt(
@@ -283,6 +302,15 @@ def hybrid_decrypt_kek(
     Raises:
         ValueError: If decryption fails on either leg
     """
+    if len(kyber_private) != KYBER_1024_PRIVATE_BYTES:
+        raise ValueError(
+            f"ML-KEM-1024 private key must be {KYBER_1024_PRIVATE_BYTES} bytes"
+        )
+    if len(kyber_ciphertext) != KYBER_1024_CIPHERTEXT_BYTES:
+        raise ValueError(
+            f"ML-KEM-1024 ciphertext must be {KYBER_1024_CIPHERTEXT_BYTES} bytes"
+        )
+
     # Decrypt hybrid KEK with RSA
     hybrid_kek = rsa_private.decrypt(
         rsa_wrapped,
@@ -297,6 +325,8 @@ def hybrid_decrypt_kek(
     kyber_shared_secret = kyber_decrypt(kyber_private, kyber_ciphertext)
 
     # XOR back to recover original KEK
-    kek = bytes(a ^ b for a, b in zip(hybrid_kek, kyber_shared_secret, strict=False))
+    if len(hybrid_kek) != KEK_BYTES or len(kyber_shared_secret) != KEK_BYTES:
+        raise ValueError("Hybrid KEK and ML-KEM shared secret must be exactly 32 bytes")
+    kek = bytes(a ^ b for a, b in zip(hybrid_kek, kyber_shared_secret, strict=True))
 
     return kek

@@ -10,6 +10,10 @@ for protecting private keys.
 import hashlib
 import secrets
 
+PASSPHRASE_BYTES = 32
+SALT_BYTES = 32
+MIN_PBKDF2_ITERATIONS = 600_000
+
 
 def generate_passphrase() -> bytes:
     """
@@ -23,7 +27,7 @@ def generate_passphrase() -> bytes:
     Note: 256 bits (32 bytes) provides clean BIP39 integration (24-word
     mnemonics encode exactly 256 bits) and excellent security for this use case.
     """
-    return secrets.token_bytes(32)
+    return secrets.token_bytes(PASSPHRASE_BYTES)
 
 
 def derive_key(
@@ -50,13 +54,13 @@ def derive_key(
     if not isinstance(salt, bytes):
         raise TypeError("Salt must be bytes")
 
-    if len(passphrase) != 32:
+    if len(passphrase) != PASSPHRASE_BYTES:
         raise ValueError("Passphrase must be exactly 32 bytes (256 bits)")
 
-    if len(salt) != 32:
+    if len(salt) != SALT_BYTES:
         raise ValueError("Salt must be exactly 32 bytes")
 
-    if iterations < 600000:
+    if iterations < MIN_PBKDF2_ITERATIONS:
         raise ValueError("Iterations must be >= 600,000 (OWASP 2023 recommendation)")
 
     # Derive 32-byte key using PBKDF2-HMAC-SHA512
@@ -74,4 +78,4 @@ def generate_salt() -> bytes:
     Returns:
         32-byte random salt
     """
-    return secrets.token_bytes(32)
+    return secrets.token_bytes(SALT_BYTES)

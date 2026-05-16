@@ -1,20 +1,30 @@
 version: 2
 
+multi-ecosystem-groups:
+  all-dependencies:
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "17:00"
+      timezone: "Etc/UTC"
+
 updates:
   - package-ecosystem: "pip"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-pip-updates:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    cooldown:
+      default-days: 7
+      include:
+        - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-actions-updates:
-        patterns:
-          - "*"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "all-dependencies"
+    cooldown:
+      default-days: 7
+      include:
+        - "*"

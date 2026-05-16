@@ -254,6 +254,12 @@ def generate_additional_shares(existing_shares: list[bytes], new_indices: list[i
     if not new_indices:
         return []
 
+    for share in existing_shares:
+        if not isinstance(share, bytes):
+            raise TypeError("All existing shares must be bytes")
+        if len(share) != 33:
+            raise ValueError(f"Each existing share must be 33 bytes, got {len(share)}")
+
     # Validate new indices
     for idx in new_indices:
         if idx < 1 or idx > 255:

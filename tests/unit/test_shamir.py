@@ -220,6 +220,16 @@ class TestShamirSecretSharing:
         with pytest.raises(ValueError, match="Duplicate"):
             generate_additional_shares(shares[:3], [10, 10])
 
+    def test_generate_additional_shares_validates_existing_share_format(self) -> None:
+        """Test: existing shares are validated before index access."""
+        from src.crypto.shamir import generate_additional_shares
+
+        with pytest.raises(TypeError, match="must be bytes"):
+            generate_additional_shares(["not-bytes"], [6])  # type: ignore[list-item]
+
+        with pytest.raises(ValueError, match="33 bytes"):
+            generate_additional_shares([b"short"], [6])
+
     def test_generate_additional_shares_empty_list(self) -> None:
         """Test: generate_additional_shares handles empty new_indices list."""
         from src.crypto.shamir import generate_additional_shares, split_secret

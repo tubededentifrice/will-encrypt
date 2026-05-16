@@ -102,7 +102,11 @@ Enter 3 of the 5 shares when prompted. All messages will be decrypted and displa
 
 - **Python**: 3.11 or higher
 - **Operating System**: Linux, macOS, Windows
-- **Dependencies**: PyYAML, cryptography, mnemonic, secretsharing
+- **Dependencies**: PyYAML, cryptography, mnemonic, pqcrypto
+- **Supply-chain policy**: Dependency manifests pin exact versions that are at least
+  7 days old when selected. CI runs `tools/check_dependency_age.py` before and after
+  installation, and Dependabot is configured to group dependency updates and wait
+  7 days before proposing newly released versions.
 
 ### Installation Methods
 
@@ -1577,7 +1581,8 @@ Hybrid design: Both RSA and Kyber must be broken. If RSA is broken:
 Yes! All cryptographic code is in `src/crypto/`. Uses standard libraries:
 - `cryptography` (Python Cryptographic Authority)
 - `mnemonic` (BIP39 implementation)
-- `secretsharing` (Shamir SSS)
+- `pqcrypto` (ML-KEM-1024 implementation)
+- Standard-library audited Shamir SSS implementation in `src/crypto/shamir.py`
 
 Review `src/docs/crypto_notes.py` for algorithm details and test vectors.
 

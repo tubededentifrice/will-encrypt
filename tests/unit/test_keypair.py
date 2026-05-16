@@ -199,6 +199,40 @@ class TestHybridKeypair:
         with pytest.raises(ValueError):
             decrypt_private_keys(keypair, wrong_passphrase)
 
+    def test_decrypt_private_key_rejects_truncated_blob(self) -> None:
+        """Test: Encrypted private key blobs must contain nonce and auth tag."""
+        from src.crypto.keypair import decrypt_key_with_passphrase
+
+        with pytest.raises(ValueError, match="too short"):
+            decrypt_key_with_passphrase(
+                b"truncated", secrets.token_bytes(32), secrets.token_bytes(32)
+            )
+
+    def test_hybrid_encrypt_validates_kek_and_kyber_key_lengths(self) -> None:
+        """Test: Hybrid wrapping rejects malformed key material before encryption."""
+        from src.crypto.keypair import hybrid_encrypt_kek
+
+        with pytest.raises(ValueError, match="KEK must be exactly 32 bytes"):
+            hybrid_encrypt_kek(b"short", b"not parsed", b"")
+
+        with pytest.raises(ValueError, match="public key must be 1568 bytes"):
+            hybrid_encrypt_kek(secrets.token_bytes(32), b"not parsed", b"short")
+
+    def test_hybrid_decrypt_validates_kyber_lengths(self) -> None:
+        """Test: Hybrid unwrapping rejects malformed Kyber private inputs."""
+        from typing import cast
+
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+
+        from src.crypto.keypair import hybrid_decrypt_kek
+
+        rsa_private = cast(RSAPrivateKey, object())
+        with pytest.raises(ValueError, match="private key must be 3168 bytes"):
+            hybrid_decrypt_kek(b"", b"", rsa_private, b"short")
+
+        with pytest.raises(ValueError, match="ciphertext must be 1568 bytes"):
+            hybrid_decrypt_kek(b"", b"short", rsa_private, b"\0" * 3168)
+
     def test_keypair_serialization_to_pem_and_base64(self) -> None:
         """Test: Keypair serialization (RSA to PEM, Kyber to base64)."""
 

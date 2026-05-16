@@ -1,10 +1,11 @@
 # will-encrypt Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-29
+Auto-generated from all feature plans. Last updated: 2026-05-16
 
 ## Active Technologies
 - Python 3.11+ (standard library preferred)
-- Dependencies: pyyaml>=6.0, cryptography>=41.0, mnemonic>=0.20, pqcrypto>=0.3.4
+- Dependencies: PyYAML==6.0.3, cryptography==48.0.0, mnemonic==0.21, pqcrypto==0.4.0
+- Dev dependencies: pytest==9.0.3, pytest-cov==7.1.0, pytest-xdist==3.8.0, ruff==0.15.12, mypy==2.0.0, pip-audit==2.10.0, plus pinned transitive dependencies in `requirements-dev.txt`
 
 ## Project Structure
 ```
@@ -34,9 +35,9 @@ will-encrypt/
 │   ├── docs/            # Generated documentation
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 123 unit tests
+│   ├── unit/            # 131 unit tests
 │   ├── contract/        # 55 contract tests
-│   ├── integration/     # 46 integration tests
+│   ├── integration/     # 69 integration tests
 │   └── test_helpers.py  # Shared test utilities
 ├── README.md            # Comprehensive user guide
 ├── EXAMPLE_IMPORT_SHARES.md
@@ -148,7 +149,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; treat drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **247/247 tests passing (100% pass rate), 65% code coverage**
+- Current status: **253 passed, 2 skipped, 65% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -164,6 +165,8 @@ python -m src.main <command>        # Alternative invocation
 - **Never commit real vaults, mnemonic shares, or private keys**
 - Use demo artifacts only for docs and reproducible tests
 - Environment overrides belong in ignored `.env` files, not tracked configs
+- Dependency manifests must pin exact versions. New dependency versions must be at least 7 days old before installation or Dependabot PR creation.
+- `tools/check_dependency_age.py` enforces the 7-day PyPI release-age cutoff in CI before and after dependency installation.
 - When touching encryption or storage, confirm temporary files are removed
 - Mention any deviation from zero-trust assumptions in code reviews
 
@@ -194,11 +197,11 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (247 tests, 65% code coverage):
-- **Unit Tests (123)**: Crypto primitives, storage, CLI wiring, secure editor navigation
+✅ Test Coverage (255 collected tests, 65% code coverage):
+- **Unit Tests (131)**: Crypto primitives, storage, CLI wiring, secure editor navigation, dependency age gate
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
 - **Integration Tests (69)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management, backward compatibility
-- All tests passing with comprehensive coverage of security features
+- Current verification: 253 passed, 2 skipped with comprehensive coverage of security features
 
 ## Commit & Pull Request Guidelines
 - History favors short, imperative subjects (e.g., "Add comprehensive UX enhancements")
