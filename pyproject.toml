@@ -108,4 +108,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-n auto --dist loadscope -v --cov=src --cov-report=html --cov-report=term"
+addopts = "-n auto --dist loadscope -v --cov=src --cov-report=html --cov-report=term --cov-fail-under=80"

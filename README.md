@@ -1454,10 +1454,10 @@ crypto_notes: |
 ### Running Tests
 
 ```bash
-# Full test suite (127 tests)
+# Full test suite (299 tests)
 pytest tests/
 
-# With coverage
+# With coverage (80% minimum gate)
 pytest tests/ --cov=src --cov-report=html
 
 # Specific test file
@@ -1614,7 +1614,7 @@ MIT License - see LICENSE file for details.
 - Share rotation
 - Passphrase rotation
 - Vault validation (fingerprints)
-- 127 tests, 100% coverage
+- 299 tests, 84% coverage with an 80% minimum gate
 
 ---
 

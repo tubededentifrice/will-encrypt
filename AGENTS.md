@@ -61,7 +61,7 @@ pytest -n 12                        # Force 12 workers when auto-detection is un
 pytest tests/unit/ -v               # Unit tests only (parallel by default)
 pytest tests/integration/ -v        # Integration tests only (parallel by default)
 pytest tests/contract/ -v           # Contract tests (CLI flows)
-pytest --cov=src                    # With coverage report (htmlcov/) - ~65% coverage
+pytest --cov=src                    # With coverage report (htmlcov/) - 80% minimum gate
 python -m pytest tests/ -v --tb=short
 
 # Linting and type checking
@@ -146,10 +146,10 @@ python -m src.main <command>        # Alternative invocation
 - Contract tests should exercise CLI flows end-to-end using CLI entry points
 - Integration tests for full workflows in `tests/integration/`
 - Use `tests/test_helpers.py` for shared test utilities (vault creation, message encryption, etc.)
-- Maintain current coverage with `pytest --cov=src`; treat drops as blockers
+- Maintain current coverage with `pytest --cov=src`; `--cov-fail-under=80` treats drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **253 passed, 2 skipped, 65% code coverage**
+- Current status: **297 passed, 2 skipped, 84% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -197,11 +197,11 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (255 collected tests, 65% code coverage):
-- **Unit Tests (131)**: Crypto primitives, storage, CLI wiring, secure editor navigation, dependency age gate
+✅ Test Coverage (299 collected tests, 84% code coverage):
+- **Unit Tests (175)**: Crypto primitives, storage, CLI wiring, interactive mode, secure editor navigation, CLI branch coverage, dependency age gate
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
 - **Integration Tests (69)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management, backward compatibility
-- Current verification: 253 passed, 2 skipped with comprehensive coverage of security features
+- Current verification: 297 passed, 2 skipped with comprehensive coverage of security features and an 80% coverage gate
 
 ## Commit & Pull Request Guidelines
 - History favors short, imperative subjects (e.g., "Add comprehensive UX enhancements")
