@@ -41,14 +41,11 @@
 git clone https://github.com/yourusername/will-encrypt.git
 cd will-encrypt
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Install tool
-pip install -e .
+# First run creates .venv and installs pinned runtime dependencies automatically
+./will-encrypt --help
 ```
 
-> ℹ️ **Launcher script:** All CLI examples assume you are running `./will-encrypt` from the repository root. If you install the package (e.g., `pip install -e .`), the command is available as `will-encrypt` on your PATH, and you can omit the `./` prefix.
+> ℹ️ **Launcher script:** All CLI examples assume you are running `./will-encrypt` from the repository root. On first run, the launcher creates `.venv` and installs the pinned dependencies from `requirements.txt` if they are missing. If you install the package (e.g., `pip install -e .`), the command is available as `will-encrypt` on your PATH, and you can omit the `./` prefix.
 
 ### 2. Interactive Mode (Recommended for beginners)
 
@@ -115,8 +112,10 @@ Enter 3 of the 5 shares when prompted. All messages will be decrypted and displa
 ```bash
 git clone https://github.com/yourusername/will-encrypt.git
 cd will-encrypt
-pip install -e .
+./will-encrypt --help
 ```
+
+The source launcher creates `.venv` automatically, reuses it on later runs, and installs pinned runtime dependencies when they are missing or at the wrong version. Set `WILL_ENCRYPT_VENV=/path/to/venv` before running `./will-encrypt` to use a different environment path.
 
 #### Option 2: Using pip (Production)
 
@@ -127,8 +126,8 @@ pip install will-encrypt
 #### Option 3: Virtual Environment (Recommended)
 
 ```bash
-python3.11 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python3.11 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
@@ -858,12 +857,11 @@ grep 'rotation_history' estate-vault.yaml
    git clone https://github.com/tubededentifrice/will-encrypt.git
    cd will-encrypt
 
-   # Install dependencies
-   pip install -r requirements.txt
-   pip install -e .
+   # First run creates .venv and installs dependencies automatically
+   ./will-encrypt --help
    ```
 
-   **Alternative (without git)**: Download ZIP from https://github.com/tubededentifrice/will-encrypt, extract it, and run the same pip commands.
+   **Alternative (without git)**: Download ZIP from https://github.com/tubededentifrice/will-encrypt, extract it, and run `./will-encrypt --help` from the extracted folder.
 
 2. **Contact Key Holders**
    ```bash
@@ -1246,12 +1244,9 @@ Error: Invalid mode 'key' (must be 'shares' or 'passphrase')
 
 **Fix**:
 ```bash
-# Install in editable mode
-pip install -e .
-
-# Or run from project root
+# Run from project root so the launcher can set up .venv
 cd /path/to/will-encrypt
-python -m src.main init --k 3 --n 5
+./will-encrypt init --k 3 --n 5
 ```
 
 #### Error: `yaml.scanner.ScannerError`
@@ -1334,6 +1329,7 @@ python -m src.main init --k 3 --n 5
 ```
 ./will-encrypt/
 ├── src/
+│   ├── bootstrap.py         # Source checkout venv/dependency bootstrap
 │   ├── main.py              # CLI entry point
 │   ├── cli/                 # Command implementations
 │   │   ├── init.py
@@ -1356,9 +1352,10 @@ python -m src.main init --k 3 --n 5
 │       ├── recovery_guide.py
 │       ├── policy.py
 │       └── crypto_notes.py
-├── tests/                   # Test suite (127 tests)
+├── tests/                   # Test suite (305 tests)
 │   ├── unit/
-│   └── contract/
+│   ├── contract/
+│   └── integration/
 ├── pyproject.toml           # Project metadata
 ├── setup.py                 # Installation script
 └── README.md                # This file

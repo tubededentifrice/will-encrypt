@@ -1,4 +1,25 @@
 #!/usr/bin/env bash
-# Thin launcher so docs' `will-encrypt` examples work without installation.
-# Forwards all CLI arguments to the Python entry point.
-python -m src.main "$@"
+set -euo pipefail
+
+# Source-checkout launcher. It creates/uses a local .venv and installs pinned
+# runtime dependencies before handing off to the real CLI entry point.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_DIR="${WILL_ENCRYPT_VENV:-${SCRIPT_DIR}/.venv}"
+
+if [[ -x "${VENV_DIR}/bin/python" ]]; then
+  PYTHON="${VENV_DIR}/bin/python"
+else
+  PYTHON=""
+  for CANDIDATE in python3.14 python3.13 python3.12 python3.11 python3 python; do
+    if command -v "${CANDIDATE}" >/dev/null 2>&1; then
+      PYTHON="${CANDIDATE}"
+      break
+    fi
+  done
+  if [[ -z "${PYTHON}" ]]; then
+    echo "Python 3.11+ is required. Install Python and retry ./will-encrypt." >&2
+    exit 1
+  fi
+fi
+
+exec "${PYTHON}" -m src.bootstrap "$@"

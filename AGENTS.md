@@ -1,6 +1,6 @@
 # will-encrypt Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-16
+Auto-generated from all feature plans. Last updated: 2026-06-07
 
 ## Active Technologies
 - Python 3.11+ (standard library preferred)
@@ -33,9 +33,10 @@ will-encrypt/
 │   │   ├── editor.py    # Secure message editor with keyboard navigation
 │   │   └── interactive.py # Interactive mode UI
 │   ├── docs/            # Generated documentation
+│   ├── bootstrap.py     # Source checkout venv/dependency bootstrap
 │   └── main.py          # CLI entry point
 ├── tests/
-│   ├── unit/            # 131 unit tests
+│   ├── unit/            # 181 unit tests
 │   ├── contract/        # 55 contract tests
 │   ├── integration/     # 69 integration tests
 │   └── test_helpers.py  # Shared test utilities
@@ -48,6 +49,9 @@ will-encrypt/
 
 ### Development
 ```bash
+# First source-checkout run creates .venv and installs pinned runtime dependencies
+./will-encrypt --help
+
 # Install dependencies
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
@@ -69,8 +73,8 @@ ruff check src tests                # Lint and auto-format hints (100-char lines
 mypy src tests                      # Enforce typing rules
 
 # Run CLI experiments
-./will-encrypt <command>              # After pip install -e .
-python -m src.main <command>        # Alternative invocation
+./will-encrypt <command>            # Auto-bootstraps .venv from requirements.txt
+python -m src.main <command>        # Alternative invocation after dependencies are installed
 
 # Interactive mode (no arguments)
 ./will-encrypt                        # Launches guided menu for all operations
@@ -149,7 +153,7 @@ python -m src.main <command>        # Alternative invocation
 - Maintain current coverage with `pytest --cov=src`; `--cov-fail-under=80` treats drops as blockers
 - Parallel test execution is required; default configuration runs with `-n auto --dist loadscope`
 - Override worker count with `PYTEST_ADDOPTS="-n 12"` when needed (CI, constrained hosts)
-- Current status: **297 passed, 2 skipped, 84% code coverage**
+- Current status: **303 passed, 2 skipped, 84% code coverage**
 - IMPORTANT: After making changes, before returning to the user:
   - Ensure all tests are still passing and iterate until everything passes
   - Ensure documentations are up to date (AGENTS.md and README.md)
@@ -197,11 +201,11 @@ python -m src.main <command>        # Alternative invocation
   - `init --source-vault` flag overrides environment-based manifest detection
 - Share display distinguishes imported vs newly generated shares
 
-✅ Test Coverage (299 collected tests, 84% code coverage):
-- **Unit Tests (175)**: Crypto primitives, storage, CLI wiring, interactive mode, secure editor navigation, CLI branch coverage, dependency age gate
+✅ Test Coverage (305 collected tests, 84% code coverage):
+- **Unit Tests (181)**: Crypto primitives, storage, CLI wiring, source bootstrap, interactive mode, secure editor navigation, CLI branch coverage, dependency age gate
 - **Contract Tests (55)**: CLI commands (init, encrypt, decrypt, list, edit, delete, validate, rotate)
 - **Integration Tests (69)**: Full lifecycle, emergency recovery, share rotation, validation audit, message management, backward compatibility
-- Current verification: 297 passed, 2 skipped with comprehensive coverage of security features and an 80% coverage gate
+- Current verification: 303 passed, 2 skipped with comprehensive coverage of security features and an 80% coverage gate
 
 ## Commit & Pull Request Guidelines
 - History favors short, imperative subjects (e.g., "Add comprehensive UX enhancements")
