@@ -130,7 +130,6 @@ python -m src.main <command>        # Alternative invocation after dependencies 
 - Python 3.11+ with explicit type hints throughout
 - Ruff enforces 100-character lines, import order, and dead-code trimming
 - Run `ruff check src tests` before committing
-- After a large change, run `jscpd --silent src tools`. Merge the duplicates that the change adds. Do not make jscpd a gate.
 - `mypy` rejects untyped definitions and implicit optionals
 - snake_case for modules, functions, and variables
 - PascalCase only for classes
