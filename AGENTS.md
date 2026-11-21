@@ -69,6 +69,7 @@ pytest --cov=src                    # With coverage report (htmlcov/) - 80% mini
 python -m pytest tests/ -v --tb=short
 
 # Linting and type checking
+tools/check.sh                      # ruff, mypy and the jscpd report
 ruff check src tests                # Lint and auto-format hints (100-char lines)
 mypy src tests                      # Enforce typing rules
 
@@ -129,7 +130,9 @@ python -m src.main <command>        # Alternative invocation after dependencies 
 ## Code Style
 - Python 3.11+ with explicit type hints throughout
 - Ruff enforces 100-character lines, import order, and dead-code trimming
-- Run `ruff check src tests` before committing
+- Run `tools/check.sh` before committing. It runs ruff and mypy, and also reports
+  jscpd clones for the changed files. Fix the clones that your change adds when
+  the fix makes the code simpler.
 - `mypy` rejects untyped definitions and implicit optionals
 - snake_case for modules, functions, and variables
 - PascalCase only for classes
